@@ -65,6 +65,9 @@ export default function AuthSheet({ initialRole = 'client', mode: initialMode = 
       }
       navigate(`/onboarding/${role}`)
     } catch (err) {
+      // TEMP DEBUG: log the raw error so it's visible in Eruda's console —
+      // remove once the "something went wrong" bug is found.
+      console.error('AuthSheet submit failed:', err)
       if (err instanceof ApiError) setFormError(err.message)
       else setFormError('Something went wrong. Please try again.')
     } finally {

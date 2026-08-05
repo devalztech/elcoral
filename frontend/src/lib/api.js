@@ -17,6 +17,9 @@ async function request(path, { method = 'GET', body, token } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers.Authorization = `Bearer ${token}`
 
+  // TEMP DEBUG — remove once bug is found
+  console.log('api request ->', `${BASE}${path}`, method)
+
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
