@@ -1,3 +1,13 @@
+import os
+import sys
+
+# HidenCloud's fixed startup command runs this file directly as
+# `python /home/container/app/main.py`, which puts app/ (not the repo
+# root) on sys.path. That breaks the `from app...` absolute imports
+# below. This inserts the parent dir (repo root) onto sys.path so the
+# `app` package resolves no matter how this file is invoked.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -43,3 +53,12 @@ app.include_router(auth.router)
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+if __name__ == "__main__":
+    # HidenCloud's fixed startup command runs `python app/main.py` directly
+    # instead of `uvicorn app.main:app`, so this boots the server manually
+    # to match what the Dockerfile's CMD would otherwise do.
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
