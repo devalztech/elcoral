@@ -13,15 +13,16 @@ class ApiError extends Error {
   }
 }
 
-async function request(path, { method = 'GET', body, token } = {}) {
-  const headers = { 'Content-Type': 'application/json' }
+async function request(path, { method = 'GET', body, token, isFormData = false } = {}) {
+  const headers = {}
+  if (!isFormData) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
 
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
     credentials: 'include', // send/receive the httponly refresh-token cookie
-    body: body ? JSON.stringify(body) : undefined,
+    body: isFormData ? body : body ? JSON.stringify(body) : undefined,
   })
 
   let data = null
@@ -52,6 +53,27 @@ export const api = {
       method: 'POST',
       body: { token_id: tokenId, token, new_password: newPassword },
     }),
+
+  // Onboarding
+  usernameAvailable: (username) =>
+    request(`/onboarding/username-available?username=${encodeURIComponent(username)}`),
+  submitOnboarding: (payload, token) =>
+    request('/onboarding', { method: 'POST', body: payload, token }),
+  myProfile: (token) => request('/onboarding/me', { token }),
+
+  // Media — multipart upload, needs the token passed explicitly since
+  // this can be called before/outside a normal page render cycle.
+  uploadMedia: (file, token) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request('/media/upload', { method: 'POST', body: form, token, isFormData: true })
+  },
+
+  // Lookup typeaheads (proxied through the backend — see app/routers/lookup.py)
+  searchCompanies: (q) => request(`/lookup/companies?q=${encodeURIComponent(q)}`),
+  searchCountries: (q) => request(`/lookup/countries?q=${encodeURIComponent(q)}`),
+  searchCities: (q, country) =>
+    request(`/lookup/cities?q=${encodeURIComponent(q)}&country=${encodeURIComponent(country)}`),
 }
 
 export { ApiError }

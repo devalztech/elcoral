@@ -1,59 +1,133 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.jsx'
-
-const COPY = {
-  client: {
-    eyebrow: 'Tell us what you need',
-    title: "Let's set up your hiring profile",
-    body: "Next we'll ask a few questions about the kind of work you post and how you like to work with freelancers — so we can match you with the right people faster.",
-  },
-  freelancer: {
-    eyebrow: 'Show what you can do',
-    title: "Let's build your profile",
-    body: "Next we'll ask about your skills, experience, and rate — similar to setting up a LinkedIn or Upwork profile. It takes a few minutes and you can always edit it later.",
-  },
-}
+import { api, ApiError } from '../lib/api.js'
+import { OnboardingProvider, useOnboarding, toApiPayload } from '../onboarding/OnboardingContext.jsx'
+import WelcomeStep from '../onboarding/steps/WelcomeStep.jsx'
+import IntentsStep from '../onboarding/steps/IntentsStep.jsx'
+import CategoriesStep from '../onboarding/steps/CategoriesStep.jsx'
+import BuildingStep from '../onboarding/steps/BuildingStep.jsx'
+import SkillsStep from '../onboarding/steps/SkillsStep.jsx'
+import PhotoStep from '../onboarding/steps/PhotoStep.jsx'
+import CoverStep from '../onboarding/steps/CoverStep.jsx'
+import LocationStep from '../onboarding/steps/LocationStep.jsx'
+import BioStep from '../onboarding/steps/BioStep.jsx'
+import WorkDetailsStep from '../onboarding/steps/WorkDetailsStep.jsx'
+import LinksStep from '../onboarding/steps/LinksStep.jsx'
+import UsernameStep from '../onboarding/steps/UsernameStep.jsx'
+import InterestsStep from '../onboarding/steps/InterestsStep.jsx'
+import FinishedStep from '../onboarding/steps/FinishedStep.jsx'
 
 export default function Onboarding() {
-  const { role } = useParams()
-  const { user } = useAuth()
+  return (
+    <OnboardingProvider>
+      <OnboardingWizard />
+    </OnboardingProvider>
+  )
+}
+
+function OnboardingWizard() {
+  const { data } = useOnboarding()
+  const { user, accessToken } = useAuth()
   const navigate = useNavigate()
-  const copy = COPY[role] ?? COPY.client
+  const [step, setStep] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [completionPct, setCompletionPct] = useState(0)
+
+  // WorkDetailsStep only makes sense if the person picked an intent it
+  // covers — skipped entirely otherwise rather than shown empty.
+  const needsWorkDetails = data.intents.includes('find_work') || data.intents.includes('hire')
+
+  const steps = [
+    'welcome',
+    'intents',
+    'categories',
+    'building',
+    'skills',
+    'photo',
+    'cover',
+    'location',
+    'bio',
+    ...(needsWorkDetails ? ['workDetails'] : []),
+    'links',
+    'username',
+    'interests',
+    'finished',
+  ]
+
+  const currentKey = steps[step]
+  // Progress excludes the welcome/finished bookends from the percentage
+  // math so it reads 0% right after "let's go" and ~100% right before
+  // the final submit, not stuck at odd fractions from padding steps in.
+  const progressableSteps = steps.filter((s) => s !== 'welcome' && s !== 'finished')
+  const progressIndex = progressableSteps.indexOf(currentKey)
+  const progress = Math.round(((progressIndex + 1) / progressableSteps.length) * 100)
+
+  function goNext() {
+    setStep((s) => Math.min(s + 1, steps.length - 1))
+  }
+  function goBack() {
+    setStep((s) => Math.max(s - 1, 0))
+  }
+
+  async function onFinalSubmit() {
+    setSubmitError('')
+    setSubmitting(true)
+    try {
+      const payload = toApiPayload(data)
+      const profile = await api.submitOnboarding(payload, accessToken)
+      setCompletionPct(profile.profile_completion_pct)
+      goNext() // -> finished step
+    } catch (err) {
+      setSubmitError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const stepProps = { progress, onNext: goNext, onBack: goBack }
 
   return (
-    <div className="onboarding">
-      <div className="onboarding-card">
-        <p className="eyebrow">{copy.eyebrow}</p>
-        <h1>{copy.title}</h1>
-        <p className="onboarding-body">
-          {user?.full_name ? `Welcome, ${user.full_name.split(' ')[0]}. ` : ''}
-          {copy.body}
-        </p>
-        <div className="onboarding-note">
-          The full question flow and verification step aren't built yet — this is a placeholder
-          so signup has somewhere real to land. For now, continue straight to the dashboard.
+    <>
+      {currentKey === 'welcome' && <WelcomeStep onNext={goNext} fullName={user?.full_name} />}
+      {currentKey === 'intents' && <IntentsStep {...stepProps} />}
+      {currentKey === 'categories' && <CategoriesStep {...stepProps} />}
+      {currentKey === 'building' && <BuildingStep {...stepProps} />}
+      {currentKey === 'skills' && <SkillsStep {...stepProps} />}
+      {currentKey === 'photo' && <PhotoStep {...stepProps} />}
+      {currentKey === 'cover' && <CoverStep {...stepProps} />}
+      {currentKey === 'location' && <LocationStep {...stepProps} />}
+      {currentKey === 'bio' && <BioStep {...stepProps} />}
+      {currentKey === 'workDetails' && <WorkDetailsStep {...stepProps} />}
+      {currentKey === 'links' && <LinksStep {...stepProps} />}
+      {currentKey === 'username' && <UsernameStep {...stepProps} />}
+      {currentKey === 'interests' && (
+        <InterestsStep {...stepProps} onNext={onFinalSubmit} nextLoading={submitting} />
+      )}
+      {currentKey === 'finished' && (
+        <FinishedStep completionPct={completionPct} onContinue={() => navigate('/home')} />
+      )}
+
+      {submitError && (
+        <div className="submit-error-toast">
+          {submitError}
+          <style>{`
+            .submit-error-toast {
+              position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+              background: rgba(255,107,74,0.12);
+              border: 1px solid var(--danger);
+              color: var(--danger);
+              padding: 12px 20px;
+              border-radius: 10px;
+              font-size: 13.5px;
+              max-width: 90vw;
+              text-align: center;
+              z-index: 50;
+            }
+          `}</style>
         </div>
-        <button className="btn btn-primary btn-block btn-lg" onClick={() => navigate('/dashboard')}>
-          Continue to dashboard
-        </button>
-      </div>
-      <style>{`
-        .onboarding {
-          min-height: 100vh; display: flex; align-items: center; justify-content: center;
-          padding: 24px;
-        }
-        .onboarding-card { max-width: 440px; width: 100%; }
-        .onboarding-card h1 {
-          font-family: var(--font-head); font-size: 28px; font-weight: 700;
-          margin-top: 8px; margin-bottom: 14px; color: var(--ink);
-        }
-        .onboarding-body { font-size: 15.5px; margin-bottom: 20px; }
-        .onboarding-note {
-          font-size: 13px; color: var(--ink-faint);
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 10px; padding: 12px 14px; margin-bottom: 24px;
-        }
-      `}</style>
-    </div>
+      )}
+    </>
   )
 }
