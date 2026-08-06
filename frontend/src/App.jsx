@@ -10,6 +10,11 @@ import Onboarding from './pages/Onboarding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import ProfileView from './pages/ProfileView.jsx'
 import ProfileEditor from './pages/ProfileEditor.jsx'
+import Settings from './pages/settings/Settings.jsx'
+import AccountSettings from './pages/settings/AccountSettings.jsx'
+import PrivacySettings from './pages/settings/PrivacySettings.jsx'
+import SecuritySettings from './pages/settings/SecuritySettings.jsx'
+import EarningsSettings from './pages/settings/EarningsSettings.jsx'
 import AppShell from './components/AppShell.jsx'
 import PublicShell from './components/PublicShell.jsx'
 
@@ -41,6 +46,11 @@ export default function App() {
             <Route path="/home/notifications" element={<ComingSoon label="Notifications" />} />
             <Route path="/home/profile" element={<ProfileView />} />
             <Route path="/home/profile/edit" element={<ProfileEditor />} />
+            <Route path="/home/settings" element={<Settings />} />
+            <Route path="/home/settings/account" element={<AccountSettings />} />
+            <Route path="/home/settings/privacy" element={<PrivacySettings />} />
+            <Route path="/home/settings/security" element={<SecuritySettings />} />
+            <Route path="/home/settings/earnings" element={<EarningsSettings />} />
           </Route>
         </Routes>
       </BrowserRouter>
