@@ -66,3 +66,29 @@ async def send_verification_email(to_email: str, full_name: str, verify_url: str
     </div>
     """
     return await asyncio.to_thread(_send_sync, to_email, subject, html_body)
+
+
+async def send_password_reset_email(to_email: str, full_name: str, reset_url: str) -> bool:
+    """Returns True if sent successfully, False otherwise. Never raises."""
+    subject = "Reset your Elcoral password"
+    html_body = f"""
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2>Reset your password</h2>
+      <p>Hi {full_name}, we received a request to reset your Elcoral password.</p>
+      <p>
+        <a href="{reset_url}"
+           style="display: inline-block; padding: 12px 24px; background: #1a1a2e;
+                  color: #fff; text-decoration: none; border-radius: 6px;">
+          Reset password
+        </a>
+      </p>
+      <p style="color: #666; font-size: 13px;">
+        If the button doesn't work, copy this link into your browser:<br>
+        <a href="{reset_url}">{reset_url}</a>
+      </p>
+      <p style="color: #999; font-size: 12px;">
+        This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
+      </p>
+    </div>
+    """
+    return await asyncio.to_thread(_send_sync, to_email, subject, html_body)

@@ -4,6 +4,18 @@ import uuid
 from pydantic import BaseModel, EmailStr, field_validator
 
 
+def _check_password_strength(v: str) -> str:
+    if len(v) < 10:
+        raise ValueError("Password must be at least 10 characters")
+    if not re.search(r"[A-Z]", v):
+        raise ValueError("Password must contain an uppercase letter")
+    if not re.search(r"[a-z]", v):
+        raise ValueError("Password must contain a lowercase letter")
+    if not re.search(r"\d", v):
+        raise ValueError("Password must contain a number")
+    return v
+
+
 class SignupRequest(BaseModel):
     email: EmailStr
     password: str
@@ -12,15 +24,7 @@ class SignupRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def password_strength(cls, v: str) -> str:
-        if len(v) < 10:
-            raise ValueError("Password must be at least 10 characters")
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("Password must contain an uppercase letter")
-        if not re.search(r"[a-z]", v):
-            raise ValueError("Password must contain a lowercase letter")
-        if not re.search(r"\d", v):
-            raise ValueError("Password must contain a number")
-        return v
+        return _check_password_strength(v)
 
     @field_validator("full_name")
     @classmethod
@@ -53,3 +57,18 @@ class TokenResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token_id: str
+    token: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        return _check_password_strength(v)

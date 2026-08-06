@@ -64,6 +64,7 @@ export default function Login() {
             onChange={(e) => update('password', e.target.value)}
           />
         </FormField>
+        <Link to="/forgot-password" className="forgot-link">Forgot password?</Link>
 
         {formError && <p className="form-error">{formError}</p>}
 
@@ -72,6 +73,14 @@ export default function Login() {
         </button>
       </form>
       <style>{`
+        .forgot-link {
+          display: block;
+          font-size: 13px;
+          color: var(--ink-faint);
+          text-align: right;
+          margin: -10px 0 20px;
+        }
+        .forgot-link:hover { color: var(--lemon); }
         .form-error {
           font-size: 13.5px;
           color: var(--danger);

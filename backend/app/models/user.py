@@ -77,3 +77,23 @@ class EmailVerificationToken(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PasswordResetToken(Base):
+    """
+    One-time token emailed to reset a forgotten password. Same hashed-
+    token pattern as EmailVerificationToken. A short expiry (see
+    PASSWORD_RESET_TOKEN_HOURS in app/routers/auth.py) since this grants
+    account takeover if leaked, unlike a verification link.
+    """
+
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    hashed_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

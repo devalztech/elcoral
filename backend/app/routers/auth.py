@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import email as email_service
@@ -18,14 +18,22 @@ from app.core.security import (
     verify_password,
     verify_verification_token,
 )
-from app.models.user import EmailVerificationToken, RefreshToken, User
-from app.schemas.auth import LoginRequest, SignupRequest, TokenResponse, UserOut
+from app.models.user import EmailVerificationToken, PasswordResetToken, RefreshToken, User
+from app.schemas.auth import (
+    ForgotPasswordRequest,
+    LoginRequest,
+    ResetPasswordRequest,
+    SignupRequest,
+    TokenResponse,
+    UserOut,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
 VERIFICATION_TOKEN_HOURS = 24
+PASSWORD_RESET_TOKEN_HOURS = 1
 
 
 def _set_refresh_cookie(response: Response, raw_refresh_token: str) -> None:
@@ -86,7 +94,7 @@ async def signup(request: Request, response: Response, body: SignupRequest, db: 
         await db.flush()  # populate verify_row.id before we build the URL
 
         verify_url = (
-            f"{settings.public_api_url}/api/auth/verify"
+            f"{settings.frontend_url}/verify-email"
             f"?token_id={verify_row.id}&token={raw_verify_token}"
         )
         await email_service.send_verification_email(user.email, user.full_name, verify_url)
@@ -155,8 +163,77 @@ async def resend_verification(
     db.add(verify_row)
     await db.flush()
 
-    verify_url = f"{settings.public_api_url}/api/auth/verify?token_id={verify_row.id}&token={raw_verify_token}"
+    verify_url = f"{settings.frontend_url}/verify-email?token_id={verify_row.id}&token={raw_verify_token}"
     await email_service.send_verification_email(user.email, user.full_name, verify_url)
+    await db.commit()
+    return None
+
+
+@router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("3/hour")
+async def forgot_password(
+    request: Request,
+    body: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Always returns 204 whether or not the email exists — confirming or
+    denying account existence here would let someone enumerate registered
+    emails. If SMTP isn't configured, this silently does nothing (there's
+    no way to deliver a reset link anyway); the person just won't receive
+    an email, same externally-visible behavior either way.
+    """
+    user = await db.scalar(select(User).where(User.email == body.email))
+
+    if user is not None and settings.smtp_configured:
+        raw_token, hashed_token = create_verification_token()
+        reset_row = PasswordResetToken(
+            user_id=user.id,
+            hashed_token=hashed_token,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=PASSWORD_RESET_TOKEN_HOURS),
+        )
+        db.add(reset_row)
+        await db.flush()
+
+        reset_url = f"{settings.frontend_url}/reset-password?token_id={reset_row.id}&token={raw_token}"
+        await email_service.send_password_reset_email(user.email, user.full_name, reset_url)
+        await db.commit()
+
+    return None
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/hour")
+async def reset_password(
+    request: Request,
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    reset_row = await db.get(PasswordResetToken, body.token_id)
+
+    invalid = HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    if reset_row is None or reset_row.used:
+        raise invalid
+    if reset_row.expires_at < datetime.now(timezone.utc):
+        raise invalid
+    if not verify_verification_token(body.token, reset_row.hashed_token):
+        raise invalid
+
+    user = await db.get(User, reset_row.user_id)
+    if user is None:
+        raise invalid
+
+    user.hashed_password = hash_password(body.new_password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    reset_row.used = True
+
+    # Resetting the password invalidates every existing session — someone
+    # who had unauthorized access via a compromised password shouldn't
+    # stay logged in after the legitimate owner resets it.
+    await db.execute(update(RefreshToken).where(RefreshToken.user_id == user.id).values(revoked=True))
+
     await db.commit()
     return None
 
@@ -221,11 +298,46 @@ async def refresh_access_token(request: Request, db: AsyncSession = Depends(get_
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Invalid session")
 
+    # The JWT signature alone only proves the token was issued by us and
+    # hasn't expired — it says nothing about whether it's since been
+    # revoked (logout, password reset). Match it against the stored,
+    # hashed rows for this user to check that too. There's no direct
+    # lookup by jti here (hashed tokens aren't queryable by equality), so
+    # this checks against this user's active tokens — fine at the scale
+    # of "how many concurrent sessions one person has."
+    result = await db.execute(
+        select(RefreshToken).where(RefreshToken.user_id == user.id, RefreshToken.revoked == False)  # noqa: E712
+    )
+    active_tokens = result.scalars().all()
+    if not any(verify_verification_token(raw_token, t.hashed_token) for t in active_tokens):
+        raise HTTPException(status_code=401, detail="Session has been revoked")
+
     access_token = create_access_token(subject=str(user.id))
     return TokenResponse(access_token=access_token, user=UserOut.model_validate(user))
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(response: Response):
+async def logout(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+    raw_token = request.cookies.get("refresh_token")
     response.delete_cookie("refresh_token", path="/api/auth")
+
+    if raw_token:
+        payload = decode_token(raw_token)
+        if payload and payload.get("type") == "refresh":
+            # Same "no direct hash lookup" constraint as /refresh — check
+            # against this user's active tokens and revoke the matching
+            # one. Without this, clearing the cookie was purely cosmetic:
+            # the token itself stayed valid and usable if someone had
+            # captured it separately.
+            result = await db.execute(
+                select(RefreshToken).where(
+                    RefreshToken.user_id == payload["sub"], RefreshToken.revoked == False  # noqa: E712
+                )
+            )
+            for t in result.scalars().all():
+                if verify_verification_token(raw_token, t.hashed_token):
+                    t.revoked = True
+                    await db.commit()
+                    break
+
     return None

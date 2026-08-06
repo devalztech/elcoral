@@ -17,9 +17,6 @@ async function request(path, { method = 'GET', body, token } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers.Authorization = `Bearer ${token}`
 
-  // TEMP DEBUG — remove once bug is found
-  console.log('api request ->', `${BASE}${path}`, method)
-
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
@@ -47,6 +44,14 @@ export const api = {
   login: (payload) => request('/auth/login', { method: 'POST', body: payload }),
   refresh: () => request('/auth/refresh', { method: 'POST' }),
   logout: () => request('/auth/logout', { method: 'POST' }),
+  verifyEmail: (tokenId, token) =>
+    request(`/auth/verify?token_id=${encodeURIComponent(tokenId)}&token=${encodeURIComponent(token)}`),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (tokenId, token, newPassword) =>
+    request('/auth/reset-password', {
+      method: 'POST',
+      body: { token_id: tokenId, token, new_password: newPassword },
+    }),
 }
 
 export { ApiError }

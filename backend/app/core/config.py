@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     # to relative paths, which still work fine same-origin.
     public_api_url: str = ""
 
+    # The frontend's public URL (Render), e.g. https://elcoral.onrender.com
+    # with no trailing slash. Used to build user-facing links that should
+    # open in the app's UI rather than hit the API directly — e.g. the
+    # email verification link points here (/verify-email?...), and the
+    # frontend page calls the actual API endpoint and shows a real screen
+    # instead of the person landing on raw JSON.
+    frontend_url: str = ""
+
     # Token for the cloudflared tunnel container/sidecar. Not read by the
     # FastAPI app itself — cloudflared reads it directly from its own
     # process env — but declared here so it doesn't crash Settings() if it
