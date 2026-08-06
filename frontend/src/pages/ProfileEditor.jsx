@@ -1,21 +1,31 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Loader2, Pencil, Check, X } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { api, ApiError } from '../lib/api.js'
 import {
   OnboardingProvider, useOnboarding, toApiPayload,
-  INTENT_OPTIONS, CATEGORY_OPTIONS, BUILDING_OPTIONS, SUGGESTED_INTERESTS,
+  INTENT_OPTIONS, CATEGORY_OPTIONS, BUILDING_OPTIONS,
+  SUGGESTED_SKILLS, SUGGESTED_INTERESTS,
 } from '../onboarding/OnboardingContext.jsx'
-import ChipPicker from '../onboarding/ChipPicker.jsx'
+import MultiSelectDropdown from '../components/MultiSelectDropdown.jsx'
+import TagAutocomplete from '../components/TagAutocomplete.jsx'
+import EditSheet from '../components/EditSheet.jsx'
+import SectionCard from '../components/SectionCard.jsx'
+import FormField, { TextInput } from '../components/FormField.jsx'
 
-// Reuses the exact same fields/vocabulary as onboarding (see
-// OnboardingContext.jsx) — profile editing IS onboarding, just presented
-// as editable sections on one page instead of a forced step-by-step
-// wizard, and pre-filled from whatever's already saved.
+// Redesigned around LinkedIn's actual edit pattern: the page shows a
+// closed, read-only summary card per section; tapping one opens a
+// focused EditSheet for just that section. Nothing is permanently
+// expanded, and every multi-choice field is a closed dropdown
+// (MultiSelectDropdown) instead of an always-visible wall of chips —
+// ChipPicker stays reserved for onboarding's one-decision-per-screen
+// flow, where a full-screen picker is the right shape.
 //
-// This is the "Edit Profile" destination linked from the owner dashboard
-// (ProfileView.jsx) — it is no longer what /home/profile shows directly.
+// Saving still submits the WHOLE onboarding payload each time (see
+// toApiPayload) — the backend doesn't have partial-update endpoints per
+// section yet — but each sheet only lets the person touch the fields
+// that section owns, so it reads and feels like a scoped edit.
 export default function ProfileEditor() {
   const { accessToken } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -34,6 +44,7 @@ export default function ProfileEditor() {
     return (
       <div className="profile-loading">
         <Loader2 size={24} className="spin" />
+        <style>{`.profile-loading { display: flex; justify-content: center; padding: 60px 0; color: var(--ink-faint); } .spin { animation: spin 0.8s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
@@ -47,7 +58,7 @@ export default function ProfileEditor() {
       <Link to="/home/profile" className="back-link">
         <ArrowLeft size={15} /> Back to profile
       </Link>
-      <ProfileEditorForm initialData={initialData} />
+      <ProfileEditorBody />
       <style>{`
         .back-link {
           display: inline-flex; align-items: center; gap: 6px;
@@ -55,194 +66,206 @@ export default function ProfileEditor() {
           margin-bottom: 18px;
         }
         .back-link:hover { color: var(--lemon); }
-        .profile-loading { display: flex; justify-content: center; padding: 60px 0; color: var(--ink-faint); }
-        .spin { animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
         .profile-error { text-align: center; color: var(--danger); padding: 40px 0; }
       `}</style>
     </OnboardingProvider>
   )
 }
 
-function ProfileEditorForm() {
+// One label per section id — SectionCard headers and EditSheet titles
+// both read from this so they can't drift out of sync.
+const SECTION_META = {
+  identity: { label: 'Headline & bio', title: 'Headline & bio' },
+  intents: { label: "What brings you here", title: "What brings you here" },
+  categories: { label: "How you'd describe yourself", title: "How you'd describe yourself" },
+  building: { label: "What you're building", title: "What you're building" },
+  skills: { label: 'Skills', title: 'Skills' },
+  interests: { label: 'Interests', title: 'Interests' },
+}
+
+function ProfileEditorBody() {
   const { data, update } = useOnboarding()
   const { accessToken } = useAuth()
-  const [saving, setSaving] = useState(null) // which section is saving
-  const [savedFlash, setSavedFlash] = useState(null)
+  const [openSection, setOpenSection] = useState(null)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-
-  async function saveSection(section) {
-    setError('')
-    setSaving(section)
-    try {
-      const payload = toApiPayload(data)
-      await api.submitOnboarding(payload, accessToken)
-      setSavedFlash(section)
-      setTimeout(() => setSavedFlash(null), 1800)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save. Please try again.')
-    } finally {
-      setSaving(null)
-    }
-  }
 
   function toggleIn(field, key) {
     const has = data[field].includes(key)
     update({ [field]: has ? data[field].filter((k) => k !== key) : [...data[field], key] })
   }
 
+  async function save() {
+    setError('')
+    setSaving(true)
+    try {
+      const payload = toApiPayload(data)
+      await api.submitOnboarding(payload, accessToken)
+      setOpenSection(null)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not save. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function closeSheet() {
+    setError('')
+    setOpenSection(null)
+  }
+
+  const labelsFor = (field, options) =>
+    options.filter((o) => data[field].includes(o.key)).map((o) => o.label)
+
   return (
     <div className="profile-editor">
       <h1 className="profile-title">Edit profile</h1>
-      <p className="profile-sub">Update any section — changes save automatically.</p>
+      <p className="profile-sub">Tap any section to update it.</p>
 
-      <EditSection
-        title="What brings you here"
-        saving={saving === 'intents'}
-        saved={savedFlash === 'intents'}
-        onSave={() => saveSection('intents')}
-      >
-        <ChipPicker options={INTENT_OPTIONS} selected={data.intents} onToggle={(k) => toggleIn('intents', k)} />
-      </EditSection>
-
-      <EditSection
-        title="How you'd describe yourself"
-        saving={saving === 'categories'}
-        saved={savedFlash === 'categories'}
-        onSave={() => saveSection('categories')}
-      >
-        <ChipPicker options={CATEGORY_OPTIONS} selected={data.categories} onToggle={(k) => toggleIn('categories', k)} />
-      </EditSection>
-
-      <EditSection
-        title="What you're building"
-        saving={saving === 'building'}
-        saved={savedFlash === 'building'}
-        onSave={() => saveSection('building')}
-      >
-        <ChipPicker options={BUILDING_OPTIONS} selected={data.building} onToggle={(k) => toggleIn('building', k)} />
-      </EditSection>
-
-      <EditSection
-        title="Headline & bio"
-        saving={saving === 'bio'}
-        saved={savedFlash === 'bio'}
-        onSave={() => saveSection('bio')}
-      >
-        <input
-          className="profile-input"
-          placeholder="Headline"
-          maxLength={120}
-          value={data.headline}
-          onChange={(e) => update({ headline: e.target.value })}
+      <div className="profile-sections">
+        <SectionCard
+          label={SECTION_META.identity.label}
+          preview={data.headline || 'Add a headline'}
+          isEmpty={!data.headline}
+          onEdit={() => setOpenSection('identity')}
         />
-        <textarea
-          className="profile-textarea"
-          placeholder="Bio"
-          maxLength={2000}
-          rows={4}
-          value={data.bio}
-          onChange={(e) => update({ bio: e.target.value })}
+        <SectionCard
+          label={SECTION_META.intents.label}
+          preview={labelsFor('intents', INTENT_OPTIONS).join(', ') || 'Not set'}
+          isEmpty={data.intents.length === 0}
+          onEdit={() => setOpenSection('intents')}
         />
-      </EditSection>
+        <SectionCard
+          label={SECTION_META.categories.label}
+          preview={labelsFor('categories', CATEGORY_OPTIONS).join(', ') || 'Not set'}
+          isEmpty={data.categories.length === 0}
+          onEdit={() => setOpenSection('categories')}
+        />
+        <SectionCard
+          label={SECTION_META.building.label}
+          preview={labelsFor('building', BUILDING_OPTIONS).join(', ') || 'Not set'}
+          isEmpty={data.building.length === 0}
+          onEdit={() => setOpenSection('building')}
+        />
+        <SectionCard
+          label={SECTION_META.skills.label}
+          preview={data.skills.join(', ') || 'Add your skills'}
+          isEmpty={data.skills.length === 0}
+          onEdit={() => setOpenSection('skills')}
+        />
+        <SectionCard
+          label={SECTION_META.interests.label}
+          preview={data.interests.join(', ') || 'Add your interests'}
+          isEmpty={data.interests.length === 0}
+          onEdit={() => setOpenSection('interests')}
+        />
+      </div>
 
-      <EditSection
-        title="Interests"
-        saving={saving === 'interests'}
-        saved={savedFlash === 'interests'}
-        onSave={() => saveSection('interests')}
-      >
-        <div className="interest-chips">
-          {SUGGESTED_INTERESTS.map((interest) => {
-            const isSelected = data.interests.includes(interest)
-            return (
-              <button
-                type="button"
-                key={interest}
-                className={`interest-chip ${isSelected ? 'interest-chip-selected' : ''}`}
-                onClick={() => toggleIn('interests', interest)}
-              >
-                {interest}
-              </button>
-            )
-          })}
-        </div>
-      </EditSection>
+      {openSection === 'identity' && (
+        <EditSheet title={SECTION_META.identity.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
+          <FormField label="Headline">
+            <TextInput
+              placeholder="e.g. Full-stack developer building AI tools"
+              maxLength={120}
+              value={data.headline}
+              onChange={(e) => update({ headline: e.target.value })}
+            />
+          </FormField>
+          <FormField label="Bio">
+            <textarea
+              className="es-textarea"
+              placeholder="Tell people what you do and what you're looking for"
+              maxLength={2000}
+              rows={5}
+              value={data.bio}
+              onChange={(e) => update({ bio: e.target.value })}
+            />
+          </FormField>
+          <style>{`
+            .es-textarea {
+              width: 100%; background: var(--panel); border: 1px solid var(--border);
+              border-radius: 8px; padding: 12px 14px; font-size: 14.5px; color: var(--ink);
+              font-family: var(--font-body); resize: vertical;
+            }
+            .es-textarea:focus { outline: none; border-color: var(--lemon); }
+          `}</style>
+        </EditSheet>
+      )}
 
-      {error && <p className="profile-save-error">{error}</p>}
+      {openSection === 'intents' && (
+        <EditSheet
+          title={SECTION_META.intents.title}
+          subtitle="Select as many as apply."
+          onClose={closeSheet} onSave={save} saving={saving} error={error}
+        >
+          <MultiSelectDropdown
+            options={INTENT_OPTIONS}
+            selected={data.intents}
+            onToggle={(k) => toggleIn('intents', k)}
+            placeholder="Select what brings you here"
+          />
+        </EditSheet>
+      )}
+
+      {openSection === 'categories' && (
+        <EditSheet
+          title={SECTION_META.categories.title}
+          subtitle="Select as many as apply."
+          onClose={closeSheet} onSave={save} saving={saving} error={error}
+        >
+          <MultiSelectDropdown
+            options={CATEGORY_OPTIONS}
+            selected={data.categories}
+            onToggle={(k) => toggleIn('categories', k)}
+            placeholder="Select your roles"
+            searchable
+          />
+        </EditSheet>
+      )}
+
+      {openSection === 'building' && (
+        <EditSheet
+          title={SECTION_META.building.title}
+          subtitle="Select as many as apply."
+          onClose={closeSheet} onSave={save} saving={saving} error={error}
+        >
+          <MultiSelectDropdown
+            options={BUILDING_OPTIONS}
+            selected={data.building}
+            onToggle={(k) => toggleIn('building', k)}
+            placeholder="Select what you're building"
+          />
+        </EditSheet>
+      )}
+
+      {openSection === 'skills' && (
+        <EditSheet title={SECTION_META.skills.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
+          <TagAutocomplete
+            suggestions={SUGGESTED_SKILLS}
+            selected={data.skills}
+            onAdd={(s) => update({ skills: [...data.skills, s] })}
+            onRemove={(s) => update({ skills: data.skills.filter((x) => x !== s) })}
+            placeholder="Search skills or type your own…"
+          />
+        </EditSheet>
+      )}
+
+      {openSection === 'interests' && (
+        <EditSheet title={SECTION_META.interests.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
+          <TagAutocomplete
+            suggestions={SUGGESTED_INTERESTS}
+            selected={data.interests}
+            onAdd={(i) => update({ interests: [...data.interests, i] })}
+            onRemove={(i) => update({ interests: data.interests.filter((x) => x !== i) })}
+            placeholder="Search interests or type your own…"
+          />
+        </EditSheet>
+      )}
 
       <style>{`
         .profile-title { font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--ink); }
-        .profile-sub { margin-top: 6px; margin-bottom: 28px; }
-        .profile-input, .profile-textarea {
-          width: 100%;
-          background: var(--panel);
-          border: 1px solid var(--border);
-          border-radius: 8px;
-          padding: 12px 14px;
-          font-size: 14.5px;
-          color: var(--ink);
-          font-family: var(--font-body);
-          margin-bottom: 10px;
-        }
-        .profile-input:focus, .profile-textarea:focus { outline: none; border-color: var(--lemon); }
-        .interest-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-        .interest-chip {
-          font-size: 13px; color: var(--ink-dim);
-          background: var(--panel-raised);
-          border: 1px solid var(--border);
-          border-radius: 999px;
-          padding: 8px 14px;
-        }
-        .interest-chip-selected { background: rgba(196,241,53,0.12); border-color: var(--lemon); color: var(--ink); }
-        .profile-save-error { color: var(--danger); font-size: 13.5px; text-align: center; margin-top: 16px; }
-      `}</style>
-    </div>
-  )
-}
-
-function EditSection({ title, children, onSave, saving, saved }) {
-  return (
-    <div className="edit-section">
-      <div className="edit-section-head">
-        <h2>{title}</h2>
-        <button type="button" className="save-btn" onClick={onSave} disabled={saving}>
-          {saving ? <Loader2 size={14} className="spin" /> : saved ? <Check size={14} /> : <Pencil size={13} />}
-          {saving ? 'Saving' : saved ? 'Saved' : 'Save'}
-        </button>
-      </div>
-      {children}
-      <style>{`
-        .edit-section {
-          background: var(--panel);
-          border: 1px solid var(--border);
-          border-radius: 14px;
-          padding: 20px;
-          margin-bottom: 16px;
-        }
-        .edit-section-head {
-          display: flex; align-items: center; justify-content: space-between;
-          margin-bottom: 16px;
-        }
-        .edit-section-head h2 {
-          font-family: var(--font-head);
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--ink);
-        }
-        .save-btn {
-          display: flex; align-items: center; gap: 6px;
-          font-size: 12.5px;
-          font-weight: 600;
-          color: var(--ink-dim);
-          background: var(--panel-raised);
-          border: 1px solid var(--border);
-          border-radius: 999px;
-          padding: 6px 12px;
-        }
-        .save-btn:hover { border-color: var(--lemon); color: var(--ink); }
-        .spin { animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .profile-sub { margin-top: 6px; margin-bottom: 24px; }
+        .profile-sections { display: flex; flex-direction: column; gap: 10px; }
       `}</style>
     </div>
   )
