@@ -341,3 +341,14 @@ async def logout(request: Request, response: Response, db: AsyncSession = Depend
                     break
 
     return None
+
+
+@router.get("/me", response_model=UserOut)
+async def get_me(user: User = Depends(get_current_user)):
+    """
+    Refetches current user state — used e.g. by the onboarding wizard to
+    detect that verification completed (in another tab/device) without
+    requiring a full re-login. is_verified isn't encoded in the access
+    token itself, so this is the only way to see a change without it.
+    """
+    return UserOut.model_validate(user)

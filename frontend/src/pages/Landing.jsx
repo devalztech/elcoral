@@ -194,8 +194,8 @@ function IntentBar() {
 
 function HowItWorks() {
   const steps = [
-    { label: 'Say what you\u2019re after', text: 'Not a job title \u2014 your actual goal. Hiring, learning, building, mentoring, or all of it.' },
-    { label: 'Elcoral finds the overlap', text: 'A developer wanting a co-founder and a designer wanting the same thing get suggested to each other \u2014 no searching required.' },
+    { label: 'Say what you’re after', text: 'Not a job title — your actual goal. Hiring, learning, building, mentoring, or all of it.' },
+    { label: 'Elcoral finds the overlap', text: 'A developer wanting a co-founder and a designer wanting the same thing get suggested to each other — no searching required.' },
     { label: 'Build in the open', text: 'Post your work, grow your network, and move projects forward with people who want the same outcome.' },
   ]
   return (
@@ -230,7 +230,7 @@ function Categories() {
     <section id="categories" className="cats">
       <div className="wrap">
         <p className="eyebrow">Who's here</p>
-        <h2 className="cats-title">Developers, designers, founders, creators \u2014 and everyone building alongside them.</h2>
+        <h2 className="cats-title">Developers, designers, founders, creators — and everyone building alongside them.</h2>
         <div className="cats-grid">
           {CATEGORIES.map((c) => (
             <div className="cat-card" key={c.name}>
@@ -263,7 +263,7 @@ function SecurityBlock() {
   const items = [
     ['Encrypted everywhere', 'Passwords are hashed, sessions use signed tokens, and traffic is TLS-only.'],
     ['Verified identities', 'Confirm who you are before your profile is visible to others.'],
-    ['You control your data', 'Your profile, your intents, your visibility \u2014 nothing is sold or shared.'],
+    ['You control your data', 'Your profile, your intents, your visibility — nothing is sold or shared.'],
     ['Rate-limited & monitored', 'Automated abuse and bot protection watches every login.'],
   ]
   return (

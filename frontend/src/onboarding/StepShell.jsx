@@ -41,7 +41,7 @@ export default function StepShell({
             disabled={nextDisabled || nextLoading}
             type="button"
           >
-            {nextLoading ? 'Saving\u2026' : nextLabel}
+            {nextLoading ? 'Saving…' : nextLabel}
           </button>
         </div>
       </div>

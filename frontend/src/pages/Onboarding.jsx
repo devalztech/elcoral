@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { api, ApiError } from '../lib/api.js'
 import { OnboardingProvider, useOnboarding, toApiPayload } from '../onboarding/OnboardingContext.jsx'
+import CheckEmailStep from '../onboarding/steps/CheckEmailStep.jsx'
 import WelcomeStep from '../onboarding/steps/WelcomeStep.jsx'
 import IntentsStep from '../onboarding/steps/IntentsStep.jsx'
 import CategoriesStep from '../onboarding/steps/CategoriesStep.jsx'
@@ -34,6 +35,18 @@ function OnboardingWizard() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [completionPct, setCompletionPct] = useState(0)
+  const [verifiedOverride, setVerifiedOverride] = useState(false)
+
+  // require_verified on the backend blocks POST /api/onboarding entirely
+  // until the user has clicked their emailed verification link — this
+  // mirrors that on the frontend so people see a clear "check your
+  // email" screen up front instead of clicking through the whole wizard
+  // only to have the final submit fail with a 403.
+  const isVerified = user?.is_verified || verifiedOverride
+
+  if (!isVerified) {
+    return <CheckEmailStep onVerified={() => setVerifiedOverride(true)} />
+  }
 
   // WorkDetailsStep only makes sense if the person picked an intent it
   // covers — skipped entirely otherwise rather than shown empty.

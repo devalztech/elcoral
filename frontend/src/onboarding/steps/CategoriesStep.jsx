@@ -14,7 +14,7 @@ export default function CategoriesStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Step 2 of 9"
       title="Which of these describes you?"
-      subtitle="Select all that fit \u2014 many people are more than one thing."
+      subtitle="Select all that fit — many people are more than one thing."
       progress={progress}
       onBack={onBack}
       onNext={onNext}

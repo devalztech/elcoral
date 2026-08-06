@@ -11,7 +11,7 @@ export default function BioStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Step 8 of 9"
       title="Tell people about yourself"
-      subtitle="A short headline and a bio \u2014 both optional, both worth filling in."
+      subtitle="A short headline and a bio — both optional, both worth filling in."
       progress={progress}
       onBack={onBack}
       onNext={onNext}
@@ -29,7 +29,7 @@ export default function BioStep({ progress, onNext, onBack }) {
         <label className="bio-label">Bio</label>
         <textarea
           className="bio-textarea"
-          placeholder="Share your background, what you're working on, and what you're looking for\u2026"
+          placeholder="Share your background, what you're working on, and what you're looking for…"
           maxLength={BIO_MAX}
           rows={6}
           value={data.bio}

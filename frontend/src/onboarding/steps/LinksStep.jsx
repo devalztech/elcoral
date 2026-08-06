@@ -22,7 +22,7 @@ export default function LinksStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Optional"
       title="Link your work"
-      subtitle="All optional \u2014 add what's relevant."
+      subtitle="All optional — add what's relevant."
       progress={progress}
       onBack={onBack}
       onNext={onNext}
@@ -61,7 +61,7 @@ export default function LinksStep({ progress, onNext, onBack }) {
             <Link2 size={17} className="link-icon" />
             <input
               className="link-input"
-              placeholder="Add a link to your work\u2026"
+              placeholder="Add a link to your work…"
               value={portfolioInput}
               onChange={(e) => setPortfolioInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPortfolioLink())}

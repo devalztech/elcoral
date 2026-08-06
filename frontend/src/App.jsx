@@ -8,6 +8,7 @@ import ResetPassword from './pages/ResetPassword.jsx'
 import VerifyEmail from './pages/VerifyEmail.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Profile from './pages/Profile.jsx'
 import AppShell from './components/AppShell.jsx'
 
 export default function App() {
@@ -28,7 +29,7 @@ export default function App() {
             <Route path="/home/jobs" element={<ComingSoon label="Jobs" />} />
             <Route path="/home/messages" element={<ComingSoon label="Messages" />} />
             <Route path="/home/notifications" element={<ComingSoon label="Notifications" />} />
-            <Route path="/home/profile" element={<ComingSoon label="Profile" />} />
+            <Route path="/home/profile" element={<Profile />} />
           </Route>
         </Routes>
       </BrowserRouter>

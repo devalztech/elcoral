@@ -53,6 +53,8 @@ export const api = {
       method: 'POST',
       body: { token_id: tokenId, token, new_password: newPassword },
     }),
+  resendVerification: (token) => request('/auth/resend-verification', { method: 'POST', token }),
+  getMe: (token) => request('/auth/me', { token }),
 
   // Onboarding
   usernameAvailable: (username) =>
@@ -71,6 +73,7 @@ export const api = {
 
   // Lookup typeaheads (proxied through the backend — see app/routers/lookup.py)
   searchCompanies: (q) => request(`/lookup/companies?q=${encodeURIComponent(q)}`),
+  listAllCountries: () => request('/lookup/countries/all'),
   searchCountries: (q) => request(`/lookup/countries?q=${encodeURIComponent(q)}`),
   searchCities: (q, country) =>
     request(`/lookup/cities?q=${encodeURIComponent(q)}&country=${encodeURIComponent(country)}`),

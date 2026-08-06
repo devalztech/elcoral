@@ -45,7 +45,7 @@ export default function WorkDetailsStep({ progress, onNext, onBack }) {
         <>
           <FormField label="Company name">
             <Typeahead
-              placeholder="Search for your company\u2026"
+              placeholder="Search for your company…"
               initialValue={data.company_name}
               fetchResults={api.searchCompanies}
               getKey={(c) => c.domain || c.name}

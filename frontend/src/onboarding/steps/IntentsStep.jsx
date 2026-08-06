@@ -14,7 +14,7 @@ export default function IntentsStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Step 1 of 9"
       title="What brings you to Elcoral?"
-      subtitle="Pick as many as apply. This is what makes Elcoral different \u2014 we connect people by what they're trying to do, not their job title."
+      subtitle="Pick as many as apply. This is what makes Elcoral different — we connect people by what they're trying to do, not their job title."
       progress={progress}
       onBack={onBack}
       onNext={onNext}

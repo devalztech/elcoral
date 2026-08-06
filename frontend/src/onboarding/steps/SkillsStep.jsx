@@ -33,7 +33,7 @@ export default function SkillsStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Step 4 of 9"
       title="What are your skills?"
-      subtitle="Search or type your own \u2014 you can always add more later."
+      subtitle="Search or type your own — you can always add more later."
       progress={progress}
       onBack={onBack}
       onNext={onNext}
@@ -41,7 +41,7 @@ export default function SkillsStep({ progress, onNext, onBack }) {
       <div className="skills-input-wrap">
         <input
           className="skills-input"
-          placeholder="Search skills or type your own\u2026"
+          placeholder="Search skills or type your own…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}

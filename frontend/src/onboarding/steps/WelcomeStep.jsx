@@ -9,7 +9,7 @@ export default function WelcomeStep({ onNext, fullName }) {
       <p className="eyebrow">You're in</p>
       <h1 className="welcome-title">Welcome to Elcoral{fullName ? `, ${fullName.split(' ')[0]}` : ''}</h1>
       <p className="welcome-sub">
-        Let's build your professional identity. A few quick steps \u2014 what you're here to do,
+        Let's build your professional identity. A few quick steps — what you're here to do,
         what you're building, and who you are. Takes about two minutes.
       </p>
       <button className="btn btn-primary btn-lg" onClick={onNext} type="button">

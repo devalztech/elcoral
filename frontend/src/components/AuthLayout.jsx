@@ -13,7 +13,7 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, footer 
         </Link>
         <div className="auth-brand-copy">
           <p className="eyebrow">A professional ecosystem</p>
-          <h2>Defined by what you're trying to build \u2014 not your job title.</h2>
+          <h2>Defined by what you're trying to build — not your job title.</h2>
         </div>
       </div>
       <div className="auth-form-side">

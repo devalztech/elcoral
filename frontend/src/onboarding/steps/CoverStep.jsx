@@ -38,7 +38,7 @@ export default function CoverStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Step 6 of 9"
       title="Add a cover banner"
-      subtitle="Optional \u2014 shows at the top of your profile."
+      subtitle="Optional — shows at the top of your profile."
       progress={progress}
       onBack={onBack}
       onNext={onNext}

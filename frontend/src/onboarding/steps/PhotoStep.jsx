@@ -38,7 +38,7 @@ export default function PhotoStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Step 5 of 9"
       title="Add a profile photo"
-      subtitle="Optional \u2014 profiles with a photo get more connections. You can add this later."
+      subtitle="Optional — profiles with a photo get more connections. You can add this later."
       progress={progress}
       onBack={onBack}
       onNext={onNext}

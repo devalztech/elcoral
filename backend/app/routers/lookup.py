@@ -40,6 +40,30 @@ async def search_companies(q: str = Query(min_length=2, max_length=100)):
     ]
 
 
+@router.get("/countries/all")
+async def list_all_countries():
+    """
+    Full country list for a real dropdown (as opposed to /countries above,
+    which is search-as-you-type). Countries don't change often enough to
+    justify re-fetching per keystroke — the frontend fetches this once and
+    renders it as a scrollable list.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.get("https://countries.dev/all", params={"fields": "name,alpha2Code,flag"})
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        return []
+
+    countries = [
+        {"name": c.get("name"), "code": c.get("alpha2Code"), "flag": c.get("flag")}
+        for c in data
+        if c.get("alpha2Code") and c.get("name")
+    ]
+    return sorted(countries, key=lambda c: c["name"])
+
+
 @router.get("/countries")
 async def search_countries(q: str = Query(min_length=1, max_length=100)):
     try:

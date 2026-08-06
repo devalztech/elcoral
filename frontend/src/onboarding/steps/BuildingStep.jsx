@@ -14,7 +14,7 @@ export default function BuildingStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Step 3 of 9"
       title="What do you want to build?"
-      subtitle="Optional \u2014 this helps Elcoral suggest collaborators working toward the same thing."
+      subtitle="Optional — this helps Elcoral suggest collaborators working toward the same thing."
       progress={progress}
       onBack={onBack}
       onNext={onNext}

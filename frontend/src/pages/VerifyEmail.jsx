@@ -37,7 +37,7 @@ export default function VerifyEmail() {
         {status === 'checking' && (
           <>
             <Loader2 size={40} className="spin icon-neutral" />
-            <h1>Verifying your email\u2026</h1>
+            <h1>Verifying your email…</h1>
             <p>This will only take a moment.</p>
           </>
         )}

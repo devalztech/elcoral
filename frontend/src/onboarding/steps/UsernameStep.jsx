@@ -40,7 +40,7 @@ export default function UsernameStep({ progress, onNext, onBack }) {
     <StepShell
       eyebrow="Almost there"
       title="Choose your username"
-      subtitle="This is how people will find and mention you \u2014 letters, numbers, and underscores only."
+      subtitle="This is how people will find and mention you — letters, numbers, and underscores only."
       progress={progress}
       onBack={onBack}
       onNext={onNext}
@@ -58,7 +58,7 @@ export default function UsernameStep({ progress, onNext, onBack }) {
       </div>
 
       {status === 'invalid' && (
-        <p className="username-hint hint-error">Only letters, numbers, and underscores \u2014 at least 3 characters.</p>
+        <p className="username-hint hint-error">Only letters, numbers, and underscores — at least 3 characters.</p>
       )}
       {status === 'taken' && <p className="username-hint hint-error">That username is already taken.</p>}
       {status === 'available' && <p className="username-hint hint-success">Available</p>}

@@ -3,6 +3,7 @@ import { useOnboarding } from '../OnboardingContext.jsx'
 import { api } from '../../lib/api.js'
 import StepShell from '../StepShell.jsx'
 import Typeahead from '../Typeahead.jsx'
+import CountrySelect from '../CountrySelect.jsx'
 
 export default function LocationStep({ progress, onNext, onBack }) {
   const { data, update } = useOnboarding()
@@ -29,24 +30,19 @@ export default function LocationStep({ progress, onNext, onBack }) {
       <div className="location-fields">
         <div className="location-field">
           <label className="location-label">Country</label>
-          <Typeahead
-            placeholder="Search for your country\u2026"
-            initialValue={data.country_label}
-            fetchResults={api.searchCountries}
-            getKey={(c) => c.code}
-            getLabel={(c) => c.name}
+          <CountrySelect
+            value={data.country_code ? { name: data.country_label, code: data.country_code } : null}
             onSelect={onSelectCountry}
-            renderOption={(c) => (
-              <>
-                {c.flag && <img src={c.flag} alt="" className="flag-icon" />}
-                {c.name}
-              </>
-            )}
           />
         </div>
 
         <div className="location-field">
           <label className="location-label">City</label>
+          {/* City stays a search field rather than a dropdown — a full
+              city list runs into the tens of thousands for larger
+              countries, which a scrollable dropdown can't handle well.
+              This mirrors how LinkedIn itself does it (country dropdown,
+              city typeahead) per the research done earlier in this build. */}
           <Typeahead
             key={data.country_code}
             placeholder={data.country_code ? 'Search for your city\u2026' : 'Pick a country first'}
@@ -79,7 +75,6 @@ export default function LocationStep({ progress, onNext, onBack }) {
           color: var(--ink-dim);
           margin-bottom: 7px;
         }
-        .flag-icon { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; }
         .remote-toggle {
           display: flex; align-items: center; gap: 10px;
           font-size: 14px; color: var(--ink-dim);
