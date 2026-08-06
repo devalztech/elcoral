@@ -25,3 +25,18 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
 
     return user
+
+
+async def require_verified(user: User = Depends(get_current_user)) -> User:
+    """
+    Use in place of get_current_user on routes that must be blocked until
+    the user's email is verified (onboarding, posting). Users created
+    while SMTP wasn't configured are auto-verified at signup, so this
+    never blocks anyone in that mode — see app/routers/auth.py signup.
+    """
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before continuing.",
+        )
+    return user

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import settings
 from app.core.database import Base
-from app.models import user  # noqa: F401 — registers models with Base.metadata
+from app.models import post, profile, user  # noqa: F401 — registers models with Base.metadata
 
 config = context.config
 if config.config_file_name is not None:

@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
 
+// Each entry shows two people's stated intents lining up — this is
+// Elcoral's actual mechanism (match by what someone is trying to do, not
+// their job title), so the live feed demonstrates the real product idea
+// instead of generic "gig posted" marketplace activity.
 const EVENTS = [
-  { tag: 'POSTED', role: 'client', text: 'Shopify storefront redesign', meta: '$800 fixed · 3 proposals', accent: true },
-  { tag: 'HIRED', role: 'match', text: 'Amara K. → Logo & brand kit', meta: 'Started 2m ago' },
-  { tag: 'POSTED', role: 'client', text: 'Python data pipeline, weekly', meta: '$40/hr · 7 proposals', accent: true },
-  { tag: 'DELIVERED', role: 'freelancer', text: 'Voiceover, 12 min explainer', meta: 'Awaiting review' },
-  { tag: 'HIRED', role: 'match', text: 'Deshawn R. → React dashboard', meta: 'Started just now' },
-  { tag: 'POSTED', role: 'client', text: 'Ghostwritten newsletter, 4x', meta: '$220/mo · 2 proposals', accent: true },
-  { tag: 'PAID', role: 'freelancer', text: 'Video edit, YouTube series', meta: 'Released from escrow' },
+  { tag: 'MATCHED', text: 'Backend developer ↔ Product designer', meta: 'Both building a SaaS' },
+  { tag: 'CONNECTED', text: 'Student ↔ Senior mentor', meta: 'Learning · Mentoring' },
+  { tag: 'JOINED', text: 'Motion designer', meta: 'Showcasing work in Lagos' },
+  { tag: 'MATCHED', text: 'Founder ↔ Co-founder search', meta: 'Both building a startup' },
+  { tag: 'CONNECTED', text: 'Recruiter ↔ AI engineer', meta: 'Hiring · Open to work' },
+  { tag: 'MATCHED', text: 'Video editor ↔ Content creator', meta: 'Both building content' },
+  { tag: 'JOINED', text: 'Data analyst', meta: 'Open to collaborate, remote' },
 ]
 
 export default function ActivityFeed({ dense = false }) {
@@ -25,12 +29,12 @@ export default function ActivityFeed({ dense = false }) {
   }, [tick])
 
   return (
-    <div className={`feed ${dense ? 'feed-dense' : ''}`} role="list" aria-label="Live marketplace activity">
+    <div className={`feed ${dense ? 'feed-dense' : ''}`} role="list" aria-label="Live activity on Elcoral">
       {visible.map((idx, i) => {
         const ev = EVENTS[idx]
         return (
           <div className="feed-card" key={`${idx}-${tick}-${i}`} role="listitem" style={{ animationDelay: `${i * 0.06}s` }}>
-            <span className={`feed-tag ${ev.accent ? 'feed-tag-accent' : ''}`}>{ev.tag}</span>
+            <span className={`feed-tag ${ev.tag === 'MATCHED' ? 'feed-tag-accent' : ''}`}>{ev.tag}</span>
             <div className="feed-body">
               <p className="feed-text">{ev.text}</p>
               <p className="feed-meta">{ev.meta}</p>

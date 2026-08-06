@@ -19,11 +19,11 @@ const ICONS = {
 }
 
 const ITEMS = [
-  { to: '/dashboard', icon: 'home', label: 'Home' },
-  { to: '/dashboard/jobs', icon: 'jobs', label: 'Jobs' },
-  { to: '/dashboard/messages', icon: 'messages', label: 'Messages' },
-  { to: '/dashboard/notifications', icon: 'notifications', label: 'Alerts' },
-  { to: '/dashboard/profile', icon: 'profile', label: 'Profile' },
+  { to: '/home', icon: 'home', label: 'Home' },
+  { to: '/home/jobs', icon: 'jobs', label: 'Jobs' },
+  { to: '/home/messages', icon: 'messages', label: 'Messages' },
+  { to: '/home/notifications', icon: 'notifications', label: 'Alerts' },
+  { to: '/home/profile', icon: 'profile', label: 'Profile' },
 ]
 
 export default function BottomNav() {
@@ -34,7 +34,7 @@ export default function BottomNav() {
           key={item.to}
           to={item.to}
           className={({ isActive }) => `bn-item ${isActive ? 'active' : ''}`}
-          end={item.to === '/dashboard'}
+          end={item.to === '/home'}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             {ICONS[item.icon]}

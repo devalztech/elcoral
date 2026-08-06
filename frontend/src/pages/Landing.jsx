@@ -1,49 +1,43 @@
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import ActivityFeed from '../components/ActivityFeed.jsx'
-import AuthSheet from '../components/AuthSheet.jsx'
+
+// Mirrors app/models/profile.py's INTENT_CHOICES — kept in sync manually
+// since intents are curated, not user-generated. Icons are lucide-react,
+// loaded from CDN per this project's convention (no emoji, ever).
+const INTENTS = [
+  { key: 'find_work', label: 'Find freelance work' },
+  { key: 'hire', label: 'Hire professionals' },
+  { key: 'build_startup', label: 'Build a startup' },
+  { key: 'find_collaborators', label: 'Find collaborators' },
+  { key: 'learn', label: 'Learn new skills' },
+  { key: 'mentor', label: 'Mentor others' },
+  { key: 'showcase_work', label: 'Showcase my work' },
+  { key: 'network', label: 'Build my network' },
+  { key: 'recruit', label: 'Recruit talent' },
+]
 
 const CATEGORIES = [
-  { name: 'Web & App Dev', count: '2,340 gigs' },
-  { name: 'Design & Brand', count: '1,180 gigs' },
-  { name: 'Writing & Content', count: '960 gigs' },
-  { name: 'Video & Audio', count: '710 gigs' },
-  { name: 'Data & AI', count: '540 gigs' },
-  { name: 'Marketing', count: '890 gigs' },
-]
-
-const STEPS_CLIENT = [
-  { label: 'Post the work', text: 'Describe what you need done and what you’ll pay. Takes about two minutes.' },
-  { label: 'Compare proposals', text: 'See who applied, their past work, and rates — then message before you decide.' },
-  { label: 'Pay on delivery', text: 'Funds sit in escrow until you approve the work. No surprises.' },
-]
-
-const STEPS_FREELANCER = [
-  { label: 'Build your profile', text: 'Show your skills, portfolio, and rate. No degree or agency required.' },
-  { label: 'Send proposals', text: 'Apply to jobs that fit. Chat directly with clients before you commit.' },
-  { label: 'Get paid, guaranteed', text: 'Work is escrowed before you start. Delivered work gets paid, on time.' },
+  { name: 'Developers', desc: 'Backend, frontend, mobile, DevOps' },
+  { name: 'Designers', desc: 'UI/UX, brand, motion' },
+  { name: 'Creators', desc: 'Video, writing, photography' },
+  { name: 'Founders', desc: 'Startups, product, growth' },
+  { name: 'Data & AI', desc: 'Analysts, ML, engineering' },
+  { name: 'Business', desc: 'Marketing, recruiting, ops' },
 ]
 
 export default function Landing() {
-  const [role, setRole] = useState('client')
-  const steps = role === 'client' ? STEPS_CLIENT : STEPS_FREELANCER
-  const [authState, setAuthState] = useState(null) // null | { role, mode }
-
-  const openAuth = (r, mode = 'signup') => setAuthState({ role: r, mode })
-  const closeAuth = () => setAuthState(null)
+  const navigate = useNavigate()
 
   return (
     <div className="page">
-      <Nav onLogin={() => openAuth('client', 'login')} />
-      <Hero onHire={() => openAuth('client', 'signup')} onWork={() => openAuth('freelancer', 'signup')} />
-      <TrustBar />
-      <HowItWorks role={role} setRole={setRole} steps={steps} />
+      <Nav onLogin={() => navigate('/login')} onSignup={() => navigate('/signup')} />
+      <Hero onSignup={() => navigate('/signup')} />
+      <IntentBar />
+      <HowItWorks />
       <Categories />
       <SecurityBlock />
-      <FinalCTA onHire={() => openAuth('client', 'signup')} onWork={() => openAuth('freelancer', 'signup')} />
+      <FinalCTA onSignup={() => navigate('/signup')} />
       <Footer />
-      {authState && (
-        <AuthSheet initialRole={authState.role} mode={authState.mode} onClose={closeAuth} />
-      )}
       <style>{`
         .page { min-height: 100vh; }
         section { padding: 96px 0; }
@@ -55,7 +49,7 @@ export default function Landing() {
   )
 }
 
-function Nav({ onLogin }) {
+function Nav({ onLogin, onSignup }) {
   return (
     <header className="nav">
       <div className="wrap nav-inner">
@@ -64,11 +58,12 @@ function Nav({ onLogin }) {
         </div>
         <nav className="nav-links">
           <a href="#how">How it works</a>
-          <a href="#categories">Categories</a>
+          <a href="#categories">Who's here</a>
           <a href="#security">Security</a>
         </nav>
         <div className="nav-actions">
           <button onClick={onLogin} className="btn btn-ghost">Log in</button>
+          <button onClick={onSignup} className="btn btn-primary">Join Elcoral</button>
         </div>
       </div>
       <style>{`
@@ -87,26 +82,27 @@ function Nav({ onLogin }) {
   )
 }
 
-function Hero({ onHire, onWork }) {
+function Hero({ onSignup }) {
   return (
     <section className="hero">
       <div className="wrap hero-inner">
         <div className="hero-copy">
-          <p className="eyebrow">Digital work, done remotely</p>
+          <p className="eyebrow">A professional ecosystem</p>
           <h1 className="hero-title">
-            Hire skill.<br />
-            Do work.<br />
-            <span className="accent">Get paid.</span>
+            Defined by what<br />
+            you're trying to<br />
+            <span className="accent">build.</span>
           </h1>
           <p className="hero-sub">
-            Elcoral connects people who need digital work done with people who can do it —
-            no office, no borders, just the skill and the deal.
+            Not your job title. Elcoral connects people by what they're actually trying to
+            do — find work, hire, build a startup, learn, mentor, collaborate — so the right
+            people find each other before either one has to search.
           </p>
           <div className="hero-ctas">
-            <button onClick={onHire} className="btn btn-primary btn-lg">Hire talent</button>
-            <button onClick={onWork} className="btn btn-ghost btn-lg">Find work</button>
+            <button onClick={onSignup} className="btn btn-primary btn-lg">Join Elcoral</button>
+            <a href="#how" className="btn btn-ghost btn-lg">See how it works</a>
           </div>
-          <p className="hero-fineprint">Free to join. No fees until you get hired or hire someone.</p>
+          <p className="hero-fineprint">Free to join. Your profile, your goals, your network.</p>
         </div>
         <div className="hero-visual">
           <div className="visual-label">Live on Elcoral</div>
@@ -119,14 +115,14 @@ function Hero({ onHire, onWork }) {
         .hero-title {
           font-family: var(--font-display);
           font-weight: 900;
-          font-size: clamp(42px, 6vw, 76px);
-          line-height: 0.98;
+          font-size: clamp(40px, 5.6vw, 68px);
+          line-height: 1.02;
           letter-spacing: -0.02em;
           margin-top: 14px;
           color: var(--ink);
         }
         .hero-title .accent { color: var(--lemon); }
-        .hero-sub { font-size: 17px; max-width: 460px; margin-top: 22px; }
+        .hero-sub { font-size: 17px; max-width: 480px; margin-top: 22px; }
         .hero-ctas { display: flex; gap: 14px; margin-top: 32px; flex-wrap: wrap; }
         .btn-lg { padding: 16px 30px; font-size: 16px; }
         .hero-fineprint { font-size: 13px; color: var(--ink-faint); margin-top: 16px; }
@@ -164,62 +160,49 @@ function Hero({ onHire, onWork }) {
   )
 }
 
-function TrustBar() {
-  const stats = [
-    ['18,400+', 'freelancers active'],
-    ['$2.1M', 'paid out to date'],
-    ['92%', 'jobs filled in 48h'],
-    ['4.8/5', 'average client rating'],
-  ]
+function IntentBar() {
   return (
-    <section className="trust">
-      <div className="wrap trust-grid">
-        {stats.map(([num, label]) => (
-          <div key={label} className="trust-item">
-            <div className="trust-num">{num}</div>
-            <div className="trust-label">{label}</div>
-          </div>
-        ))}
+    <section className="intents">
+      <div className="wrap">
+        <p className="eyebrow">What brings you here?</p>
+        <h2 className="intents-title">Pick as many as apply. That's the whole point.</h2>
+        <div className="intents-grid">
+          {INTENTS.map((it) => (
+            <div className="intent-chip" key={it.key}>{it.label}</div>
+          ))}
+        </div>
       </div>
       <style>{`
-        .trust { padding: 40px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
-        .trust-num { font-family: var(--font-display); font-weight: 800; font-size: 30px; color: var(--lemon); }
-        .trust-label { font-size: 13px; color: var(--ink-faint); margin-top: 4px; }
-        @media (max-width: 640px) { .trust-grid { grid-template-columns: repeat(2, 1fr); } }
+        .intents-title { font-size: clamp(24px, 3.4vw, 32px); font-weight: 700; margin-top: 8px; margin-bottom: 32px; max-width: 560px; }
+        .intents-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .intent-chip {
+          font-family: var(--font-head);
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--ink-dim);
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          padding: 10px 18px;
+          transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .intent-chip:hover { border-color: var(--lemon); color: var(--ink); }
       `}</style>
     </section>
   )
 }
 
-function HowItWorks({ role, setRole, steps }) {
+function HowItWorks() {
+  const steps = [
+    { label: 'Say what you\u2019re after', text: 'Not a job title \u2014 your actual goal. Hiring, learning, building, mentoring, or all of it.' },
+    { label: 'Elcoral finds the overlap', text: 'A developer wanting a co-founder and a designer wanting the same thing get suggested to each other \u2014 no searching required.' },
+    { label: 'Build in the open', text: 'Post your work, grow your network, and move projects forward with people who want the same outcome.' },
+  ]
   return (
     <section id="how" className="how">
       <div className="wrap">
-        <div className="how-head">
-          <div>
-            <p className="eyebrow">How it works</p>
-            <h2 className="how-title">Two sides, one deal.</h2>
-          </div>
-          <div className="role-switch" role="tablist" aria-label="View steps for">
-            <button
-              role="tab"
-              aria-selected={role === 'client'}
-              className={role === 'client' ? 'active' : ''}
-              onClick={() => setRole('client')}
-            >
-              I'm hiring
-            </button>
-            <button
-              role="tab"
-              aria-selected={role === 'freelancer'}
-              className={role === 'freelancer' ? 'active' : ''}
-              onClick={() => setRole('freelancer')}
-            >
-              I'm working
-            </button>
-          </div>
-        </div>
+        <p className="eyebrow">How it works</p>
+        <h2 className="how-title">Three steps. No job-board scrolling.</h2>
         <div className="steps">
           {steps.map((s, i) => (
             <div className="step" key={s.label}>
@@ -231,15 +214,7 @@ function HowItWorks({ role, setRole, steps }) {
         </div>
       </div>
       <style>{`
-        .how-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px; margin-bottom: 48px; }
-        .how-title { font-size: clamp(28px, 4vw, 40px); font-weight: 700; margin-top: 8px; }
-        .role-switch { display: flex; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 4px; }
-        .role-switch button {
-          border: none; background: transparent; color: var(--ink-dim);
-          font-family: var(--font-head); font-weight: 600; font-size: 14px;
-          padding: 10px 20px; border-radius: 999px; transition: all 0.15s ease;
-        }
-        .role-switch button.active { background: var(--lemon); color: #0B0D0A; }
+        .how-title { font-size: clamp(28px, 4vw, 40px); font-weight: 700; margin-top: 8px; margin-bottom: 48px; max-width: 640px; }
         .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
         .step { border-top: 2px solid var(--lemon); padding-top: 20px; }
         .step-index { font-family: var(--font-display); font-size: 13px; color: var(--ink-faint); font-weight: 700; letter-spacing: 0.05em; }
@@ -254,19 +229,19 @@ function Categories() {
   return (
     <section id="categories" className="cats">
       <div className="wrap">
-        <p className="eyebrow">Popular categories</p>
-        <h2 className="cats-title">Whatever the skill, someone's ready.</h2>
+        <p className="eyebrow">Who's here</p>
+        <h2 className="cats-title">Developers, designers, founders, creators \u2014 and everyone building alongside them.</h2>
         <div className="cats-grid">
           {CATEGORIES.map((c) => (
-            <a href="/work" className="cat-card" key={c.name}>
+            <div className="cat-card" key={c.name}>
               <span className="cat-name">{c.name}</span>
-              <span className="cat-count">{c.count}</span>
-            </a>
+              <span className="cat-desc">{c.desc}</span>
+            </div>
           ))}
         </div>
       </div>
       <style>{`
-        .cats-title { font-size: clamp(26px, 4vw, 36px); font-weight: 700; margin-top: 8px; margin-bottom: 40px; max-width: 500px; }
+        .cats-title { font-size: clamp(26px, 4vw, 36px); font-weight: 700; margin-top: 8px; margin-bottom: 40px; max-width: 560px; }
         .cats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         .cat-card {
           display: flex; flex-direction: column; gap: 6px;
@@ -276,7 +251,7 @@ function Categories() {
         }
         .cat-card:hover { border-color: var(--lemon); transform: translateY(-2px); }
         .cat-name { font-family: var(--font-head); font-weight: 600; font-size: 16.5px; color: var(--ink); }
-        .cat-count { font-size: 13px; color: var(--ink-faint); }
+        .cat-desc { font-size: 13px; color: var(--ink-faint); }
         @media (max-width: 768px) { .cats-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 480px) { .cats-grid { grid-template-columns: 1fr; } }
       `}</style>
@@ -286,10 +261,10 @@ function Categories() {
 
 function SecurityBlock() {
   const items = [
-    ['Escrow by default', 'Payment is held before work starts and released only when you approve delivery.'],
     ['Encrypted everywhere', 'Passwords are hashed, sessions use signed tokens, and traffic is TLS-only.'],
-    ['Verified identities', 'Freelancers and clients confirm who they are before money moves.'],
-    ['Rate-limited & monitored', 'Automated abuse and bot protection watches every login and payment.'],
+    ['Verified identities', 'Confirm who you are before your profile is visible to others.'],
+    ['You control your data', 'Your profile, your intents, your visibility \u2014 nothing is sold or shared.'],
+    ['Rate-limited & monitored', 'Automated abuse and bot protection watches every login.'],
   ]
   return (
     <section id="security" className="sec">
@@ -297,7 +272,7 @@ function SecurityBlock() {
         <div className="sec-copy">
           <p className="eyebrow">Built to be trusted</p>
           <h2 className="sec-title">Security isn't a feature here. It's the foundation.</h2>
-          <p className="sec-sub">Money and reputations move through Elcoral. Both are protected the same way: seriously, by default, without you having to ask.</p>
+          <p className="sec-sub">Your professional identity lives here. It's protected the same way, seriously, by default, without you having to ask.</p>
         </div>
         <div className="sec-grid">
           {items.map(([t, d]) => (
@@ -323,19 +298,18 @@ function SecurityBlock() {
   )
 }
 
-function FinalCTA({ onHire, onWork }) {
+function FinalCTA({ onSignup }) {
   return (
     <section className="final">
       <div className="wrap final-inner">
-        <h2 className="final-title">Post a job or start earning — today.</h2>
+        <h2 className="final-title">Your professional identity starts with what you want to build.</h2>
         <div className="hero-ctas">
-          <button onClick={onHire} className="btn btn-primary btn-lg">Hire talent</button>
-          <button onClick={onWork} className="btn btn-ghost btn-lg">Find work</button>
+          <button onClick={onSignup} className="btn btn-primary btn-lg">Join Elcoral</button>
         </div>
       </div>
       <style>{`
         .final-inner { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 28px; }
-        .final-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 5vw, 44px); max-width: 640px; letter-spacing: -0.01em; }
+        .final-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 5vw, 44px); max-width: 680px; letter-spacing: -0.01em; }
       `}</style>
     </section>
   )

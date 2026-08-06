@@ -1,27 +1,27 @@
 import uuid
 from datetime import datetime, timezone
-from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
 
-class UserRole(str, PyEnum):
-    client = "client"
-    freelancer = "freelancer"
-
-
 class User(Base):
+    """
+    Deliberately no `role` field. Elcoral defines people by the intents/
+    categories they choose (possibly several, possibly changing over
+    time) — see Profile.intents / Profile.categories — rather than a
+    fixed account type decided at signup.
+    """
+
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -35,6 +35,9 @@ class User(Base):
 
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
+    )
+    profile: Mapped["Profile"] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
 
 
@@ -53,3 +56,24 @@ class RefreshToken(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+
+
+class EmailVerificationToken(Base):
+    """
+    One-time token emailed to the user to confirm their address. Stored
+    hashed, same reasoning as RefreshToken — a DB leak alone shouldn't let
+    someone verify arbitrary accounts. Old/used tokens are left in place
+    for audit purposes rather than deleted; `used` marks whether it's
+    still valid.
+    """
+
+    __tablename__ = "email_verification_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    hashed_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

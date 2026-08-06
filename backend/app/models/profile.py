@@ -1,0 +1,152 @@
+import uuid
+from datetime import datetime, timezone
+from enum import Enum as PyEnum
+
+from sqlalchemy import ARRAY, JSON, Boolean, DateTime, Enum, ForeignKey, Numeric, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+
+
+class CompanySize(str, PyEnum):
+    solo = "solo"
+    small = "small"  # 2-10
+    medium = "medium"  # 11-50
+    large = "large"  # 50+
+
+
+# Everything below is a curated, editable vocabulary rather than a rigid
+# enum enforced at the DB level. Stored as plain string arrays (ARRAY of
+# String) so new options can be added without a migration — validation of
+# "is this a known value" happens in the Pydantic schema layer instead,
+# where it's just data, not a schema change. This is deliberate: Elcoral's
+# whole premise is defining people by goals/categories that will keep
+# growing, not a fixed set baked into the database engine.
+
+# "What brings you to Elcoral?" — a person can hold several at once.
+INTENT_CHOICES = [
+    "find_work",
+    "hire",
+    "build_startup",
+    "find_collaborators",
+    "learn",
+    "mentor",
+    "showcase_work",
+    "network",
+    "share_ideas",
+    "recruit",
+]
+
+# "Why are you here?" — broad category, not a job title; multi-select.
+CATEGORY_CHOICES = [
+    "developer",
+    "designer",
+    "writer",
+    "video_editor",
+    "photographer",
+    "animator",
+    "devops_engineer",
+    "cybersecurity_specialist",
+    "ai_engineer",
+    "data_analyst",
+    "founder",
+    "product_manager",
+    "recruiter",
+    "hr",
+    "marketer",
+    "creator",
+    "student",
+    "teacher",
+    "mentor",
+    "other",
+]
+
+# "What do you want to build?" — feeds future collaborator matching.
+BUILDING_CHOICES = [
+    "mobile_apps",
+    "saas",
+    "ai",
+    "open_source",
+    "business",
+    "games",
+    "content",
+    "other",
+]
+
+
+class Profile(Base):
+    """
+    One-to-one with User. Deliberately NOT split by role — Elcoral defines
+    people by intents/categories they choose (possibly several at once),
+    not a single job type, so role-specific fields below are optional and
+    shown/required in the UI based on selected intents/categories, not
+    enforced by the schema itself.
+    """
+
+    __tablename__ = "profiles"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
+
+    # @handle, separate from full_name. Checked for availability live
+    # during onboarding (see /api/profile/username-available).
+    username: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
+
+    # Photo/cover are stored in Telegram (see app/core/telegram_storage.py).
+    # These are the compact pointers saved here; the API layer resolves
+    # them to real-looking URLs (GET /api/media/{ref}) before they ever
+    # reach the frontend — see schemas/profile.py.
+    photo_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    cover_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    onboarding_complete: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # --- Core identity (replaces the old rigid client/freelancer role) ---
+    intents: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    categories: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    building: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    interests: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+
+    # --- Shared fields ---
+    country_code: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    is_remote: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    headline: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    bio: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    skills: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    portfolio_links: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    # Each entry: {"title": str, "company": str, "years": str}
+    work_experience: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+
+    # Social/external links — separate named columns rather than folding
+    # into portfolio_links, since these are specific well-known platforms
+    # the UI can render with recognizable icons (github, linkedin, etc).
+    github_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    linkedin_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    website_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telegram_handle: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # --- Freelance-rate fields (relevant if "find_work" is in intents) ---
+    hourly_rate: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+
+    # --- Hiring fields (relevant if "hire" is in intents) ---
+    company_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    hiring_for: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    company_size: Mapped[CompanySize | None] = mapped_column(Enum(CompanySize), nullable=True)
+    budget_min: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    budget_max: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="profile")

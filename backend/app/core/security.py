@@ -46,6 +46,22 @@ def create_refresh_token(subject: str) -> tuple[str, str]:
     return raw, hashed
 
 
+def create_verification_token() -> tuple[str, str]:
+    """
+    Returns (raw_token_for_email_link, hashed_token_for_db). Deliberately a
+    plain random token, not a JWT — there's no payload worth encoding, and
+    the DB row (EmailVerificationToken) already tracks which user and
+    when it expires, so a JWT's self-contained claims would be redundant.
+    """
+    raw = secrets.token_urlsafe(32)
+    hashed = pwd_context.hash(raw)
+    return raw, hashed
+
+
+def verify_verification_token(raw_token: str, hashed_token: str) -> bool:
+    return pwd_context.verify(raw_token, hashed_token)
+
+
 def decode_token(token: str) -> dict | None:
     try:
         return jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])

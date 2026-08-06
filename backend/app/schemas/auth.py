@@ -3,14 +3,11 @@ import uuid
 
 from pydantic import BaseModel, EmailStr, field_validator
 
-from app.models.user import UserRole
-
 
 class SignupRequest(BaseModel):
     email: EmailStr
     password: str
     full_name: str
-    role: UserRole
 
     @field_validator("password")
     @classmethod
@@ -43,7 +40,6 @@ class UserOut(BaseModel):
     id: uuid.UUID
     email: EmailStr
     full_name: str
-    role: UserRole
     is_verified: bool
 
     model_config = {"from_attributes": True}
