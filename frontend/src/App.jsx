@@ -8,8 +8,10 @@ import ResetPassword from './pages/ResetPassword.jsx'
 import VerifyEmail from './pages/VerifyEmail.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
-import Profile from './pages/Profile.jsx'
+import ProfileView from './pages/ProfileView.jsx'
+import ProfileEditor from './pages/ProfileEditor.jsx'
 import AppShell from './components/AppShell.jsx'
+import PublicShell from './components/PublicShell.jsx'
 
 export default function App() {
   return (
@@ -24,12 +26,21 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/onboarding" element={<Onboarding />} />
 
+          {/* Public-facing, works logged-out — no bottom nav for an app
+              the visitor hasn't joined. If they ARE logged in, ProfileView
+              still renders full owner/dashboard chrome when it's their own
+              profile; this shell only controls the surrounding nav. */}
+          <Route element={<PublicShell />}>
+            <Route path="/u/:username" element={<ProfileView />} />
+          </Route>
+
           <Route element={<AppShell />}>
             <Route path="/home" element={<Dashboard />} />
             <Route path="/home/jobs" element={<ComingSoon label="Jobs" />} />
             <Route path="/home/messages" element={<ComingSoon label="Messages" />} />
             <Route path="/home/notifications" element={<ComingSoon label="Notifications" />} />
-            <Route path="/home/profile" element={<Profile />} />
+            <Route path="/home/profile" element={<ProfileView />} />
+            <Route path="/home/profile/edit" element={<ProfileEditor />} />
           </Route>
         </Routes>
       </BrowserRouter>

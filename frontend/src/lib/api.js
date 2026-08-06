@@ -63,6 +63,13 @@ export const api = {
     request('/onboarding', { method: 'POST', body: payload, token }),
   myProfile: (token) => request('/onboarding/me', { token }),
 
+  // Public/viewer-aware profile — token is optional (anonymous visitors
+  // still get the public shape back; owner gets `private` populated too).
+  publicProfile: (username, token) => request(`/profile/${encodeURIComponent(username)}`, { token }),
+
+  // Posts by a specific author, for a profile page's post list.
+  postsByUsername: (username) => request(`/posts?username=${encodeURIComponent(username)}`),
+
   // Media — multipart upload, needs the token passed explicitly since
   // this can be called before/outside a normal page render cycle.
   uploadMedia: (file, token) => {
