@@ -72,3 +72,42 @@ class ResetPasswordRequest(BaseModel):
     @classmethod
     def password_strength(cls, v: str) -> str:
         return _check_password_strength(v)
+
+
+class UpdateAccountRequest(BaseModel):
+    """
+    Settings -> Account. Both fields optional so the screen can save just
+    one. Changing the email resets is_verified and re-sends the
+    verification link (when SMTP is configured) — otherwise anyone could
+    move their account to an address they don't control and keep a
+    verified badge.
+    """
+
+    full_name: str | None = None
+    email: EmailStr | None = None
+
+    @field_validator("full_name")
+    @classmethod
+    def name_not_blank(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) < 2:
+            raise ValueError("Full name is required")
+        return v
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        return _check_password_strength(v)
+
+
+class DeleteAccountRequest(BaseModel):
+    """Password re-entry required — account deletion is irreversible."""
+
+    password: str

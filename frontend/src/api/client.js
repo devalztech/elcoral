@@ -56,12 +56,38 @@ export const api = {
   resendVerification: (token) => request('/auth/resend-verification', { method: 'POST', token }),
   getMe: (token) => request('/auth/me', { token }),
 
+  // Account settings (Settings -> Account / Security). Each of these
+  // hits the authenticated account endpoints rather than the emailed
+  // forgot-password flow, so they require the current access token.
+  updateAccount: (payload, token) => request('/auth/me', { method: 'PATCH', body: payload, token }),
+  changePassword: (currentPassword, newPassword, token) =>
+    request('/auth/change-password', {
+      method: 'POST',
+      body: { current_password: currentPassword, new_password: newPassword },
+      token,
+    }),
+  deleteAccount: (password, token) =>
+    request('/auth/me', { method: 'DELETE', body: { password }, token }),
+
   // Onboarding
   usernameAvailable: (username) =>
     request(`/onboarding/username-available?username=${encodeURIComponent(username)}`),
   submitOnboarding: (payload, token) =>
     request('/onboarding', { method: 'POST', body: payload, token }),
   myProfile: (token) => request('/onboarding/me', { token }),
+
+  // Profile editing. PATCH sends only the fields that changed, so saving
+  // one section can't blank out fields the form never rendered (which is
+  // what reusing POST /onboarding would do).
+  getMyProfile: (token) => request('/profile/me', { token }),
+  updateProfile: (payload, token) => request('/profile/me', { method: 'PATCH', body: payload, token }),
+  updatePrivacy: (payload, token) =>
+    request('/profile/me/privacy', { method: 'PATCH', body: payload, token }),
+
+  // Viewer-aware availability check: doesn't report your own current
+  // username as taken while you're editing your profile.
+  usernameAvailableForEdit: (username, token) =>
+    request(`/profile/username-available?username=${encodeURIComponent(username)}`, { token }),
 
   // Public/viewer-aware profile — token is optional (anonymous visitors
   // still get the public shape back; owner gets `private` populated too).

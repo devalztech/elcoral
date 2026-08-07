@@ -20,10 +20,13 @@ from app.core.security import (
 )
 from app.models.user import EmailVerificationToken, PasswordResetToken, RefreshToken, User
 from app.schemas.auth import (
+    ChangePasswordRequest,
+    DeleteAccountRequest,
     ForgotPasswordRequest,
     LoginRequest,
     ResetPasswordRequest,
     SignupRequest,
+    UpdateAccountRequest,
     TokenResponse,
     UserOut,
 )
@@ -352,3 +355,99 @@ async def get_me(user: User = Depends(get_current_user)):
     token itself, so this is the only way to see a change without it.
     """
     return UserOut.model_validate(user)
+
+
+async def _send_verification(db: AsyncSession, user: User) -> None:
+    """Issues a fresh verification token and emails the link. No-op when
+    SMTP isn't configured (see settings.smtp_configured)."""
+    if not settings.smtp_configured:
+        return
+    raw_token, hashed_token = create_verification_token()
+    row = EmailVerificationToken(
+        user_id=user.id,
+        hashed_token=hashed_token,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_HOURS),
+    )
+    db.add(row)
+    await db.flush()
+    url = f"{settings.frontend_url}/verify-email?token_id={row.id}&token={raw_token}"
+    await email_service.send_verification_email(user.email, user.full_name, url)
+
+
+@router.patch("/me", response_model=UserOut)
+@limiter.limit("10/hour")
+async def update_account(
+    request: Request,
+    body: UpdateAccountRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Settings -> Account: change display name and/or email address."""
+    if body.full_name is not None:
+        user.full_name = body.full_name
+
+    if body.email is not None and body.email.lower() != user.email.lower():
+        existing = await db.scalar(select(User).where(User.email == body.email))
+        if existing is not None:
+            raise HTTPException(status_code=409, detail="That email is already in use")
+        user.email = body.email
+        if settings.smtp_configured:
+            # New address is unproven until its link is clicked.
+            user.is_verified = False
+            await _send_verification(db, user)
+
+    await db.commit()
+    await db.refresh(user)
+    return UserOut.model_validate(user)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/hour")
+async def change_password(
+    request: Request,
+    response: Response,
+    body: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Authenticated "change while logged in" flow — distinct from the
+    emailed forgot/reset path above. Requires the current password so a
+    stolen access token alone can't take the account over.
+    """
+    if not verify_password(body.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if verify_password(body.new_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="New password must be different")
+
+    user.hashed_password = hash_password(body.new_password)
+
+    # Same reasoning as reset-password: every other session is invalidated.
+    await db.execute(update(RefreshToken).where(RefreshToken.user_id == user.id).values(revoked=True))
+    await db.commit()
+
+    response.delete_cookie("refresh_token", path="/api/auth")
+    return None
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("3/hour")
+async def delete_account(
+    request: Request,
+    response: Response,
+    body: DeleteAccountRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Hard delete. Profile, refresh tokens, verification/reset tokens and
+    posts all cascade off users.id (ondelete="CASCADE"), so removing the
+    user row removes everything tied to it.
+    """
+    if not verify_password(body.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Password is incorrect")
+
+    await db.delete(user)
+    await db.commit()
+    response.delete_cookie("refresh_token", path="/api/auth")
+    return None

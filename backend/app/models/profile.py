@@ -129,6 +129,22 @@ class Profile(Base):
     linkedin_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     website_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     telegram_handle: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    twitter_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    dribbble_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Free-text "About you" section on the profile editor — longer-form
+    # than `bio` (which is the short 200-char blurb under the header).
+    about: Mapped[str | None] = mapped_column(String(4000), nullable=True)
+
+    # IANA-ish display label chosen in the editor (e.g. "(GMT+1) West
+    # Africa Time"). Stored as the label the UI shows rather than a strict
+    # tz identifier, matching how the picker works today.
+    timezone: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # --- Privacy preferences (Settings -> Privacy) ---
+    is_public: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
+    show_email: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    show_activity: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
 
     # --- Freelance-rate fields (relevant if "find_work" is in intents) ---
     hourly_rate: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)

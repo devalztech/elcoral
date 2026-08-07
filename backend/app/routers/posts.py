@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -42,14 +42,30 @@ async def create_post(
 @router.get("", response_model=list[PostOut])
 async def list_feed(
     cursor: uuid.UUID | None = Query(default=None, description="Post id to page before"),
+    username: str | None = Query(
+        default=None, description="Only return posts authored by this username"
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Simple reverse-chronological feed, cursor-paginated by post id (posts
     are UUIDv4 so id order isn't time order — we page by created_at with
     id as a tiebreaker instead).
+
+    Passing `username` narrows the feed to one author, which is how a
+    profile page loads that person's posts without a separate endpoint.
     """
     query = _base_query().order_by(Post.created_at.desc(), Post.id.desc()).limit(PAGE_SIZE)
+
+    if username:
+        author_id = await db.scalar(
+            select(Profile.user_id).where(func.lower(Profile.username) == username.strip().lower())
+        )
+        if author_id is None:
+            # Unknown handle: an empty list beats a 404 here, since the
+            # profile page already 404s on the profile request itself.
+            return []
+        query = query.where(Post.author_id == author_id)
 
     if cursor is not None:
         cursor_post = await db.get(Post, cursor)

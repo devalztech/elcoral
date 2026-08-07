@@ -23,8 +23,12 @@ export default function ProfileEditor() {
   const [initialData, setInitialData] = useState(null)
 
   useEffect(() => {
+    if (!accessToken) return
     api
-      .myProfile(accessToken)
+      // /profile/me (not /onboarding/me): it always returns a row, and it
+      // includes photo_ref/cover_ref, which the editor must send back
+      // unchanged or a save would wipe the person's existing images.
+      .getMyProfile(accessToken)
       .then((profile) => setInitialData(profile))
       .catch(() => setLoadError('Could not load your profile.'))
       .finally(() => setLoading(false))
@@ -37,6 +41,7 @@ export default function ProfileEditor() {
         <style>{`
           .pe-loading { display: flex; justify-content: center; padding: 60px 0; color: var(--ink-faint); }
           .pe-spin { animation: pe-spin 0.8s linear infinite; }
+        .pe-field-error { font-size: 12.5px; color: var(--danger); margin-top: 6px; }
           @keyframes pe-spin { to { transform: rotate(360deg); } }
         `}</style>
       </div>
@@ -82,7 +87,7 @@ const BIO_MAX = 200
 
 function ProfileEditorBody() {
   const { data, update } = useOnboarding()
-  const { accessToken, user } = useAuth()
+  const { accessToken, user, refreshUser } = useAuth()
   const navigate = useNavigate()
 
   const [saving, setSaving] = useState(false)
@@ -92,18 +97,23 @@ function ProfileEditorBody() {
   const photoRef = useRef(null)
   const coverRef = useRef(null)
 
-  // Fields the backend profile model doesn't own yet — kept in local
-  // state so the screen is complete and editable today.
-  const [fullName, setFullName] = useState(user?.full_name || user?.name || '')
-  const [timezone, setTimezone] = useState(TIMEZONES[0])
+  // full_name lives on the user account, not the profile, so it saves
+  // through PATCH /auth/me alongside the profile PATCH below.
+  const [fullName, setFullName] = useState(user?.full_name || '')
+  const [timezone, setTimezone] = useState(data.timezone || TIMEZONES[0])
   const [socials, setSocials] = useState({
-    twitter: '',
+    twitter: data.twitter_url || '',
     linkedin: data.linkedin_url || '',
     github: data.github_url || '',
-    dribbble: '',
+    dribbble: data.dribbble_url || '',
   })
+  const [usernameError, setUsernameError] = useState('')
   const [skillInput, setSkillInput] = useState('')
   const [addingSkill, setAddingSkill] = useState(false)
+
+  useEffect(() => {
+    if (user?.full_name) setFullName(user.full_name)
+  }, [user?.full_name])
 
   const locationLabel = useMemo(
     () => [data.city, data.country_label].filter(Boolean).join(', '),
@@ -150,19 +160,58 @@ function ProfileEditorBody() {
 
   async function save() {
     setError('')
+    setUsernameError('')
     setSaved(false)
+
+    const username = (data.username || '').trim()
+    if (username && !/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+      setUsernameError('3-30 characters, letters, numbers and underscores only.')
+      return
+    }
+    if (fullName.trim() && fullName.trim().length < 2) {
+      setError('Please enter your full name.')
+      return
+    }
+
     setSaving(true)
     try {
+      // PATCH /profile/me, not POST /onboarding: a partial update leaves
+      // every field this screen doesn't render (hiring details, budgets,
+      // interests) exactly as it was, instead of blanking them.
       const payload = toApiPayload({
         ...data,
+        username,
+        timezone,
         linkedin_url: socials.linkedin,
         github_url: socials.github,
+        twitter_url: socials.twitter,
+        dribbble_url: socials.dribbble,
       })
-      await api.submitOnboarding(payload, accessToken)
+      // An empty handle would fail the PATCH validator (min 3 chars);
+      // omitting the key just leaves the stored username untouched.
+      if (!username) delete payload.username
+      const updated = await api.updateProfile(payload, accessToken)
+
+      if (fullName.trim() && fullName.trim() !== (user?.full_name || '')) {
+        await api.updateAccount({ full_name: fullName.trim() }, accessToken)
+        await refreshUser(accessToken)
+      }
+
+      // Re-seed from the server response so refs/urls resolved backend-side
+      // (e.g. a freshly uploaded photo) replace the local blob previews.
+      update({
+        photo_ref: updated.photo_ref || null,
+        photo_preview: updated.photo_url || null,
+        cover_ref: updated.cover_ref || null,
+        cover_preview: updated.cover_url || null,
+      })
+
       setSaved(true)
       setTimeout(() => setSaved(false), 2200)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save. Please try again.')
+      const message = err instanceof ApiError ? err.message : 'Could not save. Please try again.'
+      if (err instanceof ApiError && err.status === 409) setUsernameError(message)
+      else setError(message)
     } finally {
       setSaving(false)
     }
@@ -243,9 +292,13 @@ function ProfileEditorBody() {
             <input
               className="pe-input"
               value={usernameHandle ? `@${usernameHandle}` : ''}
-              onChange={(e) => update({ username: e.target.value.replace(/^@/, '') })}
+              onChange={(e) => { setUsernameError(''); update({ username: e.target.value.replace(/^@/, '').trim() }) }}
               placeholder="@username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
             />
+            {usernameError && <p className="pe-field-error">{usernameError}</p>}
           </Field>
 
           <Field label="Headline">
@@ -415,8 +468,8 @@ function ProfileEditorBody() {
           id="pe-about"
           className="pe-input pe-textarea pe-about"
           rows={4}
-          value={data.headline_about || ''}
-          onChange={(e) => update({ headline_about: e.target.value })}
+          value={data.about || ''}
+          onChange={(e) => update({ about: e.target.value })}
           placeholder="Anything else people should know about you…"
         />
       </div>

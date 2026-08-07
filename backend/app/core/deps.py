@@ -40,3 +40,26 @@ async def require_verified(user: User = Depends(get_current_user)) -> User:
             detail="Please verify your email before continuing.",
         )
     return user
+
+
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """
+    Same as get_current_user but never raises — returns None for anonymous
+    callers. Used by viewer-aware public endpoints (e.g. GET
+    /api/profile/{username}) which must work logged-out but return extra
+    owner-only context when the caller happens to be the profile owner.
+    """
+    if credentials is None:
+        return None
+
+    payload = decode_token(credentials.credentials)
+    if not payload or payload.get("type") != "access":
+        return None
+
+    user = await db.get(User, payload["sub"])
+    if not user or not user.is_active:
+        return None
+    return user

@@ -17,7 +17,7 @@ from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core import telegram_storage
-from app.routers import auth, lookup, media, onboarding, posts
+from app.routers import auth, lookup, media, onboarding, posts, profile
 
 app = FastAPI(title="Elcoral API", version="0.1.0")
 
@@ -50,6 +50,7 @@ async def security_headers(request: Request, call_next):
 
 app.include_router(auth.router)
 app.include_router(onboarding.router)
+app.include_router(profile.router)
 app.include_router(posts.router)
 app.include_router(media.router)
 app.include_router(lookup.router)

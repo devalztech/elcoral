@@ -1,14 +1,14 @@
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_verified
 from app.models.profile import Profile
 from app.models.user import User
-from app.schemas.profile import OnboardingRequest, ProfileOut
+from app.schemas.profile import OnboardingRequest, OwnerProfileOut
 
 router = APIRouter(prefix="/api/onboarding", tags=["onboarding"])
 
@@ -36,7 +36,7 @@ async def check_username_available(
     return {"available": existing is None}
 
 
-@router.post("", response_model=ProfileOut)
+@router.post("", response_model=OwnerProfileOut)
 async def submit_onboarding(
     payload: OnboardingRequest,
     user: User = Depends(require_verified),
@@ -49,7 +49,9 @@ async def submit_onboarding(
     # last check and this submit — the DB unique constraint would catch
     # it too, but this gives a clean error instead of a raw IntegrityError.
     if profile.username != payload.username:
-        existing = await db.scalar(select(Profile).where(Profile.username == payload.username))
+        existing = await db.scalar(
+            select(Profile).where(func.lower(Profile.username) == payload.username.lower())
+        )
         if existing is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken")
 
@@ -76,6 +78,10 @@ async def submit_onboarding(
     profile.linkedin_url = payload.linkedin_url
     profile.website_url = payload.website_url
     profile.telegram_handle = payload.telegram_handle
+    profile.twitter_url = payload.twitter_url
+    profile.dribbble_url = payload.dribbble_url
+    profile.about = payload.about
+    profile.timezone = payload.timezone
 
     profile.hourly_rate = payload.hourly_rate
 
@@ -89,10 +95,10 @@ async def submit_onboarding(
 
     await db.commit()
     await db.refresh(profile)
-    return ProfileOut.from_model(profile)
+    return OwnerProfileOut.from_owner(profile, user)
 
 
-@router.get("/me", response_model=ProfileOut | None)
+@router.get("/me", response_model=OwnerProfileOut | None)
 async def get_my_profile(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -101,4 +107,4 @@ async def get_my_profile(
     profile = result.scalar_one_or_none()
     if profile is None:
         return None
-    return ProfileOut.from_model(profile)
+    return OwnerProfileOut.from_owner(profile, user)
