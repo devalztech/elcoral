@@ -89,6 +89,7 @@ export default function PhotoStep({ progress, onNext, onBack }) {
         .photo-remove {
           display: flex; align-items: center; gap: 5px;
           font-size: 13px; color: var(--ink-faint);
+          padding: 6px 0;
         }
         .photo-remove:hover { color: var(--danger); }
         .photo-error { font-size: 13px; color: var(--danger); text-align: center; }

@@ -90,7 +90,7 @@ export default function CoverStep({ progress, onNext, onBack }) {
         .cover-remove {
           display: flex; align-items: center; gap: 5px;
           font-size: 13px; color: var(--ink-faint);
-          margin-top: 12px;
+          margin-top: 12px; padding: 6px 0;
         }
         .cover-remove:hover { color: var(--danger); }
         .cover-error { font-size: 13px; color: var(--danger); margin-top: 10px; }

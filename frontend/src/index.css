@@ -42,12 +42,34 @@ body {
 }
 
 a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; }
+button {
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+}
 
 :focus-visible {
   outline: 2px solid var(--lemon);
   outline-offset: 3px;
   border-radius: 4px;
+}
+
+/* Chrome/Safari/Edge force a white (or yellow) background on autofilled
+   inputs that normal `background` CSS cannot override — this is the fix
+   that actually works: a huge inset box-shadow painted in the theme's
+   panel color, plus forcing text color, using a long transition delay
+   as the standard trick to beat the browser's own autofill styling. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--panel) inset;
+  box-shadow: 0 0 0 1000px var(--panel) inset;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: var(--ink);
 }
 
 .wrap {

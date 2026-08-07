@@ -91,7 +91,7 @@ export default function SkillsStep({ progress, onNext, onBack }) {
         .skills-input:focus { outline: none; border-color: var(--lemon); }
         .skills-add-btn {
           display: flex; align-items: center; gap: 6px;
-          margin-top: 8px;
+          margin-top: 8px; padding: 6px 0;
           font-size: 13.5px;
           color: var(--lemon);
           font-weight: 500;

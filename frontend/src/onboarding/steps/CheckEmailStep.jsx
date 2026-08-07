@@ -84,7 +84,7 @@ export default function CheckEmailStep({ onVerified }) {
         @keyframes spin { to { transform: rotate(360deg); } }
         .check-email-error { font-size: 13px; color: var(--danger); margin-top: 14px; }
         .check-email-logout {
-          margin-top: 28px; font-size: 13px; color: var(--ink-faint);
+          margin-top: 28px; padding: 8px 0; font-size: 13px; color: var(--ink-faint);
         }
         .check-email-logout:hover { color: var(--ink-dim); }
       `}</style>

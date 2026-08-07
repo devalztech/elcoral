@@ -271,7 +271,7 @@ function ProfileEditorBody() {
             }
             .photo-circle:hover { border-color: var(--lemon); color: var(--lemon); }
             .photo-circle img { width: 100%; height: 100%; object-fit: cover; }
-            .photo-change-link { font-size: 13.5px; font-weight: 600; color: var(--lemon); }
+            .photo-change-link { font-size: 13.5px; font-weight: 600; color: var(--lemon); padding: 6px 0; }
           `}</style>
         </EditSheet>
       )}

@@ -334,7 +334,7 @@ function ProfileBody({ profile, posts }) {
         .pb-tab {
           flex: 1; padding: 12px 8px; text-align: center;
           font-size: 13px; font-weight: 600; color: var(--ink-faint);
-          border-bottom: 2px solid transparent; white-space: nowrap;
+          background: none; border: none; border-bottom: 2px solid transparent; white-space: nowrap;
         }
         .pb-tab-active { color: var(--ink); border-bottom-color: var(--lemon); }
         .pb-panel { padding: 20px 0; min-height: 120px; }
