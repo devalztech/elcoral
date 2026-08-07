@@ -9,6 +9,7 @@ import VerifyEmail from '../pages/VerifyEmail.jsx'
 import Onboarding from '../pages/Onboarding.jsx'
 import Dashboard from '../pages/Dashboard.jsx'
 import Create from '../pages/Create.jsx'
+import Jobs from '../pages/Jobs.jsx'
 import ProfileView from '../pages/ProfileView.jsx'
 import ProfileEditor from '../pages/ProfileEditor.jsx'
 import Settings from '../pages/settings/Settings.jsx'
@@ -43,7 +44,8 @@ export default function App() {
 
           <Route element={<AppShell />}>
             <Route path="/home" element={<Dashboard />} />
-            <Route path="/home/jobs" element={<ComingSoon label="Jobs" />} />
+            <Route path="/home/jobs" element={<Jobs />} />
+            <Route path="/home/jobs/:slug" element={<ComingSoon label="Jobs" />} />
             <Route path="/home/search" element={<ComingSoon label="Search" />} />
             <Route path="/home/discover" element={<ComingSoon label="Discover" />} />
             <Route path="/home/stories/:id" element={<ComingSoon label="Story" />} />
