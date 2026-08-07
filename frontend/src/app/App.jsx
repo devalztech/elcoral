@@ -15,6 +15,7 @@ import AccountSettings from '../pages/settings/AccountSettings.jsx'
 import PrivacySettings from '../pages/settings/PrivacySettings.jsx'
 import SecuritySettings from '../pages/settings/SecuritySettings.jsx'
 import EarningsSettings from '../pages/settings/EarningsSettings.jsx'
+import SettingsPlaceholder from '../pages/settings/SettingsPlaceholder.jsx'
 import AppShell from '../layouts/AppShell.jsx'
 import PublicShell from '../layouts/PublicShell.jsx'
 
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="/home/settings/privacy" element={<PrivacySettings />} />
             <Route path="/home/settings/security" element={<SecuritySettings />} />
             <Route path="/home/settings/earnings" element={<EarningsSettings />} />
+            <Route path="/home/settings/:slug" element={<SettingsPlaceholder />} />
           </Route>
         </Routes>
       </BrowserRouter>
