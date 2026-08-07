@@ -2,6 +2,7 @@ import { Outlet, Link } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import BottomNav from './BottomNav.jsx'
+import ElcoralMark from '../components/ElcoralMark.jsx'
 
 // Shell for pages that must render for logged-out visitors (e.g. /u/:username).
 //
@@ -20,7 +21,7 @@ export default function PublicShell() {
         <header className="pshell-header">
           <div className="pshell-header-inner">
             <Link to="/" className="pshell-logo" aria-label="Elcoral home">
-              <span className="pshell-logo-mark" aria-hidden="true">E</span>
+              <ElcoralMark size={26} color="var(--lemon)" className="pshell-logo-mark" />
               <span className="pshell-logo-word">Elcoral</span>
             </Link>
             <div className="pshell-actions">
@@ -47,11 +48,8 @@ export default function PublicShell() {
           max-width: 640px; margin: 0 auto;
           display: flex; align-items: center; justify-content: space-between; gap: 14px;
         }
-        .pshell-logo { display: inline-flex; align-items: center; gap: 10px; }
-        .pshell-logo-mark {
-          font-family: var(--font-display); font-weight: 800; font-size: 26px;
-          line-height: 1; color: var(--lemon);
-        }
+        .pshell-logo { display: inline-flex; align-items: center; gap: 6px; }
+        .pshell-logo-mark { flex-shrink: 0; }
         .pshell-logo-word {
           font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--ink);
         }

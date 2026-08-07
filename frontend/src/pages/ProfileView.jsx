@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api } from '../api/client.js'
+import ElcoralMark from '../components/ElcoralMark.jsx'
 
 // Elcoral profile page, built to the approved design reference across all
 // three viewing angles:
@@ -436,7 +437,9 @@ function BuildingCardOwner() {
         <ChevronRight size={17} />
       </Link>
       <div className="pv-build">
-        <div className="pv-build-logo" aria-hidden="true">E</div>
+        <div className="pv-build-logo">
+          <ElcoralMark size={30} color="var(--lemon)" />
+        </div>
         <div>
           <p className="pv-build-name">{BUILDING.name}</p>
           <p className="pv-build-desc">{BUILDING.description}</p>
@@ -532,7 +535,7 @@ function VisitorProfile({ profile, posts }) {
           aria-pressed={following}
           onClick={() => setFollowing((v) => !v)}
         >
-          {following ? <CircleCheck size={18} aria-hidden="true" /> : <UserPlus size={18} aria-hidden="true" />}
+          {following && <CircleCheck size={18} aria-hidden="true" />}
           {following ? 'Following' : 'Follow'}
         </button>
       </div>
@@ -623,7 +626,9 @@ function PublicBuildingCard() {
   return (
     <section className="pv-card pv-building-card">
       <div className="pv-building-main">
-        <div className="pv-build-logo pv-build-logo-lg" aria-hidden="true">E</div>
+        <div className="pv-build-logo pv-build-logo-lg">
+          <ElcoralMark size={38} color="var(--lemon)" />
+        </div>
         <div className="pv-building-text">
           <p className="pv-building-eyebrow">What we're building</p>
           <p className="pv-build-name">{BUILDING.name}</p>
@@ -1166,9 +1171,8 @@ function ProfileStyles() {
         width: 58px; height: 58px; flex-shrink: 0; border-radius: 14px;
         background: #0B0D0A; border: 1px solid var(--pv-line-soft);
         display: flex; align-items: center; justify-content: center;
-        font-family: var(--font-display); font-weight: 800; font-size: 28px; color: var(--lemon);
       }
-      .pv-build-logo-lg { width: 68px; height: 68px; font-size: 34px; border-radius: 16px; }
+      .pv-build-logo-lg { width: 68px; height: 68px; border-radius: 16px; }
       .pv-build-name { font-size: 16px; font-weight: 700; color: var(--ink); font-family: var(--font-head); }
       .pv-build-desc { font-size: 14px; color: var(--ink-dim); line-height: 1.45; margin-top: 4px; }
       .pv-build-sub { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-top: 22px; }
