@@ -8,6 +8,7 @@ import {
   Heart, Repeat2, Share, Pin, CircleCheck,
 } from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
+import ReportDialog from '../features/settings/components/ReportDialog.jsx'
 import { api } from '../api/client.js'
 import ElcoralMark from '../components/ElcoralMark.jsx'
 
@@ -478,9 +479,24 @@ function AvailabilityStrip() {
 
 function VisitorProfile({ profile, posts }) {
   const navigate = useNavigate()
+  const { accessToken } = useAuth()
   const [following, setFollowing] = useState(false)
   const [connected, setConnected] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [reporting, setReporting] = useState(false)
+  const [blockError, setBlockError] = useState('')
+
+  // Blocking is mutual on the backend, so the viewer loses access to this
+  // profile straight away — sending them home avoids a dead 404 screen.
+  async function block() {
+    setMoreOpen(false)
+    try {
+      await api.blockUser(profile.username, accessToken)
+      navigate('/home')
+    } catch (err) {
+      setBlockError(err.message || 'Could not block this member.')
+    }
+  }
 
   return (
     <>
@@ -505,8 +521,28 @@ function VisitorProfile({ profile, posts }) {
             Copy profile link
           </button>
           <Link to="/home/messages" className="pv-menu-item">Send a message</Link>
-          <button type="button" className="pv-menu-item pv-menu-item-danger">Report profile</button>
+          <button
+            type="button"
+            className="pv-menu-item pv-menu-item-danger"
+            onClick={() => { setMoreOpen(false); setReporting(true) }}
+          >
+            Report profile
+          </button>
+          <button type="button" className="pv-menu-item pv-menu-item-danger" onClick={block}>
+            Block @{profile.username}
+          </button>
         </div>
+      )}
+
+      {blockError && <p className="pv-inline-error" role="alert">{blockError}</p>}
+
+      {reporting && (
+        <ReportDialog
+          targetType="user"
+          targetUsername={profile.username}
+          label={`@${profile.username}`}
+          onClose={() => setReporting(false)}
+        />
       )}
 
       <div className="pv-cover">
@@ -1119,6 +1155,7 @@ function ProfileStyles() {
       .pv-menu-item:last-child { border-bottom: none; }
       .pv-menu-item:hover { color: var(--lemon); background: var(--pv-surface-2); }
       .pv-menu-item-danger { color: var(--danger); }
+      .pv-inline-error { margin: 0 16px 8px; font-size: 13px; color: var(--danger); }
       .pv-menu-item-danger:hover { color: var(--danger); }
 
       /* ------------------------------- cards ----------------------------- */

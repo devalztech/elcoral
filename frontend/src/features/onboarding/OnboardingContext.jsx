@@ -82,6 +82,7 @@ const emptyData = {
   cover_preview: null,
   country_code: '',
   country_label: '',
+  country_flag: '',
   city: '',
   is_remote: false,
   headline: '',

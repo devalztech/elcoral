@@ -17,7 +17,7 @@ from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core import telegram_storage
-from app.routers import auth, lookup, media, onboarding, posts, profile
+from app.routers import auth, lookup, media, onboarding, posts, profile, settings as settings_router
 
 app = FastAPI(title="Elcoral API", version="0.1.0")
 
@@ -54,6 +54,7 @@ app.include_router(profile.router)
 app.include_router(posts.router)
 app.include_router(media.router)
 app.include_router(lookup.router)
+app.include_router(settings_router.router)
 
 
 @app.on_event("startup")
@@ -186,11 +187,72 @@ def _start_cloudflare_tunnel(port: int):
     threading.Thread(target=_run_forever, daemon=True).start()
 
 
+def _run_migrations():
+    """
+    Runs `alembic upgrade head` before the app serves traffic, so the DB
+    schema is never out of sync with the models. Unlike Telegram storage,
+    this must be synchronous — serving requests against a stale schema is
+    worse than a slightly slower boot.
+
+    To stay compatible with Pterodactyl's startup watchdog (which expects
+    the port to bind quickly), this is bounded to a hard timeout via a
+    subprocess call rather than importing alembic's Python API in-process.
+    If migrations fail or time out, the process exits non-zero instead of
+    starting the app half-migrated — Pterodactyl will show the failure in
+    the console and the crash loop makes the problem impossible to miss,
+    rather than silently serving against the wrong schema.
+
+    Set SKIP_MIGRATIONS=1 as an escape hatch (e.g. to boot once and
+    manually inspect state) without touching this code.
+    """
+    if os.environ.get("SKIP_MIGRATIONS") == "1":
+        print("[migrations] SKIP_MIGRATIONS=1 set — skipping alembic upgrade head")
+        return
+
+    import subprocess
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    print("[migrations] running alembic upgrade head...")
+    try:
+        # `python -m alembic` instead of the bare `alembic` command: on
+        # this panel, packages install to ~/.local (see the "pip install
+        # --prefix .local" step in the startup log), which puts the
+        # `alembic` console script in ~/.local/bin — a directory that
+        # isn't on PATH here even though the package imports fine. Using
+        # `sys.executable -m alembic` runs it as a module through the
+        # same Python/sys.path that's already resolving `import alembic`
+        # successfully in alembic/env.py, so it can't hit this again
+        # regardless of where pip decided to put the console script.
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            cwd=repo_root,
+            timeout=60,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.TimeoutExpired:
+        print("[migrations] timed out after 60s — refusing to start app against unknown schema state")
+        sys.exit(1)
+    except FileNotFoundError:
+        print("[migrations] alembic module not found — is it installed? refusing to start")
+        sys.exit(1)
+
+    print(result.stdout)
+    if result.returncode != 0:
+        print(result.stderr)
+        print("[migrations] alembic upgrade head failed — refusing to start app")
+        sys.exit(1)
+
+    print("[migrations] up to date")
+
+
 if __name__ == "__main__":
     # HidenCloud's fixed startup command runs `python app/main.py` directly
     # instead of `uvicorn app.main:app`, so this boots the server manually
     # to match what the Dockerfile's CMD would otherwise do.
     import uvicorn
+
+    _run_migrations()
 
     port = int(os.environ.get("PORT", 8000))
     _start_cloudflare_tunnel(port)

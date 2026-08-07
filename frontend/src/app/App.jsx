@@ -19,13 +19,26 @@ import PrivacySettings from '../pages/settings/PrivacySettings.jsx'
 import SecuritySettings from '../pages/settings/SecuritySettings.jsx'
 import EarningsSettings from '../pages/settings/EarningsSettings.jsx'
 import SettingsPlaceholder from '../pages/settings/SettingsPlaceholder.jsx'
+import VerificationSettings from '../pages/settings/VerificationSettings.jsx'
+import EmailSettings from '../pages/settings/EmailSettings.jsx'
+import NotificationSettings from '../pages/settings/NotificationSettings.jsx'
+import AppearanceSettings from '../pages/settings/AppearanceSettings.jsx'
+import LanguageSettings from '../pages/settings/LanguageSettings.jsx'
+import AccessibilitySettings from '../pages/settings/AccessibilitySettings.jsx'
+import BlockedSettings from '../pages/settings/BlockedSettings.jsx'
+import ReportsSettings from '../pages/settings/ReportsSettings.jsx'
+import DataSettings from '../pages/settings/DataSettings.jsx'
+import HelpSettings from '../pages/settings/HelpSettings.jsx'
+import AboutSettings from '../pages/settings/AboutSettings.jsx'
+import { SettingsProvider } from '../features/settings/hooks/useSettings.jsx'
 import AppShell from '../layouts/AppShell.jsx'
 import PublicShell from '../layouts/PublicShell.jsx'
 
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <SettingsProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -65,10 +78,22 @@ export default function App() {
             <Route path="/home/settings/privacy" element={<PrivacySettings />} />
             <Route path="/home/settings/security" element={<SecuritySettings />} />
             <Route path="/home/settings/earnings" element={<EarningsSettings />} />
+            <Route path="/home/settings/verification" element={<VerificationSettings />} />
+            <Route path="/home/settings/email" element={<EmailSettings />} />
+            <Route path="/home/settings/notifications" element={<NotificationSettings />} />
+            <Route path="/home/settings/appearance" element={<AppearanceSettings />} />
+            <Route path="/home/settings/language" element={<LanguageSettings />} />
+            <Route path="/home/settings/accessibility" element={<AccessibilitySettings />} />
+            <Route path="/home/settings/blocked" element={<BlockedSettings />} />
+            <Route path="/home/settings/reports" element={<ReportsSettings />} />
+            <Route path="/home/settings/data" element={<DataSettings />} />
+            <Route path="/home/settings/help" element={<HelpSettings />} />
+            <Route path="/home/settings/about" element={<AboutSettings />} />
             <Route path="/home/settings/:slug" element={<SettingsPlaceholder />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </SettingsProvider>
     </AuthProvider>
   )
 }

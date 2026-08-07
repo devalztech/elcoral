@@ -22,6 +22,7 @@ from app.core.deps import get_current_user, get_optional_user
 from app.models.post import Post
 from app.models.profile import Profile
 from app.models.user import User
+from app.routers.settings import is_blocked_between
 from app.schemas.profile import (
     OwnerProfileOut,
     PrivacyUpdateRequest,
@@ -179,6 +180,13 @@ async def get_public_profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
     if not owner.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+
+    # A block hides the profile in both directions: the blocker doesn't
+    # want to see them, and the blocked person shouldn't be able to keep
+    # watching the blocker. Same 404 as private/nonexistent, so the block
+    # itself isn't advertised.
+    if viewer is not None and not is_owner and await is_blocked_between(db, viewer.id, owner.id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
     posts_count = (

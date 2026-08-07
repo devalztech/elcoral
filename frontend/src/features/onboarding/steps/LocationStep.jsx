@@ -10,7 +10,12 @@ export default function LocationStep({ progress, onNext, onBack }) {
 
   function onSelectCountry(country) {
     // Changing country invalidates any previously picked city.
-    update({ country_code: country.code, country_label: country.name, city: '' })
+    update({
+      country_code: country.code,
+      country_label: country.name,
+      country_flag: country.flag,
+      city: '',
+    })
   }
 
   function onSelectCity(city) {
@@ -31,7 +36,11 @@ export default function LocationStep({ progress, onNext, onBack }) {
         <div className="location-field">
           <label className="location-label">Country</label>
           <CountrySelect
-            value={data.country_code ? { name: data.country_label, code: data.country_code } : null}
+            value={
+              data.country_code
+                ? { name: data.country_label, code: data.country_code, flag: data.country_flag }
+                : null
+            }
             onSelect={onSelectCountry}
           />
         </div>

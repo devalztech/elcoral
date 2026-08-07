@@ -14,6 +14,7 @@ export default function CountrySelect({ value, onSelect }) {
   const [countries, setCountries] = useState([])
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('')
+  const [error, setError] = useState('')
   const wrapRef = useRef(null)
 
   useEffect(() => {
@@ -24,15 +25,31 @@ export default function CountrySelect({ value, onSelect }) {
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
 
+  function loadCountries() {
+    if (countries.length || loading) return
+    setLoading(true)
+    setError('')
+    api
+      .listAllCountries()
+      .then((list) => setCountries(Array.isArray(list) ? list : []))
+      // Country is required to leave this step, so a silent failure would
+      // strand people in onboarding with an empty dropdown and no
+      // explanation — surface it and let them retry.
+      .catch(() => setError("Couldn't load the country list."))
+      .finally(() => setLoading(false))
+  }
+
+  // Fetched on mount, not on first open: the list is required to finish
+  // onboarding, so it should already be there the moment the dropdown is
+  // tapped rather than showing a spinner on every first open.
+  useEffect(() => {
+    loadCountries()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function toggleOpen() {
     setOpen((o) => !o)
-    if (!countries.length && !loading) {
-      setLoading(true)
-      api
-        .listAllCountries()
-        .then(setCountries)
-        .finally(() => setLoading(false))
-    }
+    loadCountries()
   }
 
   const filtered = filter
@@ -44,7 +61,7 @@ export default function CountrySelect({ value, onSelect }) {
       <button type="button" className="country-trigger" onClick={toggleOpen}>
         {value ? (
           <span className="country-trigger-value">
-            {value.flag && <img src={value.flag} alt="" className="flag-icon" />}
+            {value.flag && <span className="flag-icon" aria-hidden="true">{value.flag}</span>}
             {value.name}
           </span>
         ) : (
@@ -66,6 +83,12 @@ export default function CountrySelect({ value, onSelect }) {
           </div>
           <div className="country-list">
             {loading && <div className="country-loading">Loading\u2026</div>}
+            {!loading && error && (
+              <div className="country-error">
+                {error}{' '}
+                <button type="button" className="country-retry" onClick={loadCountries}>Retry</button>
+              </div>
+            )}
             {!loading &&
               filtered.map((c) => (
                 <button
@@ -78,11 +101,13 @@ export default function CountrySelect({ value, onSelect }) {
                     setFilter('')
                   }}
                 >
-                  {c.flag && <img src={c.flag} alt="" className="flag-icon" />}
+                  {c.flag && <span className="flag-icon" aria-hidden="true">{c.flag}</span>}
                   {c.name}
                 </button>
               ))}
-            {!loading && filtered.length === 0 && <div className="country-empty">No matches</div>}
+            {!loading && !error && filtered.length === 0 && (
+              <div className="country-empty">No matches</div>
+            )}
           </div>
         </div>
       )}
@@ -104,7 +129,7 @@ export default function CountrySelect({ value, onSelect }) {
         .country-placeholder { color: var(--ink-faint); }
         .chevron { color: var(--ink-faint); transition: transform 0.15s ease; flex-shrink: 0; }
         .chevron-open { transform: rotate(180deg); }
-        .flag-icon { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
+        .flag-icon { font-size: 17px; line-height: 1; flex-shrink: 0; }
         .country-menu {
           position: absolute;
           top: calc(100% + 6px);
@@ -135,6 +160,8 @@ export default function CountrySelect({ value, onSelect }) {
           color: var(--ink);
         }
         .country-option:hover { background: var(--panel); }
+        .country-error { padding: 16px 14px; font-size: 13.5px; color: var(--danger); text-align: center; }
+        .country-retry { color: var(--lemon); font-weight: 600; text-decoration: underline; }
         .country-loading, .country-empty {
           padding: 16px 14px; font-size: 13.5px; color: var(--ink-faint); text-align: center;
         }

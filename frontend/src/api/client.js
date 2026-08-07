@@ -104,6 +104,36 @@ export const api = {
     return request('/media/upload', { method: 'POST', body: form, token, isFormData: true })
   },
 
+  // Settings. One GET returns every preference group; each screen PATCHes
+  // only its own slice, so saving Appearance can't clobber Notifications.
+  getSettings: (token) => request('/settings', { token }),
+  getSettingsOptions: () => request('/settings/options'),
+  updateNotificationSettings: (payload, token) =>
+    request('/settings/notifications', { method: 'PATCH', body: payload, token }),
+  updateEmailSettings: (payload, token) =>
+    request('/settings/email', { method: 'PATCH', body: payload, token }),
+  updateAppearanceSettings: (payload, token) =>
+    request('/settings/appearance', { method: 'PATCH', body: payload, token }),
+  updateAccessibilitySettings: (payload, token) =>
+    request('/settings/accessibility', { method: 'PATCH', body: payload, token }),
+  updateLanguageSetting: (language, token) =>
+    request('/settings/language', { method: 'PATCH', body: { language }, token }),
+
+  getVerificationStatus: (token) => request('/settings/verification', { token }),
+
+  listBlockedUsers: (token) => request('/settings/blocked', { token }),
+  blockUser: (username, token) =>
+    request('/settings/blocked', { method: 'POST', body: { username }, token }),
+  unblockUser: (userId, token) =>
+    request(`/settings/blocked/${encodeURIComponent(userId)}`, { method: 'DELETE', token }),
+
+  listMyReports: (token) => request('/settings/reports', { token }),
+  reportContent: (payload, token) =>
+    request('/settings/reports', { method: 'POST', body: payload, token }),
+
+  exportMyData: (token) => request('/settings/export', { token }),
+  getAbout: () => request('/settings/about'),
+
   // Lookup typeaheads (proxied through the backend — see app/routers/lookup.py)
   searchCompanies: (q) => request(`/lookup/companies?q=${encodeURIComponent(q)}`),
   listAllCountries: () => request('/lookup/countries/all'),

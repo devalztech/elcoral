@@ -1,20 +1,27 @@
 """
-Proxies third-party lookup APIs used by onboarding's typeahead fields, so
-the frontend never calls external services directly. Keeping this on the
-backend means: no CORS issues, one place to add caching/rate-limiting
-later, and the provider can be swapped without any frontend change.
+Lookup endpoints backing onboarding's location/company fields, so the
+frontend never calls external services directly (no CORS issues, one
+place for caching/rate-limiting, providers swappable without a frontend
+change).
 
-  - /api/lookup/companies -> Clearbit Autocomplete (name, domain, logo)
-  - /api/lookup/countries -> countries.dev (name, alpha2Code, flag)
-  - /api/lookup/cities    -> countries.dev (name, countryCode, geonameId)
+  - /api/lookup/countries/all -> full country list (local, always available)
+  - /api/lookup/countries     -> country search-as-you-type (local)
+  - /api/lookup/cities        -> countries.dev city search (remote + graceful degrade)
+  - /api/lookup/companies     -> Clearbit Autocomplete (remote + graceful degrade)
 
-All are free, keyless, third-party services — wrapped in a short timeout
-and a broad except so a slow/down provider degrades to an empty result
-list instead of breaking the onboarding form.
+Countries are served from a vendored ISO 3166-1 list (see
+app/core/countries.py) rather than a third-party call. The previous
+implementation hit `https://countries.dev/all`, which does not exist —
+it answered with an HTML 404 page, the broad `except` swallowed it, and
+the endpoint returned `[]` forever. That left the onboarding country
+dropdown permanently empty, and since the location step can't be
+advanced without a country, the wizard could never be finished.
 """
 
 import httpx
 from fastapi import APIRouter, Query
+
+from app.core import countries as country_data
 
 router = APIRouter(prefix="/api/lookup", tags=["lookup"])
 
@@ -43,47 +50,17 @@ async def search_companies(q: str = Query(min_length=2, max_length=100)):
 @router.get("/countries/all")
 async def list_all_countries():
     """
-    Full country list for a real dropdown (as opposed to /countries above,
-    which is search-as-you-type). Countries don't change often enough to
-    justify re-fetching per keystroke — the frontend fetches this once and
-    renders it as a scrollable list.
+    Full country list for the onboarding dropdown. Served locally, so it
+    is never empty and never slow — countries change far too rarely to
+    justify a network dependency on a blocking form field.
     """
-    try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-            resp = await client.get("https://countries.dev/all", params={"fields": "name,alpha2Code,flag"})
-            resp.raise_for_status()
-            data = resp.json()
-    except Exception:
-        return []
-
-    countries = [
-        {"name": c.get("name"), "code": c.get("alpha2Code"), "flag": c.get("flag")}
-        for c in data
-        if c.get("alpha2Code") and c.get("name")
-    ]
-    return sorted(countries, key=lambda c: c["name"])
+    return country_data.COUNTRIES
 
 
 @router.get("/countries")
 async def search_countries(q: str = Query(min_length=1, max_length=100)):
-    try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-            resp = await client.get(f"https://countries.dev/name/{q}", params={"fields": "name,alpha2Code,flag"})
-            if resp.status_code == 404:
-                return []
-            resp.raise_for_status()
-            data = resp.json()
-    except Exception:
-        return []
-
-    if isinstance(data, dict):
-        data = [data]
-
-    return [
-        {"name": c.get("name"), "code": c.get("alpha2Code"), "flag": c.get("flag")}
-        for c in data
-        if c.get("alpha2Code")
-    ][:10]
+    """Search-as-you-type over the same local list."""
+    return country_data.search_countries(q)
 
 
 @router.get("/cities")
@@ -91,6 +68,12 @@ async def search_cities(
     q: str = Query(min_length=1, max_length=100),
     country: str = Query(min_length=2, max_length=2),
 ):
+    """
+    City typeahead. A full city list is far too large to ship or render,
+    so this stays a remote search. If the provider is slow or down the
+    result is an empty list — the city field is optional, so onboarding
+    still completes.
+    """
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.get(
@@ -102,6 +85,9 @@ async def search_cities(
             data = resp.json()
     except Exception:
         return []
+
+    if isinstance(data, dict):
+        data = [data]
 
     return [
         {"name": c.get("name"), "countryCode": c.get("countryCode"), "geonameId": c.get("geonameId")}

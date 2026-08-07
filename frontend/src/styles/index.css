@@ -19,6 +19,67 @@
   --max-width: 1200px;
 }
 
+/* ---------------------------------------------------------------------------
+   Settings -> Appearance / Accessibility.
+
+   SettingsProvider writes the member's saved preferences onto <html> as
+   data-* attributes; everything below reacts to them. Keeping it here
+   (rather than as inline styles in the Appearance screen) is what makes a
+   chosen theme or text size hold on every page of the app.
+
+   The palette is expressed through the same --lemon* variables the whole
+   app already uses for its accent, so switching accent needs no component
+   changes at all.
+--------------------------------------------------------------------------- */
+
+:root[data-theme='light'] {
+  --bg: #FBFCF7;
+  --panel: #FFFFFF;
+  --panel-raised: #F2F4EA;
+  --border: #DDE2D0;
+  --ink: #15180F;
+  --ink-dim: #4C5442;
+  --ink-faint: #7C856F;
+  --lemon-dim: #6E9922;
+  --lemon-deep: #4E6E17;
+}
+
+:root[data-accent='coral'] { --lemon: #FF7A5A; --lemon-dim: #E45C3C; --lemon-deep: #B94327; }
+:root[data-accent='sky']   { --lemon: #5AC8FF; --lemon-dim: #2FA6E4; --lemon-deep: #1B7EB0; }
+:root[data-accent='violet']{ --lemon: #A98BFF; --lemon-dim: #8A69E6; --lemon-deep: #6647BC; }
+:root[data-accent='amber'] { --lemon: #FFC14D; --lemon-dim: #E0A22C; --lemon-deep: #B37D14; }
+
+/* Text size. The UI is laid out in px, so bumping a root font-size would
+   move almost nothing — zoom scales the rendered interface as a whole,
+   which is what someone asking for bigger text actually wants. */
+:root[data-font-scale='small']  { zoom: 0.92; }
+:root[data-font-scale='large']  { zoom: 1.1; }
+:root[data-font-scale='xlarge'] { zoom: 1.22; }
+
+/* Explicit opt-in, on top of the prefers-reduced-motion query below: some
+   people need this on a specific device without changing an OS setting. */
+:root[data-reduce-motion='true'] { scroll-behavior: auto; }
+:root[data-reduce-motion='true'] *,
+:root[data-reduce-motion='true'] *::before,
+:root[data-reduce-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+:root[data-contrast='high'] {
+  --border: #6B7560;
+  --ink-dim: #E4EBD8;
+  --ink-faint: #B9C4AC;
+}
+:root[data-contrast='high'][data-theme='light'] {
+  --border: #8A9179;
+  --ink-dim: #23271A;
+  --ink-faint: #3D4433;
+}
+:root[data-contrast='high'] * { border-color: var(--border); }
+
 * { box-sizing: border-box; }
 
 html { scroll-behavior: smooth; }
