@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import ActivityFeed from '../components/ActivityFeed.jsx'
+import ActivityFeed from '../features/landing/components/ActivityFeed.jsx'
 
 // Mirrors app/models/profile.py's INTENT_CHOICES — kept in sync manually
 // since intents are curated, not user-generated. Icons are lucide-react,

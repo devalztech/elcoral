@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth.jsx'
-import { ApiError } from '../lib/api.js'
-import AuthLayout from '../components/AuthLayout.jsx'
+import { useAuth } from '../features/auth/hooks/useAuth.jsx'
+import { ApiError } from '../api/client.js'
+import AuthLayout from '../features/auth/components/AuthLayout.jsx'
 import FormField, { TextInput } from '../components/FormField.jsx'
 
 export default function Login() {

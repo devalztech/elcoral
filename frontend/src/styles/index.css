@@ -1,0 +1,123 @@
+:root {
+  --bg: #0B0D0A;
+  --panel: #14170F;
+  --panel-raised: #1B1F15;
+  --border: #2A2F21;
+  --lemon: #C4F135;
+  --lemon-dim: #8FBF2B;
+  --lemon-deep: #6E9922;
+  --ink: #F7FBEE;
+  --ink-dim: #A8B39A;
+  --ink-faint: #6B7560;
+  --danger: #FF6B4A;
+
+  --font-display: "Archivo", sans-serif;
+  --font-head: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  --radius: 10px;
+  --max-width: 1200px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+button {
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lemon);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Chrome/Safari/Edge force a white (or yellow) background on autofilled
+   inputs that normal `background` CSS cannot override — this is the fix
+   that actually works: a huge inset box-shadow painted in the theme's
+   panel color, plus forcing text color, using a long transition delay
+   as the standard trick to beat the browser's own autofill styling. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--panel) inset;
+  box-shadow: 0 0 0 1000px var(--panel) inset;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: var(--ink);
+}
+
+.wrap {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.eyebrow {
+  font-family: var(--font-head);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lemon);
+  font-weight: 500;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 26px;
+  border-radius: 999px;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 15px;
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--lemon);
+  color: #0B0D0A;
+}
+.btn-primary:hover { background: var(--ink); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--border);
+}
+.btn-ghost:hover { border-color: var(--lemon); color: var(--lemon); }
+
+.btn-block { width: 100%; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 0 18px; }
+}

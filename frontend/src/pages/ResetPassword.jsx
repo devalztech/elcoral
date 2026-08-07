@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2, Check, X, CheckCircle2 } from 'lucide-react'
-import { api, ApiError } from '../lib/api.js'
-import AuthLayout from '../components/AuthLayout.jsx'
+import { api, ApiError } from '../api/client.js'
+import AuthLayout from '../features/auth/components/AuthLayout.jsx'
 import FormField, { TextInput } from '../components/FormField.jsx'
 
 // Same rules as app/schemas/auth.py's _check_password_strength — kept in

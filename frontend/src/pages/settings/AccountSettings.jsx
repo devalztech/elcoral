@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../features/auth/hooks/useAuth.jsx'
 import FormField, { TextInput } from '../../components/FormField.jsx'
-import SettingsSubpage from './SettingsSubpage.jsx'
+import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 
 // Frontend-only for now — no PATCH /auth/me or username-change endpoint
 // exists on the backend yet (see app/routers/auth.py). Fields are

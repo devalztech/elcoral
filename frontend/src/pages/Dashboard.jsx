@@ -1,4 +1,4 @@
-import { useAuth } from '../hooks/useAuth.jsx'
+import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 
 export default function Dashboard() {
   const { user } = useAuth()

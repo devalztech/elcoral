@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Loader2, MailCheck } from 'lucide-react'
-import { api, ApiError } from '../lib/api.js'
-import AuthLayout from '../components/AuthLayout.jsx'
+import { api, ApiError } from '../api/client.js'
+import AuthLayout from '../features/auth/components/AuthLayout.jsx'
 import FormField, { TextInput } from '../components/FormField.jsx'
 
 export default function ForgotPassword() {

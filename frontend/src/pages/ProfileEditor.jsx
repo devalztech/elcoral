@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Loader2, Camera, Github, Linkedin, Globe, Send, Link2, X, Plus } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth.jsx'
-import { api, ApiError } from '../lib/api.js'
+import { useAuth } from '../features/auth/hooks/useAuth.jsx'
+import { api, ApiError } from '../api/client.js'
 import {
   OnboardingProvider, useOnboarding, toApiPayload,
   INTENT_OPTIONS, CATEGORY_OPTIONS, BUILDING_OPTIONS,
   SUGGESTED_SKILLS, SUGGESTED_INTERESTS,
-} from '../onboarding/OnboardingContext.jsx'
-import MultiSelectDropdown from '../components/MultiSelectDropdown.jsx'
-import TagAutocomplete from '../components/TagAutocomplete.jsx'
-import EditSheet from '../components/EditSheet.jsx'
-import SectionCard from '../components/SectionCard.jsx'
+} from '../features/onboarding/OnboardingContext.jsx'
+import MultiSelectDropdown from '../features/profile/components/MultiSelectDropdown.jsx'
+import TagAutocomplete from '../features/profile/components/TagAutocomplete.jsx'
+import EditSheet from '../features/profile/components/EditSheet.jsx'
+import SectionCard from '../features/profile/components/SectionCard.jsx'
 import FormField, { TextInput } from '../components/FormField.jsx'
-import CountrySelect from '../onboarding/CountrySelect.jsx'
-import Typeahead from '../onboarding/Typeahead.jsx'
+import CountrySelect from '../features/onboarding/components/CountrySelect.jsx'
+import Typeahead from '../features/onboarding/components/Typeahead.jsx'
 
 // Redesigned around LinkedIn's actual edit pattern: the page shows a
 // closed, read-only summary card per section; tapping one opens a

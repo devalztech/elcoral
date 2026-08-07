@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import FormField, { TextInput } from '../../components/FormField.jsx'
-import SettingsSubpage from './SettingsSubpage.jsx'
+import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 
 // Frontend-only — no change-password endpoint exists on the backend yet
 // (auth.py has forgot/reset-password via email token, but no authenticated

@@ -7,8 +7,8 @@ import {
   ArrowLeft, UserPlus, Crown, FlaskConical, Sprout, Rocket, Lock, Users,
   Heart, Repeat2, Share, Pin, CircleCheck,
 } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth.jsx'
-import { api } from '../lib/api.js'
+import { useAuth } from '../features/auth/hooks/useAuth.jsx'
+import { api } from '../api/client.js'
 
 // Elcoral profile page, built to the approved design reference across all
 // three viewing angles:

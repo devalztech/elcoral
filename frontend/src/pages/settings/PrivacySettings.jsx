@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import SettingsSubpage from './SettingsSubpage.jsx'
+import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 
 // Frontend-only — no privacy-preference fields exist on the backend
 // profile model yet. Toggles hold local state so the UI is real and

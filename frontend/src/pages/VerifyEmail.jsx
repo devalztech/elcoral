@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
-import { api, ApiError } from '../lib/api.js'
+import { api, ApiError } from '../api/client.js'
 
 export default function VerifyEmail() {
   const [params] = useSearchParams()

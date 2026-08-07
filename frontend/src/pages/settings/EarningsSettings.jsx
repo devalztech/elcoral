@@ -1,5 +1,5 @@
 import { Wallet } from 'lucide-react'
-import SettingsSubpage from './SettingsSubpage.jsx'
+import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 
 // Frontend-only — payments/escrow isn't built on the backend yet. This
 // is the placement for it once it exists; kept minimal rather than

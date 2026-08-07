@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, User, Lock, Shield, Wallet, ChevronRight, LogOut } from 'lucide-react'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../features/auth/hooks/useAuth.jsx'
 
 const ITEMS = [
   { to: '/home/settings/account', icon: User, label: 'Account', desc: 'Name, email, username' },
