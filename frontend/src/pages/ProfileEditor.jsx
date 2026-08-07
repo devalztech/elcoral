@@ -1,33 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowLeft, Loader2, Camera, Github, Linkedin, Globe, Send, Link2, X, Plus } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  ArrowLeft, Loader2, Camera, X, Plus, ChevronDown, ChevronRight, CircleCheck,
+  Link2, MapPin, UsersRound, SlidersHorizontal, Target, FileText, Info,
+  Briefcase, UserRound, GraduationCap, MessagesSquare, Twitter, Linkedin, Github, Dribbble,
+} from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api, ApiError } from '../api/client.js'
 import {
-  OnboardingProvider, useOnboarding, toApiPayload,
-  INTENT_OPTIONS, CATEGORY_OPTIONS, BUILDING_OPTIONS,
-  SUGGESTED_SKILLS, SUGGESTED_INTERESTS,
+  OnboardingProvider, useOnboarding, toApiPayload, SUGGESTED_SKILLS,
 } from '../features/onboarding/OnboardingContext.jsx'
-import MultiSelectDropdown from '../features/profile/components/MultiSelectDropdown.jsx'
-import TagAutocomplete from '../features/profile/components/TagAutocomplete.jsx'
-import EditSheet from '../features/profile/components/EditSheet.jsx'
-import SectionCard from '../features/profile/components/SectionCard.jsx'
-import FormField, { TextInput } from '../components/FormField.jsx'
-import CountrySelect from '../features/onboarding/components/CountrySelect.jsx'
-import Typeahead from '../features/onboarding/components/Typeahead.jsx'
 
-// Redesigned around LinkedIn's actual edit pattern: the page shows a
-// closed, read-only summary card per section; tapping one opens a
-// focused EditSheet for just that section. Nothing is permanently
-// expanded, and every multi-choice field is a closed dropdown
-// (MultiSelectDropdown) instead of an always-visible wall of chips —
-// ChipPicker stays reserved for onboarding's one-decision-per-screen
-// flow, where a full-screen picker is the right shape.
-//
-// Saving still submits the WHOLE onboarding payload each time (see
-// toApiPayload) — the backend doesn't have partial-update endpoints per
-// section yet — but each sheet only lets the person touch the fields
-// that section owns, so it reads and feels like a scoped edit.
+// Full-page Edit Profile screen, built to the Elcoral mobile design spec:
+// sticky topbar (back / title / Save), a cover + avatar media card, then
+// stacked sections — Basic information, Location & Links, Skills,
+// Looking for, About you. Everything still saves through the same
+// onboarding payload endpoint the sectioned editor used.
 export default function ProfileEditor() {
   const { accessToken } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -44,97 +32,135 @@ export default function ProfileEditor() {
 
   if (loading) {
     return (
-      <div className="profile-loading">
-        <Loader2 size={24} className="spin" />
-        <style>{`.profile-loading { display: flex; justify-content: center; padding: 60px 0; color: var(--ink-faint); } .spin { animation: spin 0.8s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="pe-loading">
+        <Loader2 size={24} className="pe-spin" />
+        <style>{`
+          .pe-loading { display: flex; justify-content: center; padding: 60px 0; color: var(--ink-faint); }
+          .pe-spin { animation: pe-spin 0.8s linear infinite; }
+          @keyframes pe-spin { to { transform: rotate(360deg); } }
+        `}</style>
       </div>
     )
   }
 
   if (loadError) {
-    return <p className="profile-error">{loadError}</p>
+    return <p style={{ textAlign: 'center', color: 'var(--danger)', padding: '40px 0' }}>{loadError}</p>
   }
 
   return (
     <OnboardingProvider initialData={initialData}>
-      <Link to="/home/profile" className="back-link">
-        <ArrowLeft size={15} /> Back to profile
-      </Link>
       <ProfileEditorBody />
-      <style>{`
-        .back-link {
-          display: inline-flex; align-items: center; gap: 6px;
-          font-size: 13.5px; font-weight: 600; color: var(--ink-dim);
-          margin-bottom: 18px;
-        }
-        .back-link:hover { color: var(--lemon); }
-        .profile-error { text-align: center; color: var(--danger); padding: 40px 0; }
-      `}</style>
     </OnboardingProvider>
   )
 }
 
-// One label per section id — SectionCard headers and EditSheet titles
-// both read from this so they can't drift out of sync.
-const SECTION_META = {
-  photo: { label: 'Profile photo', title: 'Profile photo' },
-  identity: { label: 'Headline & bio', title: 'Headline & bio' },
-  intents: { label: "What brings you here", title: "What brings you here" },
-  categories: { label: "How you'd describe yourself", title: "How you'd describe yourself" },
-  building: { label: "What you're building", title: "What you're building" },
-  skills: { label: 'Skills', title: 'Skills' },
-  interests: { label: 'Interests', title: 'Interests' },
-  location: { label: 'Location', title: 'Location' },
-  phone: { label: 'Phone number', title: 'Phone number' },
-  links: { label: 'Links', title: 'Links' },
-  experience: { label: 'Work experience', title: 'Work experience' },
-}
+const LOOKING_FOR = [
+  { key: 'find_work', label: 'Job opportunities', icon: Briefcase },
+  { key: 'find_collaborators', label: 'Collaboration', icon: UsersRound },
+  { key: 'showcase_work', label: 'Freelance', icon: UserRound },
+  { key: 'learn', label: 'Internship', icon: GraduationCap },
+  { key: 'mentor', label: 'Mentorship', icon: MessagesSquare },
+]
+
+const SOCIALS = [
+  { key: 'twitter', label: 'Twitter', icon: Twitter, placeholder: '@username' },
+  { key: 'linkedin', label: 'LinkedIn', icon: Linkedin, placeholder: 'linkedin.com/in/username' },
+  { key: 'github', label: 'GitHub', icon: Github, placeholder: 'github.com/username' },
+  { key: 'dribbble', label: 'Dribbble', icon: Dribbble, placeholder: 'dribbble.com/username' },
+]
+
+const TIMEZONES = [
+  '(GMT+1) West Africa Time',
+  '(GMT+0) Greenwich Mean Time',
+  '(GMT+2) Central European Time',
+  '(GMT+3) East Africa Time',
+  '(GMT-5) Eastern Time',
+  '(GMT-8) Pacific Time',
+]
+
+const BIO_MAX = 200
 
 function ProfileEditorBody() {
   const { data, update } = useOnboarding()
-  const { accessToken } = useAuth()
-  const [openSection, setOpenSection] = useState(null)
+  const { accessToken, user } = useAuth()
+  const navigate = useNavigate()
+
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
-  const fileRef = useRef(null)
+  const [uploading, setUploading] = useState(null) // 'photo' | 'cover' | null
+  const photoRef = useRef(null)
+  const coverRef = useRef(null)
 
-  // Phone number has no backend field yet (see app/models/profile.py) —
-  // held in local state only so the section is real and editable, but it
-  // does not persist across reloads until the backend adds a column and
-  // this gets folded into toApiPayload/fromApiProfile like every other
-  // field here.
-  const [phone, setPhone] = useState('')
+  // Fields the backend profile model doesn't own yet — kept in local
+  // state so the screen is complete and editable today.
+  const [fullName, setFullName] = useState(user?.full_name || user?.name || '')
+  const [timezone, setTimezone] = useState(TIMEZONES[0])
+  const [socials, setSocials] = useState({
+    twitter: '',
+    linkedin: data.linkedin_url || '',
+    github: data.github_url || '',
+    dribbble: '',
+  })
+  const [skillInput, setSkillInput] = useState('')
+  const [addingSkill, setAddingSkill] = useState(false)
 
-  function toggleIn(field, key) {
-    const has = data[field].includes(key)
-    update({ [field]: has ? data[field].filter((k) => k !== key) : [...data[field], key] })
-  }
+  const locationLabel = useMemo(
+    () => [data.city, data.country_label].filter(Boolean).join(', '),
+    [data.city, data.country_label],
+  )
 
-  async function onPhotoChange(e) {
+  const bio = data.bio || ''
+  const usernameHandle = data.username || user?.username || ''
+
+  async function onFile(kind, e) {
     const file = e.target.files?.[0]
     if (!file) return
     setError('')
-    setUploadingPhoto(true)
+    setUploading(kind)
     try {
-      const localPreview = URL.createObjectURL(file)
+      const preview = URL.createObjectURL(file)
       const result = await api.uploadMedia(file, accessToken)
-      update({ photo_ref: result.ref, photo_preview: localPreview })
+      update(kind === 'photo'
+        ? { photo_ref: result.ref, photo_preview: preview }
+        : { cover_ref: result.ref, cover_preview: preview })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Upload failed. Please try again.')
     } finally {
-      setUploadingPhoto(false)
+      setUploading(null)
       e.target.value = ''
     }
   }
 
+  function addSkill(value) {
+    const skill = value.trim()
+    if (!skill || data.skills.includes(skill)) return
+    update({ skills: [...data.skills, skill] })
+    setSkillInput('')
+  }
+
+  function removeSkill(skill) {
+    update({ skills: data.skills.filter((s) => s !== skill) })
+  }
+
+  function toggleLookingFor(key) {
+    const has = data.intents.includes(key)
+    update({ intents: has ? data.intents.filter((k) => k !== key) : [...data.intents, key] })
+  }
+
   async function save() {
     setError('')
+    setSaved(false)
     setSaving(true)
     try {
-      const payload = toApiPayload(data)
+      const payload = toApiPayload({
+        ...data,
+        linkedin_url: socials.linkedin,
+        github_url: socials.github,
+      })
       await api.submitOnboarding(payload, accessToken)
-      setOpenSection(null)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2200)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not save. Please try again.')
     } finally {
@@ -142,460 +168,534 @@ function ProfileEditorBody() {
     }
   }
 
-  function closeSheet() {
-    setError('')
-    setOpenSection(null)
-  }
-
-  function addExperience() {
-    update({ work_experience: [...data.work_experience, { title: '', company: '', years: '' }] })
-  }
-
-  function updateExperience(index, patch) {
-    const next = data.work_experience.map((exp, i) => (i === index ? { ...exp, ...patch } : exp))
-    update({ work_experience: next })
-  }
-
-  function removeExperience(index) {
-    update({ work_experience: data.work_experience.filter((_, i) => i !== index) })
-  }
-
-  const labelsFor = (field, options) =>
-    options.filter((o) => data[field].includes(o.key)).map((o) => o.label)
-
-  const locationPreview = [data.city, data.country_label, data.is_remote ? 'Remote' : null]
-    .filter(Boolean)
-    .join(', ')
-
-  const linksCount = [data.github_url, data.linkedin_url, data.website_url, data.telegram_handle]
-    .filter(Boolean).length + data.portfolio_links.length
+  const suggestions = SUGGESTED_SKILLS.filter(
+    (s) => !data.skills.includes(s) && s.toLowerCase().includes(skillInput.trim().toLowerCase()),
+  ).slice(0, 6)
 
   return (
-    <div className="profile-editor">
-      <h1 className="profile-title">Edit profile</h1>
-      <p className="profile-sub">Tap any section to update it.</p>
-
-      <div className="profile-sections">
-        <SectionCard
-          label={SECTION_META.photo.label}
-          preview={data.photo_preview ? 'Added' : 'Add a profile photo'}
-          isEmpty={!data.photo_preview}
-          onEdit={() => setOpenSection('photo')}
-        />
-        <SectionCard
-          label={SECTION_META.identity.label}
-          preview={data.headline || 'Add a headline'}
-          isEmpty={!data.headline}
-          onEdit={() => setOpenSection('identity')}
-        />
-        <SectionCard
-          label={SECTION_META.location.label}
-          preview={locationPreview || 'Add your location'}
-          isEmpty={!locationPreview}
-          onEdit={() => setOpenSection('location')}
-        />
-        <SectionCard
-          label={SECTION_META.phone.label}
-          preview={phone || 'Add a phone number'}
-          isEmpty={!phone}
-          onEdit={() => setOpenSection('phone')}
-        />
-        <SectionCard
-          label={SECTION_META.intents.label}
-          preview={labelsFor('intents', INTENT_OPTIONS).join(', ') || 'Not set'}
-          isEmpty={data.intents.length === 0}
-          onEdit={() => setOpenSection('intents')}
-        />
-        <SectionCard
-          label={SECTION_META.categories.label}
-          preview={labelsFor('categories', CATEGORY_OPTIONS).join(', ') || 'Not set'}
-          isEmpty={data.categories.length === 0}
-          onEdit={() => setOpenSection('categories')}
-        />
-        <SectionCard
-          label={SECTION_META.building.label}
-          preview={labelsFor('building', BUILDING_OPTIONS).join(', ') || 'Not set'}
-          isEmpty={data.building.length === 0}
-          onEdit={() => setOpenSection('building')}
-        />
-        <SectionCard
-          label={SECTION_META.skills.label}
-          preview={data.skills.join(', ') || 'Add your skills'}
-          isEmpty={data.skills.length === 0}
-          onEdit={() => setOpenSection('skills')}
-        />
-        <SectionCard
-          label={SECTION_META.interests.label}
-          preview={data.interests.join(', ') || 'Add your interests'}
-          isEmpty={data.interests.length === 0}
-          onEdit={() => setOpenSection('interests')}
-        />
-        <SectionCard
-          label={SECTION_META.experience.label}
-          preview={data.work_experience.length ? `${data.work_experience.length} entries` : 'Add work experience'}
-          isEmpty={data.work_experience.length === 0}
-          onEdit={() => setOpenSection('experience')}
-        />
-        <SectionCard
-          label={SECTION_META.links.label}
-          preview={linksCount ? `${linksCount} links added` : 'Add links'}
-          isEmpty={linksCount === 0}
-          onEdit={() => setOpenSection('links')}
-        />
-      </div>
-
-      {openSection === 'photo' && (
-        <EditSheet title={SECTION_META.photo.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
-          <div className="photo-edit">
-            <button type="button" className="photo-circle" onClick={() => fileRef.current?.click()} disabled={uploadingPhoto}>
-              {uploadingPhoto ? (
-                <Loader2 size={24} className="es-spin" />
-              ) : data.photo_preview ? (
-                <img src={data.photo_preview} alt="Profile preview" />
-              ) : (
-                <Camera size={24} />
-              )}
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhotoChange} />
-            <button type="button" className="photo-change-link" onClick={() => fileRef.current?.click()}>
-              {data.photo_preview ? 'Change photo' : 'Upload photo'}
-            </button>
-          </div>
-          <style>{`
-            .photo-edit { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-            .photo-circle {
-              width: 96px; height: 96px; border-radius: 50%;
-              background: var(--panel-raised); border: 1px dashed var(--border);
-              display: flex; align-items: center; justify-content: center;
-              overflow: hidden; color: var(--ink-faint);
-            }
-            .photo-circle:hover { border-color: var(--lemon); color: var(--lemon); }
-            .photo-circle img { width: 100%; height: 100%; object-fit: cover; }
-            .photo-change-link { font-size: 13.5px; font-weight: 600; color: var(--lemon); padding: 6px 0; }
-          `}</style>
-        </EditSheet>
-      )}
-
-      {openSection === 'location' && (
-        <EditSheet title={SECTION_META.location.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
-          <FormField label="Country">
-            <CountrySelect
-              value={data.country_code ? { name: data.country_label, code: data.country_code } : null}
-              onSelect={(c) => update({ country_code: c.code, country_label: c.name, city: '' })}
-            />
-          </FormField>
-          <FormField label="City">
-            <Typeahead
-              key={data.country_code}
-              placeholder={data.country_code ? 'Search for your city…' : 'Pick a country first'}
-              initialValue={data.city}
-              fetchResults={(q) => api.searchCities(q, data.country_code)}
-              getKey={(c) => c.geonameId}
-              getLabel={(c) => c.name}
-              onSelect={(c) => update({ city: c.name })}
-            />
-          </FormField>
-          <label className="remote-toggle">
-            <input type="checkbox" checked={data.is_remote} onChange={(e) => update({ is_remote: e.target.checked })} />
-            <Globe size={16} />
-            <span>I work remotely / location doesn't matter</span>
-          </label>
-          <style>{`
-            .remote-toggle {
-              display: flex; align-items: center; gap: 10px;
-              font-size: 14px; color: var(--ink-dim);
-              padding: 12px 14px; background: var(--panel); border: 1px solid var(--border);
-              border-radius: 8px; cursor: pointer;
-            }
-            .remote-toggle input { accent-color: var(--lemon); width: 16px; height: 16px; }
-          `}</style>
-        </EditSheet>
-      )}
-
-      {openSection === 'phone' && (
-        <EditSheet
-          title={SECTION_META.phone.title}
-          subtitle="Only visible to people you're connected with."
-          onClose={closeSheet}
-          onSave={() => setOpenSection(null)}
-          saving={false}
-          error={error}
-        >
-          <FormField label="Phone number">
-            <TextInput
-              type="tel"
-              placeholder="+1 555 123 4567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </FormField>
-        </EditSheet>
-      )}
-
-      {openSection === 'links' && (
-        <EditSheet title={SECTION_META.links.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
-          <div className="links-list">
-            <LinkField icon={<Github size={17} />} placeholder="github.com/username" value={data.github_url} onChange={(v) => update({ github_url: v })} />
-            <LinkField icon={<Linkedin size={17} />} placeholder="linkedin.com/in/username" value={data.linkedin_url} onChange={(v) => update({ linkedin_url: v })} />
-            <LinkField icon={<Globe size={17} />} placeholder="yourwebsite.com" value={data.website_url} onChange={(v) => update({ website_url: v })} />
-            <LinkField icon={<Send size={17} />} placeholder="@telegram_handle" value={data.telegram_handle} onChange={(v) => update({ telegram_handle: v })} />
-          </div>
-          <PortfolioLinks
-            links={data.portfolio_links}
-            onAdd={(l) => update({ portfolio_links: [...data.portfolio_links, l] })}
-            onRemove={(l) => update({ portfolio_links: data.portfolio_links.filter((x) => x !== l) })}
-          />
-          <style>{`.links-list { display: flex; flex-direction: column; gap: 10px; }`}</style>
-        </EditSheet>
-      )}
-
-      {openSection === 'experience' && (
-        <EditSheet title={SECTION_META.experience.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
-          <div className="exp-list">
-            {data.work_experience.map((exp, i) => (
-              <div className="exp-entry" key={i}>
-                <button type="button" className="exp-remove" onClick={() => removeExperience(i)} aria-label="Remove entry">
-                  <X size={14} />
-                </button>
-                <FormField label="Title">
-                  <TextInput value={exp.title} onChange={(e) => updateExperience(i, { title: e.target.value })} placeholder="e.g. Frontend Developer" />
-                </FormField>
-                <FormField label="Company">
-                  <TextInput value={exp.company} onChange={(e) => updateExperience(i, { company: e.target.value })} placeholder="e.g. Acme Inc." />
-                </FormField>
-                <FormField label="Years">
-                  <TextInput value={exp.years} onChange={(e) => updateExperience(i, { years: e.target.value })} placeholder="e.g. 2022 – Present" />
-                </FormField>
-              </div>
-            ))}
-          </div>
-          <button type="button" className="add-exp-btn" onClick={addExperience}>
-            <Plus size={15} /> Add experience
+    <div className="pe">
+      <header className="pe-topbar">
+        <div className="pe-topbar-inner">
+          <button type="button" className="pe-back" onClick={() => navigate('/home/profile')} aria-label="Back to profile">
+            <ArrowLeft size={24} />
           </button>
-          <style>{`
-            .exp-list { display: flex; flex-direction: column; gap: 8px; }
-            .exp-entry {
-              position: relative;
-              background: var(--panel-raised); border: 1px solid var(--border);
-              border-radius: 10px; padding: 16px; margin-bottom: 4px;
-            }
-            .exp-remove {
-              position: absolute; top: 10px; right: 10px;
-              color: var(--ink-faint); padding: 4px;
-            }
-            .exp-remove:hover { color: var(--danger); }
-            .add-exp-btn {
-              display: flex; align-items: center; justify-content: center; gap: 6px;
-              width: 100%; font-size: 13.5px; font-weight: 600; color: var(--lemon);
-              border: 1px dashed var(--border); border-radius: 10px; padding: 12px;
-            }
-            .add-exp-btn:hover { border-color: var(--lemon); }
-          `}</style>
-        </EditSheet>
-      )}
+          <h1 className="pe-title">Edit Profile</h1>
+          <button type="button" className="pe-save" onClick={save} disabled={saving}>
+            {saving ? <Loader2 size={17} className="pe-spin" /> : saved ? 'Saved' : 'Save'}
+          </button>
+        </div>
+      </header>
 
-      {openSection === 'identity' && (
-        <EditSheet title={SECTION_META.identity.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
-          <FormField label="Headline">
-            <TextInput
-              placeholder="e.g. Full-stack developer building AI tools"
+      <div className="pe-body">
+        {error && <p className="pe-error">{error}</p>}
+
+        {/* ── Media card ─────────────────────────────── */}
+        <section className="pe-card pe-media">
+          <button
+            type="button"
+            className="pe-cover"
+            onClick={() => coverRef.current?.click()}
+            style={data.cover_preview ? { backgroundImage: `url(${data.cover_preview})` } : undefined}
+          >
+            <span className="pe-cover-inner">
+              {uploading === 'cover' ? <Loader2 size={26} className="pe-spin" /> : <Camera size={26} />}
+              <span className="pe-cover-title">Change cover photo</span>
+              <span className="pe-cover-hint">Recommended 1500 x 500px</span>
+            </span>
+          </button>
+          <input ref={coverRef} type="file" accept="image/*" hidden onChange={(e) => onFile('cover', e)} />
+
+          <div className="pe-avatar-row">
+            <div className="pe-avatar-wrap">
+              <div className="pe-avatar">
+                {data.photo_preview
+                  ? <img src={data.photo_preview} alt="Profile" />
+                  : <UserRound size={48} />}
+              </div>
+              <button type="button" className="pe-avatar-btn" onClick={() => photoRef.current?.click()} aria-label="Change profile photo">
+                {uploading === 'photo' ? <Loader2 size={18} className="pe-spin" /> : <Camera size={18} />}
+              </button>
+              <input ref={photoRef} type="file" accept="image/*" hidden onChange={(e) => onFile('photo', e)} />
+            </div>
+            <div className="pe-avatar-copy">
+              <p className="pe-avatar-title">Profile photo</p>
+              <p className="pe-avatar-hint">Recommended 400 x 400px</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Basic information ──────────────────────── */}
+        <SectionHeading icon={UsersRound}>Basic information</SectionHeading>
+        <div className="pe-stack">
+          <Field label="Full name">
+            <input className="pe-input" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your name" />
+          </Field>
+
+          <Field
+            label="Username"
+            trailing={
+              <span className="pe-url">
+                elcoral.com/{usernameHandle || 'username'}
+                <CircleCheck size={16} className="pe-url-check" />
+              </span>
+            }
+          >
+            <input
+              className="pe-input"
+              value={usernameHandle ? `@${usernameHandle}` : ''}
+              onChange={(e) => update({ username: e.target.value.replace(/^@/, '') })}
+              placeholder="@username"
+            />
+          </Field>
+
+          <Field label="Headline">
+            <input
+              className="pe-input"
               maxLength={120}
               value={data.headline}
               onChange={(e) => update({ headline: e.target.value })}
+              placeholder="e.g. Full Stack Developer"
             />
-          </FormField>
-          <FormField label="Bio">
+          </Field>
+
+          <Field
+            label={<>Bio <Info size={13} className="pe-info" /></>}
+            footer={<span className="pe-counter">{bio.length}/{BIO_MAX}</span>}
+          >
             <textarea
-              className="es-textarea"
-              placeholder="Tell people what you do and what you're looking for"
-              maxLength={2000}
-              rows={5}
-              value={data.bio}
+              className="pe-input pe-textarea"
+              rows={2}
+              maxLength={BIO_MAX}
+              value={bio}
               onChange={(e) => update({ bio: e.target.value })}
+              placeholder="Tell people what you do and what you're looking for"
             />
-          </FormField>
-          <style>{`
-            .es-textarea {
-              width: 100%; background: var(--panel); border: 1px solid var(--border);
-              border-radius: 8px; padding: 12px 14px; font-size: 14.5px; color: var(--ink);
-              font-family: var(--font-body); resize: vertical;
-            }
-            .es-textarea:focus { outline: none; border-color: var(--lemon); }
-          `}</style>
-        </EditSheet>
-      )}
-
-      {openSection === 'intents' && (
-        <EditSheet
-          title={SECTION_META.intents.title}
-          subtitle="Select as many as apply."
-          onClose={closeSheet} onSave={save} saving={saving} error={error}
-        >
-          <MultiSelectDropdown
-            options={INTENT_OPTIONS}
-            selected={data.intents}
-            onToggle={(k) => toggleIn('intents', k)}
-            placeholder="Select what brings you here"
-          />
-        </EditSheet>
-      )}
-
-      {openSection === 'categories' && (
-        <EditSheet
-          title={SECTION_META.categories.title}
-          subtitle="Select as many as apply."
-          onClose={closeSheet} onSave={save} saving={saving} error={error}
-        >
-          <MultiSelectDropdown
-            options={CATEGORY_OPTIONS}
-            selected={data.categories}
-            onToggle={(k) => toggleIn('categories', k)}
-            placeholder="Select your roles"
-            searchable
-          />
-        </EditSheet>
-      )}
-
-      {openSection === 'building' && (
-        <EditSheet
-          title={SECTION_META.building.title}
-          subtitle="Select as many as apply."
-          onClose={closeSheet} onSave={save} saving={saving} error={error}
-        >
-          <MultiSelectDropdown
-            options={BUILDING_OPTIONS}
-            selected={data.building}
-            onToggle={(k) => toggleIn('building', k)}
-            placeholder="Select what you're building"
-          />
-        </EditSheet>
-      )}
-
-      {openSection === 'skills' && (
-        <EditSheet title={SECTION_META.skills.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
-          <TagAutocomplete
-            suggestions={SUGGESTED_SKILLS}
-            selected={data.skills}
-            onAdd={(s) => update({ skills: [...data.skills, s] })}
-            onRemove={(s) => update({ skills: data.skills.filter((x) => x !== s) })}
-            placeholder="Search skills or type your own…"
-          />
-        </EditSheet>
-      )}
-
-      {openSection === 'interests' && (
-        <EditSheet title={SECTION_META.interests.title} onClose={closeSheet} onSave={save} saving={saving} error={error}>
-          <TagAutocomplete
-            suggestions={SUGGESTED_INTERESTS}
-            selected={data.interests}
-            onAdd={(i) => update({ interests: [...data.interests, i] })}
-            onRemove={(i) => update({ interests: data.interests.filter((x) => x !== i) })}
-            placeholder="Search interests or type your own…"
-          />
-        </EditSheet>
-      )}
-
-      <style>{`
-        .profile-title { font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--ink); }
-        .profile-sub { margin-top: 6px; margin-bottom: 24px; }
-        .profile-sections { display: flex; flex-direction: column; gap: 10px; }
-      `}</style>
-    </div>
-  )
-}
-
-function LinkField({ icon, placeholder, value, onChange }) {
-  return (
-    <div className="link-field-wrap">
-      <span className="link-icon">{icon}</span>
-      <input
-        className="link-input"
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      <style>{`
-        .link-field-wrap {
-          display: flex; align-items: center; gap: 10px;
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 8px; padding: 12px 14px;
-        }
-        .link-field-wrap:focus-within { border-color: var(--lemon); }
-        .link-icon { color: var(--ink-faint); flex-shrink: 0; display: flex; }
-        .link-input {
-          flex: 1; background: transparent; border: none; outline: none;
-          font-size: 14.5px; color: var(--ink); font-family: var(--font-body);
-        }
-        .link-input::placeholder { color: var(--ink-faint); }
-      `}</style>
-    </div>
-  )
-}
-
-function PortfolioLinks({ links, onAdd, onRemove }) {
-  const [input, setInput] = useState('')
-
-  function add() {
-    const trimmed = input.trim()
-    if (!trimmed || links.includes(trimmed)) return
-    onAdd(trimmed)
-    setInput('')
-  }
-
-  return (
-    <div className="portfolio-section">
-      <label className="portfolio-label">Portfolio links</label>
-      <div className="portfolio-input-row">
-        <div className="link-field-wrap">
-          <Link2 size={17} className="link-icon" />
-          <input
-            className="link-input"
-            placeholder="Add a link to your work…"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), add())}
-          />
+          </Field>
         </div>
-        <button type="button" className="portfolio-add" onClick={add}>
-          <Plus size={16} />
+
+        {/* ── Location & Links ───────────────────────── */}
+        <SectionHeading icon={MapPin}>Location &amp; Links</SectionHeading>
+        <div className="pe-stack">
+          <div className="pe-grid-2">
+            <Field
+              label="Location"
+              trailing={locationLabel ? <ClearBtn onClick={() => update({ city: '', country_code: '', country_label: '' })} /> : null}
+            >
+              <input
+                className="pe-input"
+                value={locationLabel}
+                onChange={(e) => update({ city: e.target.value, country_label: '' })}
+                placeholder="City, Country"
+              />
+            </Field>
+
+            <Field label="Timezone" trailing={<ChevronDown size={18} className="pe-chev" />}>
+              <select className="pe-input pe-select" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+                {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+              </select>
+            </Field>
+          </div>
+
+          <Field
+            label="Website"
+            leading={<Link2 size={19} className="pe-lead" />}
+            trailing={data.website_url ? <ClearBtn onClick={() => update({ website_url: '' })} /> : null}
+          >
+            <input
+              className="pe-input"
+              value={data.website_url}
+              onChange={(e) => update({ website_url: e.target.value })}
+              placeholder="https://yourwebsite.com"
+            />
+          </Field>
+
+          <Field
+            label="Portfolio / GitHub"
+            leading={<Link2 size={19} className="pe-lead" />}
+            trailing={socials.github ? <ClearBtn onClick={() => setSocials({ ...socials, github: '' })} /> : null}
+          >
+            <input
+              className="pe-input"
+              value={socials.github}
+              onChange={(e) => setSocials({ ...socials, github: e.target.value })}
+              placeholder="https://github.com/username"
+            />
+          </Field>
+
+          <p className="pe-sublabel">Social links</p>
+          <div className="pe-grid-2">
+            {SOCIALS.map(({ key, label, icon: Icon, placeholder }) => (
+              <Field
+                key={key}
+                label={label}
+                leading={<span className="pe-social-badge"><Icon size={20} /></span>}
+                trailing={socials[key] ? <ClearBtn onClick={() => setSocials({ ...socials, [key]: '' })} /> : null}
+              >
+                <input
+                  className="pe-input"
+                  value={socials[key]}
+                  onChange={(e) => setSocials({ ...socials, [key]: e.target.value })}
+                  placeholder={placeholder}
+                />
+              </Field>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Skills ─────────────────────────────────── */}
+        <div className="pe-heading-row">
+          <SectionHeading icon={SlidersHorizontal} bare>Skills</SectionHeading>
+          <button type="button" className="pe-add-skill" onClick={() => setAddingSkill((v) => !v)}>
+            <Plus size={16} /> Add skill
+          </button>
+        </div>
+
+        {addingSkill && (
+          <div className="pe-skill-add">
+            <input
+              className="pe-input pe-skill-input"
+              autoFocus
+              value={skillInput}
+              placeholder="Type a skill and press Enter"
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(skillInput) } }}
+            />
+            {suggestions.length > 0 && (
+              <div className="pe-suggestions">
+                {suggestions.map((s) => (
+                  <button type="button" key={s} className="pe-suggestion" onClick={() => addSkill(s)}>{s}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="pe-chips">
+          {data.skills.length === 0 && !addingSkill && (
+            <p className="pe-empty">No skills yet — add the ones you want to be found for.</p>
+          )}
+          {data.skills.map((skill) => (
+            <span className="pe-chip" key={skill}>
+              {skill}
+              <button type="button" onClick={() => removeSkill(skill)} aria-label={`Remove ${skill}`}>
+                <X size={15} />
+              </button>
+            </span>
+          ))}
+        </div>
+
+        {/* ── Looking for ────────────────────────────── */}
+        <SectionHeading icon={Target}>Looking for</SectionHeading>
+        <div className="pe-looking">
+          {LOOKING_FOR.map(({ key, label, icon: Icon }) => {
+            const active = data.intents.includes(key)
+            return (
+              <button
+                type="button"
+                key={key}
+                className={`pe-look${active ? ' is-active' : ''}`}
+                aria-pressed={active}
+                onClick={() => toggleLookingFor(key)}
+              >
+                <Icon size={22} className="pe-look-icon" />
+                <span className="pe-look-label">{label}</span>
+                <span className="pe-look-box">{active && <CheckMark />}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* ── About you ──────────────────────────────── */}
+        <SectionHeading icon={FileText}>About you</SectionHeading>
+        <button type="button" className="pe-row" onClick={() => document.getElementById('pe-about')?.focus()}>
+          <span className="pe-row-label">Tell us more about yourself</span>
+          <span className="pe-row-right">Optional <ChevronRight size={18} /></span>
         </button>
+        <textarea
+          id="pe-about"
+          className="pe-input pe-textarea pe-about"
+          rows={4}
+          value={data.headline_about || ''}
+          onChange={(e) => update({ headline_about: e.target.value })}
+          placeholder="Anything else people should know about you…"
+        />
       </div>
 
-      {links.length > 0 && (
-        <ul className="portfolio-list">
-          {links.map((link) => (
-            <li key={link}>
-              <span>{link}</span>
-              <button type="button" onClick={() => onRemove(link)} aria-label="Remove">
-                <X size={14} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
       <style>{`
-        .portfolio-section { margin-top: 20px; }
-        .portfolio-label {
-          display: block; font-family: var(--font-head); font-size: 13px; font-weight: 600;
-          color: var(--ink-dim); margin-bottom: 7px;
+        .pe {
+          margin: -24px -20px calc(-88px - env(safe-area-inset-bottom));
+          background: var(--bg);
+          min-height: 100vh;
         }
-        .portfolio-input-row { display: flex; gap: 8px; }
-        .portfolio-add {
-          width: 46px; flex-shrink: 0;
-          background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
-          color: var(--ink-dim); display: flex; align-items: center; justify-content: center;
+        .pe-spin { animation: pe-spin 0.8s linear infinite; }
+        @keyframes pe-spin { to { transform: rotate(360deg); } }
+
+        /* Topbar */
+        .pe-topbar {
+          position: sticky; top: 0; z-index: 20;
+          background: rgba(11, 13, 10, 0.94);
+          backdrop-filter: blur(14px);
+          padding-top: env(safe-area-inset-top);
         }
-        .portfolio-add:hover { border-color: var(--lemon); color: var(--lemon); }
-        .portfolio-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-        .portfolio-list li {
-          display: flex; align-items: center; justify-content: space-between;
-          background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
-          padding: 10px 12px; font-size: 13.5px; color: var(--ink-dim);
+        .pe-topbar-inner {
+          display: grid; grid-template-columns: 40px 1fr 40px;
+          align-items: center; gap: 8px;
+          max-width: 640px; margin: 0 auto;
+          padding: 14px 16px 12px;
         }
-        .portfolio-list button { color: var(--ink-faint); }
-        .portfolio-list button:hover { color: var(--danger); }
+        .pe-back { display: flex; align-items: center; color: var(--ink); }
+        .pe-back:hover { color: var(--lemon); }
+        .pe-title {
+          margin: 0; text-align: center;
+          font-family: var(--font-head); font-size: 21px; font-weight: 700;
+          letter-spacing: -0.01em; color: var(--ink);
+        }
+        .pe-save {
+          justify-self: end; display: inline-flex; align-items: center;
+          font-family: var(--font-head); font-size: 17px; font-weight: 600;
+          color: var(--lemon); white-space: nowrap;
+        }
+        .pe-save:disabled { opacity: 0.6; }
+
+        .pe-body {
+          max-width: 640px; margin: 0 auto;
+          padding: 4px 16px calc(96px + env(safe-area-inset-bottom));
+        }
+        .pe-error {
+          margin: 0 0 12px; padding: 10px 14px; border-radius: 10px;
+          background: rgba(255, 107, 74, 0.12); border: 1px solid rgba(255, 107, 74, 0.35);
+          color: var(--danger); font-size: 13.5px;
+        }
+
+        /* Media card */
+        .pe-card {
+          background: #101210; border: 1px solid #191C16;
+          border-radius: 16px; padding: 14px;
+        }
+        .pe-media { margin-bottom: 22px; }
+        .pe-cover {
+          display: block; width: 100%; aspect-ratio: 16 / 6.4;
+          border: 1px dashed rgba(196, 241, 53, 0.38);
+          border-radius: 12px; overflow: hidden;
+          background-color: #0E110C;
+          background-size: cover; background-position: center;
+          background-image:
+            radial-gradient(120% 150% at 50% 120%, rgba(196, 241, 53, 0.14), transparent 62%),
+            repeating-linear-gradient(78deg, rgba(196, 241, 53, 0.09) 0 1px, transparent 1px 7px);
+          color: var(--lemon);
+        }
+        .pe-cover:hover { border-color: var(--lemon); }
+        .pe-cover-inner {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 6px; height: 100%; padding: 10px;
+        }
+        .pe-cover-title {
+          font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--ink);
+        }
+        .pe-cover-hint { font-size: 12px; color: var(--ink-faint); }
+
+        .pe-avatar-row {
+          display: flex; align-items: center; gap: 16px;
+          margin-top: -46px; padding-left: 2px;
+        }
+        .pe-avatar-wrap { position: relative; flex: 0 0 auto; }
+        .pe-avatar {
+          width: 108px; height: 108px; border-radius: 50%;
+          background: var(--panel-raised); border: 3px solid #101210;
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden; color: var(--ink-faint);
+        }
+        .pe-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .pe-avatar-btn {
+          position: absolute; right: -4px; bottom: 4px;
+          width: 40px; height: 40px; border-radius: 50%;
+          background: #0E110C; border: 1.5px solid var(--lemon);
+          display: flex; align-items: center; justify-content: center;
+          color: var(--lemon);
+        }
+        .pe-avatar-btn:hover { background: rgba(196, 241, 53, 0.12); }
+        .pe-avatar-copy { padding-top: 42px; min-width: 0; }
+        .pe-avatar-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
+        .pe-avatar-hint { margin: 3px 0 0; font-size: 12.5px; color: var(--ink-faint); }
+
+        /* Section heading */
+        .pe-section-head {
+          display: flex; align-items: center; gap: 10px;
+          margin: 26px 0 12px;
+        }
+        .pe-section-head svg { color: var(--lemon); flex: 0 0 auto; }
+        .pe-section-head h2 {
+          margin: 0; font-family: var(--font-head);
+          font-size: 18.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink);
+        }
+        .pe-heading-row {
+          display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          margin: 26px 0 12px;
+        }
+        .pe-heading-row .pe-section-head { margin: 0; }
+        .pe-add-skill {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 9px 16px; border-radius: 999px;
+          border: 1px solid rgba(196, 241, 53, 0.5);
+          color: var(--lemon); font-size: 14px; font-weight: 600;
+        }
+        .pe-add-skill:hover { background: rgba(196, 241, 53, 0.1); }
+
+        /* Fields */
+        .pe-stack { display: flex; flex-direction: column; gap: 10px; }
+        .pe-field {
+          position: relative; display: flex; align-items: center; gap: 12px;
+          background: #101210; border: 1px solid #1B1F17;
+          border-radius: 12px; padding: 11px 14px;
+          transition: border-color 0.15s ease;
+        }
+        .pe-field:focus-within { border-color: rgba(196, 241, 53, 0.55); }
+        .pe-field-main { flex: 1 1 auto; min-width: 0; }
+        .pe-label {
+          display: flex; align-items: center; gap: 5px;
+          font-size: 12px; color: var(--ink-faint); margin-bottom: 2px;
+        }
+        .pe-info { color: var(--ink-faint); }
+        .pe-input {
+          width: 100%; background: transparent; border: none; padding: 0;
+          font-family: var(--font-body); font-size: 16px; color: var(--ink);
+          line-height: 1.45;
+        }
+        .pe-input::placeholder { color: #4E5847; }
+        .pe-input:focus { outline: none; }
+        .pe-textarea { resize: vertical; min-height: 46px; }
+        .pe-select { appearance: none; }
+        .pe-select option { background: var(--panel); color: var(--ink); }
+        .pe-chev, .pe-lead { color: var(--ink-faint); flex: 0 0 auto; }
+        .pe-clear { display: flex; color: var(--ink-dim); flex: 0 0 auto; padding: 4px; }
+        .pe-clear:hover { color: var(--ink); }
+        .pe-url {
+          display: inline-flex; align-items: center; gap: 7px;
+          font-size: 13px; color: var(--ink-dim); white-space: nowrap;
+        }
+        .pe-url-check { color: var(--lemon); }
+        .pe-counter {
+          display: block; text-align: right;
+          font-size: 12.5px; color: var(--ink-faint); margin-top: 6px;
+        }
+        .pe-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .pe-sublabel { margin: 16px 0 8px; font-size: 13.5px; color: var(--ink-dim); }
+        .pe-social-badge {
+          width: 40px; height: 40px; border-radius: 50%;
+          background: #F7FBEE; color: #0B0D0A;
+          display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+        }
+
+        /* Skills */
+        .pe-skill-add { margin-bottom: 12px; }
+        .pe-skill-input {
+          background: #101210; border: 1px solid #1B1F17;
+          border-radius: 12px; padding: 12px 14px;
+        }
+        .pe-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .pe-suggestion {
+          padding: 7px 13px; border-radius: 999px;
+          border: 1px dashed #2A2F21; color: var(--ink-dim); font-size: 13.5px;
+        }
+        .pe-suggestion:hover { border-color: var(--lemon); color: var(--lemon); }
+        .pe-chips { display: flex; flex-wrap: wrap; gap: 9px; }
+        .pe-empty { margin: 0; font-size: 13.5px; color: var(--ink-faint); }
+        .pe-chip {
+          display: inline-flex; align-items: center; gap: 9px;
+          padding: 9px 14px; border-radius: 999px;
+          background: #101210; border: 1px solid #22271C;
+          font-size: 14.5px; color: var(--ink);
+        }
+        .pe-chip button { display: flex; color: var(--ink-dim); }
+        .pe-chip button:hover { color: var(--danger); }
+
+        /* Looking for */
+        .pe-looking {
+          display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px;
+        }
+        .pe-look {
+          display: flex; flex-direction: column; align-items: center; gap: 9px;
+          padding: 14px 6px 12px; border-radius: 12px;
+          background: #101210; border: 1px solid #1B1F17;
+          text-align: center; transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .pe-look-icon { color: var(--ink-dim); }
+        .pe-look-label { font-size: 11.5px; line-height: 1.25; color: var(--ink-dim); }
+        .pe-look-box {
+          width: 18px; height: 18px; border-radius: 4px;
+          border: 1.5px solid #3A4132; display: flex; align-items: center; justify-content: center;
+        }
+        .pe-look.is-active { border-color: var(--lemon); background: rgba(196, 241, 53, 0.05); }
+        .pe-look.is-active .pe-look-icon { color: var(--lemon); }
+        .pe-look.is-active .pe-look-label { color: var(--ink); }
+        .pe-look.is-active .pe-look-box { background: var(--lemon); border-color: var(--lemon); }
+
+        /* About you */
+        .pe-row {
+          display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          width: 100%; padding: 16px 14px; border-radius: 12px;
+          background: #101210; border: 1px solid #1B1F17;
+        }
+        .pe-row:hover { border-color: rgba(196, 241, 53, 0.4); }
+        .pe-row-label { font-size: 15.5px; color: var(--ink); }
+        .pe-row-right {
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 13.5px; color: var(--ink-faint);
+        }
+        .pe-about {
+          margin-top: 10px; background: #101210; border: 1px solid #1B1F17;
+          border-radius: 12px; padding: 12px 14px;
+        }
+
+        @media (max-width: 400px) {
+          .pe-looking { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          .pe-avatar { width: 92px; height: 92px; }
+          .pe-avatar-copy { padding-top: 40px; }
+        }
+        @media (min-width: 860px) {
+          .pe { margin: -32px -40px 0; }
+          .pe-body { padding-bottom: 60px; }
+        }
       `}</style>
     </div>
+  )
+}
+
+function SectionHeading({ icon: Icon, children, bare = false }) {
+  return (
+    <div className="pe-section-head" style={bare ? { margin: 0 } : undefined}>
+      <Icon size={21} />
+      <h2>{children}</h2>
+    </div>
+  )
+}
+
+function Field({ label, children, leading = null, trailing = null, footer = null }) {
+  return (
+    <div className="pe-field">
+      {leading}
+      <div className="pe-field-main">
+        <span className="pe-label">{label}</span>
+        {children}
+        {footer}
+      </div>
+      {trailing}
+    </div>
+  )
+}
+
+function ClearBtn({ onClick }) {
+  return (
+    <button type="button" className="pe-clear" onClick={onClick} aria-label="Clear field">
+      <X size={18} />
+    </button>
+  )
+}
+
+function CheckMark() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B0D0A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
   )
 }
