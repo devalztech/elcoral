@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   Loader2, Pencil, Share2, Link2, Settings, MapPin, MessageCircle, Bell,
-  Github, Linkedin, Globe, Briefcase,
+  Github, Linkedin, Globe, Briefcase, MoreHorizontal, Plus, ImagePlus,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { api } from '../lib/api.js'
@@ -138,6 +138,25 @@ function ProfileHeader({ profile, isLoggedIn }) {
 
   return (
     <div className="ph">
+      {/* Cover photo. No backend field for it yet — falls back to a
+          branded gradient. Owner sees a tap-to-upload affordance. */}
+      <div className="ph-cover">
+        {profile.cover_url && <img src={profile.cover_url} alt="" />}
+        {isOwner && (
+          <Link to="/home/profile/edit" className="ph-cover-upload" aria-label="Upload cover photo">
+            <ImagePlus size={15} /> <span>Add cover</span>
+          </Link>
+        )}
+      </div>
+
+      {isOwner && (
+        <div className="ph-toolbar ph-toolbar-left">
+          <Link to="/home/more" className="ph-icon-btn" aria-label="More">
+            <MoreHorizontal size={20} />
+          </Link>
+        </div>
+      )}
+
       {isOwner && (
         <div className="ph-toolbar">
           <Link to="/home/messages" className="ph-icon-btn" aria-label="Messages">
@@ -152,8 +171,15 @@ function ProfileHeader({ profile, isLoggedIn }) {
         </div>
       )}
 
-      <div className="ph-avatar">
-        {profile.photo_url ? <img src={profile.photo_url} alt="" /> : <span>{initials}</span>}
+      <div className="ph-avatar-wrap">
+        <div className="ph-avatar">
+          {profile.photo_url ? <img src={profile.photo_url} alt="" /> : <span>{initials}</span>}
+        </div>
+        {isOwner && (
+          <Link to="/home/profile/edit" className="ph-avatar-add" aria-label="Upload profile photo">
+            <Plus size={14} strokeWidth={3} />
+          </Link>
+        )}
       </div>
 
       <h1 className="ph-name">{profile.full_name}</h1>
@@ -209,10 +235,39 @@ function ProfileHeader({ profile, isLoggedIn }) {
       )}
 
       <style>{`
-        .ph { display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; padding-top: 8px; }
+        .ph { display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; padding-top: 0; }
+        .ph-cover {
+          position: relative; width: 100%; height: 132px;
+          border-radius: 16px; overflow: hidden;
+          background: linear-gradient(135deg, var(--panel-raised), rgba(0,0,0,0.35));
+          border: 1px solid var(--border);
+        }
+        .ph-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .ph-cover-upload {
+          position: absolute; right: 10px; bottom: 10px;
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 12px; font-weight: 600; color: var(--ink);
+          background: rgba(11, 13, 10, 0.62); border: 1px solid var(--border);
+          border-radius: 999px; padding: 6px 11px; backdrop-filter: blur(6px);
+        }
+        .ph-cover-upload:hover { border-color: var(--lemon); color: var(--lemon); }
         .ph-toolbar {
-          position: absolute; top: 0; right: 0;
+          position: absolute; top: 10px; right: 10px; z-index: 2;
           display: flex; align-items: center; gap: 2px;
+        }
+        .ph-toolbar-left { right: auto; left: 10px; }
+        .ph-toolbar .ph-icon-btn {
+          color: var(--ink);
+          background: rgba(11, 13, 10, 0.55);
+          backdrop-filter: blur(6px);
+        }
+        .ph-avatar-wrap { position: relative; margin-top: -44px; }
+        .ph-avatar-add {
+          position: absolute; right: -2px; bottom: 2px;
+          width: 26px; height: 26px; border-radius: 50%;
+          display: inline-flex; align-items: center; justify-content: center;
+          background: var(--lemon); color: #0B0D0A;
+          border: 2px solid var(--panel, #0B0D0A);
         }
         .ph-icon-btn {
           display: inline-flex; align-items: center; justify-content: center;
@@ -221,7 +276,7 @@ function ProfileHeader({ profile, isLoggedIn }) {
         .ph-icon-btn:hover { color: var(--lemon); background: var(--panel-raised); }
         .ph-avatar {
           width: 88px; height: 88px; border-radius: 50%;
-          background: var(--panel-raised); border: 2px solid var(--border);
+          background: var(--panel-raised); border: 3px solid var(--panel, #0B0D0A);
           display: flex; align-items: center; justify-content: center;
           overflow: hidden;
           font-family: var(--font-head); font-weight: 700; font-size: 26px; color: var(--lemon);

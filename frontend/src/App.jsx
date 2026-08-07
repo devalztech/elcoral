@@ -46,6 +46,7 @@ export default function App() {
           <Route path="/home/community" element={<ComingSoon label="Community" />} />
           <Route path="/home/messages" element={<ComingSoon label="Messages" />} />
             <Route path="/home/notifications" element={<ComingSoon label="Notifications" />} />
+            <Route path="/home/more" element={<ComingSoon label="More" />} />
             <Route path="/home/profile" element={<ProfileView />} />
             <Route path="/home/profile/edit" element={<ProfileEditor />} />
             <Route path="/home/settings" element={<Settings />} />
