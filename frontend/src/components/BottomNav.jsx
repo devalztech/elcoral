@@ -7,11 +7,11 @@ const ICONS = {
   jobs: (
     <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18V8.5ZM9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M4 12.5h16" />
   ),
-  messages: (
-    <path d="M21 11.5a8.5 8.5 0 0 1-12.35 7.6L4 20l1.05-4.2A8.5 8.5 0 1 1 21 11.5Z" />
+  create: (
+    <path d="M12 5v14M5 12h14" />
   ),
-  notifications: (
-    <path d="M12 3a5.5 5.5 0 0 0-5.5 5.5c0 4.5-1.5 6-2.5 7h16c-1-1-2.5-2.5-2.5-7A5.5 5.5 0 0 0 12 3ZM9.8 19a2.2 2.2 0 0 0 4.4 0" />
+  community: (
+    <path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM20 19v-1.5a3.5 3.5 0 0 0-2.6-3.38M15.5 4.6a3.5 3.5 0 0 1 0 6.78" />
   ),
   profile: (
     <path d="M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 20.5c1.2-3.6 4.2-5.5 7.5-5.5s6.3 1.9 7.5 5.5" />
@@ -21,8 +21,8 @@ const ICONS = {
 const ITEMS = [
   { to: '/home', icon: 'home', label: 'Home' },
   { to: '/home/jobs', icon: 'jobs', label: 'Jobs' },
-  { to: '/home/messages', icon: 'messages', label: 'Messages' },
-  { to: '/home/notifications', icon: 'notifications', label: 'Alerts' },
+  { to: '/home/create', icon: 'create', label: 'Create' },
+  { to: '/home/community', icon: 'community', label: 'Community' },
   { to: '/home/profile', icon: 'profile', label: 'Profile' },
 ]
 

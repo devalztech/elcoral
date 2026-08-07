@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
-  Loader2, Pencil, Share2, Link2, Settings, MapPin,
+  Loader2, Pencil, Share2, Link2, Settings, MapPin, MessageCircle, Bell,
   Github, Linkedin, Globe, Briefcase,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth.jsx'
@@ -139,9 +139,17 @@ function ProfileHeader({ profile, isLoggedIn }) {
   return (
     <div className="ph">
       {isOwner && (
-        <Link to="/home/settings" className="ph-settings" aria-label="Settings">
-          <Settings size={20} />
-        </Link>
+        <div className="ph-toolbar">
+          <Link to="/home/messages" className="ph-icon-btn" aria-label="Messages">
+            <MessageCircle size={20} />
+          </Link>
+          <Link to="/home/notifications" className="ph-icon-btn" aria-label="Alerts">
+            <Bell size={20} />
+          </Link>
+          <Link to="/home/settings" className="ph-icon-btn" aria-label="Settings">
+            <Settings size={20} />
+          </Link>
+        </div>
       )}
 
       <div className="ph-avatar">
@@ -202,11 +210,15 @@ function ProfileHeader({ profile, isLoggedIn }) {
 
       <style>{`
         .ph { display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; padding-top: 8px; }
-        .ph-settings {
+        .ph-toolbar {
           position: absolute; top: 0; right: 0;
+          display: flex; align-items: center; gap: 2px;
+        }
+        .ph-icon-btn {
+          display: inline-flex; align-items: center; justify-content: center;
           color: var(--ink-dim); padding: 8px; border-radius: 10px;
         }
-        .ph-settings:hover { color: var(--lemon); background: var(--panel-raised); }
+        .ph-icon-btn:hover { color: var(--lemon); background: var(--panel-raised); }
         .ph-avatar {
           width: 88px; height: 88px; border-radius: 50%;
           background: var(--panel-raised); border: 2px solid var(--border);

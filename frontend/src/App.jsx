@@ -42,7 +42,9 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route path="/home" element={<Dashboard />} />
             <Route path="/home/jobs" element={<ComingSoon label="Jobs" />} />
-            <Route path="/home/messages" element={<ComingSoon label="Messages" />} />
+            <Route path="/home/create" element={<ComingSoon label="Create" />} />
+          <Route path="/home/community" element={<ComingSoon label="Community" />} />
+          <Route path="/home/messages" element={<ComingSoon label="Messages" />} />
             <Route path="/home/notifications" element={<ComingSoon label="Notifications" />} />
             <Route path="/home/profile" element={<ProfileView />} />
             <Route path="/home/profile/edit" element={<ProfileEditor />} />
