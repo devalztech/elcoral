@@ -9,9 +9,21 @@ import { X, Loader2 } from 'lucide-react'
 export default function EditSheet({ title, subtitle, onClose, onSave, saving, error, children }) {
   const firstFieldRef = useRef(null)
 
+  // Mount-only: this must NOT depend on onClose/onSave, since those are
+  // recreated on every keystroke in the parent (ProfileEditorBody
+  // re-renders on every onboarding `update()` call, which redefines
+  // closeSheet/save as new function references each time). Re-running
+  // this effect on every keystroke was re-adding the keydown listener
+  // and re-focusing an element repeatedly, which is what was dropping
+  // the mobile keyboard after the first character typed. Escape/close
+  // still works correctly via the ref below, which always calls the
+  // LATEST onClose without needing it in the dependency array.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     const timer = setTimeout(() => firstFieldRef.current?.focus(), 50)
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e) => { if (e.key === 'Escape') onCloseRef.current() }
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
@@ -19,7 +31,8 @@ export default function EditSheet({ title, subtitle, onClose, onSave, saving, er
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
-  }, [onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="es-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
