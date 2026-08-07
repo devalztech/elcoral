@@ -1,5 +1,8 @@
 import { useNavigate } from 'react-router-dom'
+import { Users, Briefcase, Rocket, Quote } from 'lucide-react'
 import ActivityFeed from '../features/landing/components/ActivityFeed.jsx'
+import ElcoralMark from '../components/ElcoralMark.jsx'
+import NetworkGraphic from '../features/auth/components/NetworkGraphic.jsx'
 
 // Mirrors app/models/profile.py's INTENT_CHOICES — kept in sync manually
 // since intents are curated, not user-generated. Icons are lucide-react,
@@ -32,6 +35,7 @@ export default function Landing() {
     <div className="page">
       <Nav onLogin={() => navigate('/login')} onSignup={() => navigate('/signup')} />
       <Hero onSignup={() => navigate('/signup')} />
+      <Highlights />
       <IntentBar />
       <HowItWorks />
       <Categories />
@@ -54,7 +58,8 @@ function Nav({ onLogin, onSignup }) {
     <header className="nav">
       <div className="wrap nav-inner">
         <div className="logo">
-          <span className="logo-mark">el</span>coral
+          <ElcoralMark size={26} color="var(--lemon)" />
+          <span>Elcoral</span>
         </div>
         <nav className="nav-links">
           <a href="#how">How it works</a>
@@ -69,8 +74,7 @@ function Nav({ onLogin, onSignup }) {
       <style>{`
         .nav { position: sticky; top: 0; z-index: 40; background: rgba(11,13,10,0.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
         .nav-inner { display: flex; align-items: center; justify-content: space-between; padding-top: 18px; padding-bottom: 18px; }
-        .logo { font-family: var(--font-display); font-weight: 900; font-size: 20px; letter-spacing: -0.02em; }
-        .logo-mark { color: var(--lemon); }
+        .logo { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 800; font-size: 21px; letter-spacing: -0.02em; }
         .nav-links { display: flex; gap: 32px; }
         .nav-links a { font-size: 14.5px; color: var(--ink-dim); font-weight: 500; }
         .nav-links a:hover { color: var(--ink); }
@@ -87,16 +91,17 @@ function Hero({ onSignup }) {
     <section className="hero">
       <div className="wrap hero-inner">
         <div className="hero-copy">
-          <p className="eyebrow">A professional ecosystem</p>
+          <div className="hero-badge">
+            <Users size={15} />
+            <span>Join thousands of builders and creators</span>
+          </div>
           <h1 className="hero-title">
-            Defined by what<br />
-            you're trying to<br />
-            <span className="accent">build.</span>
+            Build what matters,<br />
+            together on <span className="accent">Elcoral</span>
           </h1>
           <p className="hero-sub">
-            Not your job title. Elcoral connects people by what they're actually trying to
-            do — find work, hire, build a startup, learn, mentor, collaborate — so the right
-            people find each other before either one has to search.
+            Connect with amazing people, collaborate on projects and discover opportunities
+            that help you grow.
           </p>
           <div className="hero-ctas">
             <button onClick={onSignup} className="btn btn-primary btn-lg">Join Elcoral</button>
@@ -105,6 +110,7 @@ function Hero({ onSignup }) {
           <p className="hero-fineprint">Free to join. Your profile, your goals, your network.</p>
         </div>
         <div className="hero-visual">
+          <NetworkGraphic />
           <div className="visual-label">Live on Elcoral</div>
           <ActivityFeed />
         </div>
@@ -122,6 +128,18 @@ function Hero({ onSignup }) {
           color: var(--ink);
         }
         .hero-title .accent { color: var(--lemon); }
+        .hero-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 9px 15px;
+          border-radius: 999px;
+          background: var(--panel);
+          border: 1px solid var(--border);
+          font-size: 12.5px;
+          color: var(--ink-dim);
+        }
+        .hero-badge svg { color: var(--lemon); }
         .hero-sub { font-size: 17px; max-width: 480px; margin-top: 22px; }
         .hero-ctas { display: flex; gap: 14px; margin-top: 32px; flex-wrap: wrap; }
         .btn-lg { padding: 16px 30px; font-size: 16px; }
@@ -154,6 +172,91 @@ function Hero({ onSignup }) {
         @media (max-width: 900px) {
           .hero-inner { grid-template-columns: 1fr; }
           .hero-visual { order: -1; }
+        }
+      `}</style>
+    </section>
+  )
+}
+
+const HIGHLIGHTS = [
+  {
+    icon: Users,
+    title: 'Build meaningful connections',
+    body: 'Meet and collaborate with professionals around the world.',
+  },
+  {
+    icon: Briefcase,
+    title: 'Discover opportunities',
+    body: 'Find jobs, projects and collaborations that match your skills.',
+  },
+  {
+    icon: Rocket,
+    title: 'Grow your career',
+    body: 'Learn, share and grow with communities that inspire you.',
+  },
+]
+
+function Highlights() {
+  return (
+    <section className="highlights">
+      <div className="wrap highlights-inner">
+        <div className="hl-card">
+          {HIGHLIGHTS.map(({ icon: Icon, title, body }) => (
+            <div className="hl-item" key={title}>
+              <Icon size={22} className="hl-icon" />
+              <div>
+                <p className="hl-title">{title}</p>
+                <p className="hl-body">{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hl-card hl-quote">
+          <Quote size={20} className="hl-icon" />
+          <p className="quote-text">
+            Elcoral helped me find the right people and opportunities to turn my ideas into
+            reality.
+          </p>
+          <div className="quote-author">
+            <span className="quote-avatar">DC</span>
+            <div>
+              <p className="hl-title">David Chen</p>
+              <p className="hl-body">Full Stack Developer</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        .highlights { padding-top: 0; }
+        .highlights-inner { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; align-items: start; }
+        .hl-card {
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: 14px;
+          padding: 24px 22px;
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+        }
+        .hl-item { display: flex; gap: 14px; align-items: flex-start; }
+        .hl-icon { color: var(--lemon); flex-shrink: 0; margin-top: 2px; }
+        .hl-title { margin: 0; font-family: var(--font-head); font-size: 15px; font-weight: 600; color: var(--ink); }
+        .hl-body { margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-dim); }
+        .hl-quote { gap: 16px; }
+        .quote-text { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink); }
+        .quote-author { display: flex; align-items: center; gap: 12px; }
+        .quote-avatar {
+          width: 42px; height: 42px;
+          border-radius: 50%;
+          display: grid; place-items: center;
+          background: linear-gradient(140deg, var(--lemon-deep), var(--panel-raised));
+          font-family: var(--font-head);
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--ink);
+        }
+        @media (max-width: 900px) {
+          .highlights-inner { grid-template-columns: 1fr; }
         }
       `}</style>
     </section>
