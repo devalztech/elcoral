@@ -17,7 +17,18 @@ from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core import telegram_storage
-from app.routers import auth, lookup, media, onboarding, posts, profile, settings as settings_router
+from app.routers import (
+    auth,
+    communities,
+    lookup,
+    media,
+    messages,
+    onboarding,
+    posts,
+    profile,
+    settings as settings_router,
+    social,
+)
 
 app = FastAPI(title="Elcoral API", version="0.1.0")
 
@@ -55,6 +66,9 @@ app.include_router(posts.router)
 app.include_router(media.router)
 app.include_router(lookup.router)
 app.include_router(settings_router.router)
+app.include_router(social.router)
+app.include_router(messages.router)
+app.include_router(communities.router)
 
 
 @app.on_event("startup")

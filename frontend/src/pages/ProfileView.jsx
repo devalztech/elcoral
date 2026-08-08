@@ -11,6 +11,8 @@ import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import ReportDialog from '../features/settings/components/ReportDialog.jsx'
 import { api } from '../api/client.js'
 import ElcoralMark from '../components/ElcoralMark.jsx'
+import { useFollow } from '../features/social/useFollow.js'
+import { formatCount } from '../features/social/format.js'
 
 // Elcoral profile page, built to the approved design reference across all
 // three viewing angles:
@@ -225,6 +227,10 @@ function EmptyState({ title, body, actionTo, actionLabel }) {
           background: var(--lemon); color: var(--on-accent); font-weight: 700;
           font-size: 13.5px; padding: 10px 20px; border-radius: 999px;
         }
+        .pv-stat-link { text-decoration: none; color: inherit; cursor: pointer; }
+        .pv-stat-link:hover .pv-stat-label { color: var(--ink); }
+        .pv-inline-error { margin: 8px 16px 0; font-size: 13px; color: var(--danger, #d33); text-align: center; }
+
       `}</style>
     </div>
   )
@@ -302,22 +308,44 @@ function MetaRow({ profile, align = 'center' }) {
   )
 }
 
-function StatsRow({ profile, postCount }) {
+/*
+ * Follower/following counts come from the live follow graph
+ * (`follow`, owned by the parent view) rather than the profile payload,
+ * so pressing Follow moves the number immediately instead of leaving a
+ * stale count until the next reload. Both are tappable and open the
+ * matching people list.
+ */
+function StatsRow({ profile, postCount, follow }) {
   const stats = [
-    { label: 'Following', value: profile.following_count ?? 0 },
-    { label: 'Followers', value: profile.followers_count ?? 0 },
+    {
+      label: 'Following',
+      value: follow?.following_count ?? profile.following_count ?? 0,
+      to: `/u/${profile.username}/following`,
+    },
+    {
+      label: 'Followers',
+      value: follow?.followers_count ?? profile.followers_count ?? 0,
+      to: `/u/${profile.username}/followers`,
+    },
     { label: 'Projects', value: profile.projects_count ?? 0 },
     { label: 'Posts', value: postCount },
     { label: 'Likes', value: profile.likes_count ?? 0 },
   ]
   return (
     <div className="pv-stats">
-      {stats.map((s) => (
-        <div className="pv-stat" key={s.label}>
-          <span className="pv-stat-value">{s.value}</span>
-          <span className="pv-stat-label">{s.label}</span>
-        </div>
-      ))}
+      {stats.map((s) => {
+        const body = (
+          <>
+            <span className="pv-stat-value">{formatCount(s.value)}</span>
+            <span className="pv-stat-label">{s.label}</span>
+          </>
+        )
+        return s.to && profile.username ? (
+          <Link className="pv-stat pv-stat-link" key={s.label} to={s.to}>{body}</Link>
+        ) : (
+          <div className="pv-stat" key={s.label}>{body}</div>
+        )
+      })}
     </div>
   )
 }
@@ -338,6 +366,7 @@ function NameBlock({ profile, align = 'center' }) {
 
 function OwnerProfile({ profile, posts }) {
   const [moreOpen, setMoreOpen] = useState(false)
+  const follow = useFollow(profile.username)
 
   return (
     <>
@@ -380,7 +409,7 @@ function OwnerProfile({ profile, posts }) {
         {profile.bio && <p className="pv-bio pv-bio-center">{profile.bio}</p>}
         <BadgeRow align="center" />
         <MetaRow profile={profile} align="center" />
-        <StatsRow profile={profile} postCount={posts.length} />
+        <StatsRow profile={profile} postCount={posts.length} follow={follow} />
 
         <div className="pv-actions">
           <Link to="/home/profile/edit" className="pv-btn pv-btn-primary">
@@ -548,10 +577,29 @@ function AvailabilityStrip({ profile, isOwner }) {
 function VisitorProfile({ profile, posts }) {
   const navigate = useNavigate()
   const { accessToken } = useAuth()
-  const [following, setFollowing] = useState(false)
+  const follow = useFollow(profile.username)
   const [moreOpen, setMoreOpen] = useState(false)
   const [reporting, setReporting] = useState(false)
   const [blockError, setBlockError] = useState('')
+  const [messageError, setMessageError] = useState('')
+  const [opening, setOpening] = useState(false)
+
+  // "Message" is find-or-create: the backend returns the existing thread
+  // if these two have talked before, so tapping it twice can't fork the
+  // conversation.
+  async function openConversation() {
+    if (opening) return
+    setOpening(true)
+    setMessageError('')
+    try {
+      const conversation = await api.startConversation(profile.username, accessToken)
+      navigate(`/home/messages/${conversation.id}`)
+    } catch (err) {
+      setMessageError(err.message || 'Could not open this conversation.')
+    } finally {
+      setOpening(false)
+    }
+  }
 
   // Blocking is mutual on the backend, so the viewer loses access to this
   // profile straight away — sending them home avoids a dead 404 screen.
@@ -587,7 +635,13 @@ function VisitorProfile({ profile, posts }) {
           <button type="button" className="pv-menu-item" onClick={() => copyProfileLink(profile.username)}>
             Copy profile link
           </button>
-          <Link to="/home/messages" className="pv-menu-item">Send a message</Link>
+          <button
+            type="button"
+            className="pv-menu-item"
+            onClick={() => { setMoreOpen(false); openConversation() }}
+          >
+            Send a message
+          </button>
           <button
             type="button"
             className="pv-menu-item pv-menu-item-danger"
@@ -620,26 +674,39 @@ function VisitorProfile({ profile, posts }) {
       </div>
 
       <div className="pv-actionrow">
-        <button type="button" className="pv-round-btn pv-round-btn-lg" aria-label="Message">
+        <button
+          type="button"
+          className="pv-round-btn pv-round-btn-lg"
+          aria-label={`Message ${profile.full_name || profile.username}`}
+          disabled={opening}
+          onClick={openConversation}
+        >
           <MessageCircle size={20} />
         </button>
         <button
           type="button"
-          className={`pv-btn pv-follow ${following ? 'pv-follow-on' : 'pv-btn-primary'}`}
-          aria-pressed={following}
-          onClick={() => setFollowing((v) => !v)}
+          className={`pv-btn pv-follow ${follow.is_following ? 'pv-follow-on' : 'pv-btn-primary'}`}
+          aria-pressed={follow.is_following}
+          disabled={follow.loading || follow.pending}
+          onClick={follow.toggle}
         >
-          {following ? <CircleCheck size={18} aria-hidden="true" /> : <UserPlus size={18} aria-hidden="true" />}
-          {following ? 'Following' : 'Follow'}
+          {follow.is_following
+            ? <CircleCheck size={18} aria-hidden="true" />
+            : <UserPlus size={18} aria-hidden="true" />}
+          {follow.is_following ? 'Following' : follow.follows_you ? 'Follow back' : 'Follow'}
         </button>
       </div>
+
+      {(messageError || follow.error) && (
+        <p className="pv-inline-error" role="alert">{messageError || follow.error}</p>
+      )}
 
       <div className="pv-head pv-head-left">
         <NameBlock profile={profile} align="left" />
         <BadgeRow align="left" />
         {profile.bio && <p className="pv-bio pv-bio-left">{profile.bio}</p>}
         <MetaRow profile={profile} align="left" />
-        <StatsRow profile={profile} postCount={posts.length} />
+        <StatsRow profile={profile} postCount={posts.length} follow={follow} />
       </div>
 
       <TopSkills profile={profile} />
@@ -652,6 +719,7 @@ function VisitorProfile({ profile, posts }) {
 
 function GuestProfile({ profile, posts }) {
   const firstName = profile.full_name || `@${profile.username}`
+  const follow = useFollow(profile.username)
 
   return (
     <>
@@ -667,7 +735,7 @@ function GuestProfile({ profile, posts }) {
         {profile.bio && <p className="pv-bio pv-bio-left">{profile.bio}</p>}
         <BadgeRow align="left" />
         <MetaRow profile={profile} align="left" />
-        <StatsRow profile={profile} postCount={posts.length} />
+        <StatsRow profile={profile} postCount={posts.length} follow={follow} />
       </div>
 
       <PublicBuildingCard />

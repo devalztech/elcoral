@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Search, Bell, UserPlus, X, Crown, ArrowRight, ThumbsUp,
@@ -6,59 +6,37 @@ import {
   BarChart3, Palette, Leaf,
 } from 'lucide-react'
 import ElcoralMark from '../components/ElcoralMark.jsx'
+import { useAuth } from '../features/auth/hooks/useAuth.jsx'
+import { api } from '../api/client.js'
+import { avatarTone, displayName, formatCount, initialsOf, pluralize, timeAgo } from '../features/social/format.js'
 
 /* ---------------------------------------------------------------- data ---- */
 
-const FILTERS = ['For you', 'All', 'Tech', 'Design', 'Business', 'AI', 'Startups']
-
-const MINE = [
-  { id: 'm1', name: 'Elcoral Official', members: '12.4K members', brand: true, owner: true, tone: 'lemon' },
-  { id: 'm2', name: 'Web Developers', members: '28.7K members', glyph: '</>', tone: 'lemon' },
-  { id: 'm3', name: 'UI/UX Designers', members: '15.3K members', glyph: 'figma', tone: 'dark' },
-  { id: 'm4', name: 'Startups Hub', members: '9.1K members', glyph: 'rocket', tone: 'dark' },
-  { id: 'm5', name: 'Python Community', members: '17.6K members', glyph: 'python', tone: 'dark' },
-  { id: 'm6', name: 'Data Science', members: '8.4K members', glyph: 'chart', tone: 'dark' },
-]
-
-const TRENDING = [
-  {
-    id: 't1', name: 'AI Builders', desc: 'Share, learn and build AI projects together.',
-    members: '24.8K members', fresh: '380 new today', logo: 'ai', tone: 'violet',
-  },
-  {
-    id: 't2', name: 'Open Source Hub', desc: 'Collaborate on open source and make an impact.',
-    members: '18.5K members', fresh: '210 new today', logo: 'leaf', tone: 'leaf',
-  },
-  {
-    id: 't3', name: 'Game Developers', desc: 'Everything about game development.',
-    members: '11.2K members', fresh: '125 new today', logo: 'pad', tone: 'pink',
-  },
-]
-
-const DISCUSSIONS = [
-  {
-    id: 'd1', title: 'What tech stack are you using in 2024?', author: 'Jane Cooper',
-    group: 'Web Developers', groupIcon: 'leaf', time: '2h ago', likes: 128, comments: 56, views: '1.2K', av: 'a',
-  },
-  {
-    id: 'd2', title: 'Best practices for UI design in mobile apps?', author: 'Alex Johnson',
-    group: 'UI/UX Designers', groupIcon: 'palette', time: '5h ago', likes: 96, comments: 34, views: '870', av: 'b',
-  },
-  {
-    id: 'd3', title: 'How I got my first 3 freelance clients', author: 'David Chen',
-    group: 'Startups Hub', groupIcon: 'rocket', time: '1d ago', likes: 204, comments: 78, views: '2.1K', av: 'c',
-  },
+/*
+ * Filter chips. `topic` is what the API understands; `null` means "no
+ * topic filter" — "For you" and "All" are computed scopes rather than
+ * topics (see app/routers/communities.py).
+ */
+const FILTERS = [
+  { label: 'For you', scope: 'for_you', topic: null },
+  { label: 'All', scope: 'all', topic: null },
+  { label: 'Tech', scope: 'all', topic: 'tech' },
+  { label: 'Design', scope: 'all', topic: 'design' },
+  { label: 'Business', scope: 'all', topic: 'business' },
+  { label: 'AI', scope: 'all', topic: 'ai' },
+  { label: 'Startups', scope: 'all', topic: 'startups' },
 ]
 
 /* ------------------------------------------------------------- helpers ---- */
 
-function initialsOf(name) {
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
-}
-
 function Glyph({ item, size }) {
-  if (item.brand) return <ElcoralMark size={Math.round(size * 0.56)} color="var(--lemon)" />
-  const g = item.glyph ?? item.logo
+  // A real uploaded icon always wins over the generated mark.
+  if (item.icon_url) {
+    return <img className="cm-tile-img" src={item.icon_url} alt="" width={size} height={size} />
+  }
+  if (item.is_official) return <ElcoralMark size={Math.round(size * 0.56)} color="var(--lemon)" />
+
+  const g = item.glyph
   if (g === 'figma') {
     return (
       <svg width={size * 0.5} height={size * 0.62} viewBox="0 0 38 57" aria-hidden="true">
@@ -96,18 +74,132 @@ function Glyph({ item, size }) {
   return <span className="cm-word">{initialsOf(item.name)}</span>
 }
 
-function GroupIcon({ name }) {
-  const Icon = name === 'palette' ? Palette : name === 'rocket' ? Rocket : Leaf
+function GroupIcon({ community }) {
+  const g = community?.glyph
+  const Icon = g === 'palette' ? Palette : g === 'rocket' ? Rocket : Leaf
   return <Icon size={14} strokeWidth={1.9} color="var(--lemon)" aria-hidden="true" />
+}
+
+function Avatar({ person }) {
+  const name = displayName(person)
+  if (person?.photo_url) {
+    return <img className="cm-avatar cm-avatar-img" src={person.photo_url} alt="" />
+  }
+  return <span className={`cm-avatar av-${avatarTone(person?.id ?? name)}`} aria-hidden="true">{initialsOf(name)}</span>
+}
+
+function SectionState({ loading, error, empty, emptyText, onRetry }) {
+  if (loading) return <p className="cm-state">Loading…</p>
+  if (error) {
+    return (
+      <p className="cm-state cm-state-error">
+        {error}{' '}
+        <button type="button" className="cm-retry" onClick={onRetry}>Try again</button>
+      </p>
+    )
+  }
+  if (empty) return <p className="cm-state">{emptyText}</p>
+  return null
 }
 
 /* --------------------------------------------------------------- screen ---- */
 
 export default function Community() {
+  const { accessToken, authLoading } = useAuth()
   const [filter, setFilter] = useState('For you')
   const [promo, setPromo] = useState(true)
-  const [joined, setJoined] = useState({})
-  const [saved, setSaved] = useState({})
+
+  const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('')
+
+  const [mine, setMine] = useState({ items: [], loading: true, error: null })
+  const [trending, setTrending] = useState({ items: [], loading: true, error: null })
+  const [discussions, setDiscussions] = useState({ items: [], loading: true, error: null })
+  // Per-row pending flags so a slow join can't be double-submitted and
+  // the tapped row is the only one that shows as busy.
+  const [busy, setBusy] = useState({})
+
+  const active = useMemo(() => FILTERS.find((f) => f.label === filter) ?? FILTERS[0], [filter])
+
+  // Debounce the search box so typing doesn't fire a request per keystroke.
+  const searchRef = useRef(search)
+  searchRef.current = search
+  useEffect(() => {
+    const id = setTimeout(() => setQuery(searchRef.current.trim()), 300)
+    return () => clearTimeout(id)
+  }, [search])
+
+  const load = useCallback(async () => {
+    if (authLoading) return
+    const token = accessToken ?? undefined
+    const q = query || undefined
+
+    // "My communities" only exists for a signed-in member.
+    if (token) {
+      setMine((s) => ({ ...s, loading: true, error: null }))
+      api
+        .listCommunities({ scope: 'mine', q, limit: 12 }, token)
+        .then((data) => setMine({ items: data.items, loading: false, error: null }))
+        .catch((err) => setMine({ items: [], loading: false, error: err.message }))
+    } else {
+      setMine({ items: [], loading: false, error: null })
+    }
+
+    setTrending((s) => ({ ...s, loading: true, error: null }))
+    api
+      .listCommunities({ scope: 'trending', topic: active.topic ?? undefined, q, limit: 6 }, token)
+      .then((data) => setTrending({ items: data.items, loading: false, error: null }))
+      .catch((err) => setTrending({ items: [], loading: false, error: err.message }))
+
+    setDiscussions((s) => ({ ...s, loading: true, error: null }))
+    api
+      .listDiscussions({ scope: 'top', topic: active.topic ?? undefined, q, limit: 5 }, token)
+      .then((data) => setDiscussions({ items: data.items, loading: false, error: null }))
+      .catch((err) => setDiscussions({ items: [], loading: false, error: err.message }))
+  }, [accessToken, authLoading, active.topic, query])
+
+  useEffect(() => { load() }, [load])
+
+  function replaceCommunity(next) {
+    const swap = (list) => list.map((c) => (c.id === next.id ? next : c))
+    setTrending((s) => ({ ...s, items: swap(s.items) }))
+    setMine((s) => ({
+      ...s,
+      // Joining from the trending list should make the community appear
+      // in "My communities" without a full reload; leaving removes it.
+      items: next.is_member
+        ? (s.items.some((c) => c.id === next.id) ? swap(s.items) : [...s.items, next])
+        : s.items.filter((c) => c.id !== next.id),
+    }))
+  }
+
+  async function toggleJoin(community) {
+    if (!accessToken || busy[community.id]) return
+    setBusy((s) => ({ ...s, [community.id]: true }))
+    try {
+      const next = community.is_member
+        ? await api.leaveCommunity(community.slug, accessToken)
+        : await api.joinCommunity(community.slug, accessToken)
+      replaceCommunity(next)
+    } catch (err) {
+      setTrending((s) => ({ ...s, error: err.message }))
+    } finally {
+      setBusy((s) => ({ ...s, [community.id]: false }))
+    }
+  }
+
+  async function toggleSave(discussion) {
+    if (!accessToken || busy[discussion.id]) return
+    setBusy((s) => ({ ...s, [discussion.id]: true }))
+    try {
+      const next = await api.saveDiscussion(discussion.id, !discussion.is_saved, accessToken)
+      setDiscussions((s) => ({ ...s, items: s.items.map((d) => (d.id === next.id ? next : d)) }))
+    } catch (err) {
+      setDiscussions((s) => ({ ...s, error: err.message }))
+    } finally {
+      setBusy((s) => ({ ...s, [discussion.id]: false }))
+    }
+  }
 
   return (
     <div className="cm">
@@ -116,7 +208,6 @@ export default function Community() {
         <h1 className="cm-title">Communities</h1>
         <Link to="/home/notifications" className="cm-icon-btn" aria-label="Notifications">
           <Bell size={23} strokeWidth={1.9} />
-          <span className="cm-badge">3</span>
         </Link>
         <Link to="/home/community/invite" className="cm-icon-btn" aria-label="Invite people">
           <UserPlus size={23} strokeWidth={1.9} />
@@ -126,7 +217,13 @@ export default function Community() {
       <div className="cm-searchwrap">
         <label className="cm-search">
           <Search size={19} strokeWidth={2} />
-          <input type="search" placeholder="Search communities or topics" aria-label="Search communities" />
+          <input
+            type="search"
+            placeholder="Search communities or topics"
+            aria-label="Search communities"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </label>
       </div>
 
@@ -135,18 +232,15 @@ export default function Community() {
         <div className="cm-rail cm-filters-rail">
           {FILTERS.map((f) => (
             <button
-              key={f}
+              key={f.label}
               type="button"
-              className={`cm-filter ${filter === f ? 'on' : ''}`}
-              aria-current={filter === f ? 'true' : undefined}
-              onClick={() => setFilter(f)}
+              className={`cm-filter ${filter === f.label ? 'on' : ''}`}
+              aria-current={filter === f.label ? 'true' : undefined}
+              onClick={() => setFilter(f.label)}
             >
-              {f}
+              {f.label}
             </button>
           ))}
-          <button type="button" className="cm-filter more" aria-label="More filters">
-            <MoreHorizontal size={18} strokeWidth={2.2} />
-          </button>
         </div>
       </nav>
 
@@ -156,18 +250,35 @@ export default function Community() {
         <Link to="/home/community/mine" className="cm-see-all">See all</Link>
       </div>
 
-      <div className="cm-rail cm-mine-rail">
-        {MINE.map((c) => (
-          <Link key={c.id} to="/home/community/mine" className="cm-mine">
-            <span className={`cm-tile tone-${c.tone}`} aria-hidden="true">
-              <Glyph item={c} size={64} />
-            </span>
-            {c.owner && <span className="cm-crown" aria-label="Owner"><Crown size={13} strokeWidth={2.2} /></span>}
-            <p className="cm-mine-name">{c.name}</p>
-            <p className="cm-mine-meta">{c.members}<i className="cm-live" /></p>
-          </Link>
-        ))}
-      </div>
+      <SectionState
+        loading={mine.loading}
+        error={mine.error}
+        empty={mine.items.length === 0}
+        emptyText={
+          accessToken
+            ? 'You haven’t joined a community yet. Join one below to see it here.'
+            : 'Sign in to see the communities you’ve joined.'
+        }
+        onRetry={load}
+      />
+
+      {mine.items.length > 0 && (
+        <div className="cm-rail cm-mine-rail">
+          {mine.items.map((c) => (
+            <Link key={c.id} to={`/home/community/${c.slug}`} className="cm-mine">
+              <span className={`cm-tile tone-${c.tone}`} aria-hidden="true">
+                <Glyph item={c} size={64} />
+              </span>
+              {c.is_owner && <span className="cm-crown" aria-label="Owner"><Crown size={13} strokeWidth={2.2} /></span>}
+              <p className="cm-mine-name">{c.name}</p>
+              <p className="cm-mine-meta">
+                {pluralize(c.members_count, 'member')}
+                {c.new_today > 0 && <i className="cm-live" />}
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* ---------------------------------------------------------- promo --- */}
       {promo && (
@@ -205,30 +316,51 @@ export default function Community() {
         <Link to="/home/community/trending" className="cm-see-all">See all</Link>
       </div>
 
-      <ul className="cm-card cm-list">
-        {TRENDING.map((c) => (
-          <li key={c.id} className="cm-row">
-            <span className={`cm-logo tone-${c.tone}`} aria-hidden="true">
-              <Glyph item={c} size={56} />
-            </span>
-            <div className="cm-row-id">
-              <h3>{c.name}</h3>
-              <p className="cm-row-desc">{c.desc}</p>
-              <p className="cm-row-meta">
-                {c.members}<span className="cm-sep">•</span><span className="cm-fresh">{c.fresh}</span>
-              </p>
-            </div>
-            <button
-              type="button"
-              className={`cm-join ${joined[c.id] ? 'on' : ''}`}
-              aria-pressed={joined[c.id] ? 'true' : 'false'}
-              onClick={() => setJoined((s) => ({ ...s, [c.id]: !s[c.id] }))}
-            >
-              {joined[c.id] ? 'Joined' : 'Join'}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <SectionState
+        loading={trending.loading}
+        error={trending.error}
+        empty={trending.items.length === 0}
+        emptyText={query ? `No communities match “${query}”.` : 'No communities to show yet.'}
+        onRetry={load}
+      />
+
+      {trending.items.length > 0 && (
+        <ul className="cm-card cm-list">
+          {trending.items.map((c) => (
+            <li key={c.id} className="cm-row">
+              <Link to={`/home/community/${c.slug}`} className={`cm-logo tone-${c.tone}`} aria-label={c.name}>
+                <Glyph item={c} size={56} />
+              </Link>
+              <div className="cm-row-id">
+                <h3><Link to={`/home/community/${c.slug}`}>{c.name}</Link></h3>
+                {c.description && <p className="cm-row-desc">{c.description}</p>}
+                <p className="cm-row-meta">
+                  {pluralize(c.members_count, 'member')}
+                  {c.new_today > 0 && (
+                    <>
+                      <span className="cm-sep">•</span>
+                      <span className="cm-fresh">{formatCount(c.new_today)} new today</span>
+                    </>
+                  )}
+                </p>
+              </div>
+              {accessToken ? (
+                <button
+                  type="button"
+                  className={`cm-join ${c.is_member ? 'on' : ''}`}
+                  aria-pressed={c.is_member ? 'true' : 'false'}
+                  disabled={!!busy[c.id]}
+                  onClick={() => toggleJoin(c)}
+                >
+                  {busy[c.id] ? '…' : c.is_member ? 'Joined' : 'Join'}
+                </button>
+              ) : (
+                <Link to="/login" className="cm-join">Join</Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* -------------------------------------------------- top discussions --- */}
       <div className="cm-section-head">
@@ -236,39 +368,58 @@ export default function Community() {
         <Link to="/home/community/discussions" className="cm-see-all">See all</Link>
       </div>
 
-      <ul className="cm-card cm-list">
-        {DISCUSSIONS.map((d) => (
-          <li key={d.id} className="cm-disc">
-            <span className={`cm-avatar av-${d.av}`} aria-hidden="true">{initialsOf(d.author)}</span>
-            <div className="cm-disc-body">
-              <div className="cm-disc-top">
-                <h3>{d.title}</h3>
-                <button type="button" className="cm-more" aria-label="More options">
-                  <MoreHorizontal size={19} strokeWidth={2.2} />
-                </button>
+      <SectionState
+        loading={discussions.loading}
+        error={discussions.error}
+        empty={discussions.items.length === 0}
+        emptyText={query ? `No discussions match “${query}”.` : 'No discussions yet — start the first one.'}
+        onRetry={load}
+      />
+
+      {discussions.items.length > 0 && (
+        <ul className="cm-card cm-list">
+          {discussions.items.map((d) => (
+            <li key={d.id} className="cm-disc">
+              <Avatar person={d.author} />
+              <div className="cm-disc-body">
+                <div className="cm-disc-top">
+                  <h3><Link to={`/home/community/discussions/${d.id}`}>{d.title}</Link></h3>
+                  <button type="button" className="cm-more" aria-label="More options">
+                    <MoreHorizontal size={19} strokeWidth={2.2} />
+                  </button>
+                </div>
+                <p className="cm-disc-meta">
+                  {d.author.username
+                    ? <Link to={`/u/${d.author.username}`}>{displayName(d.author)}</Link>
+                    : displayName(d.author)}
+                  <span className="cm-sep">•</span>in{' '}
+                  <Link className="cm-disc-group" to={`/home/community/${d.community.slug}`}>
+                    <GroupIcon community={d.community} />{d.community.name}
+                  </Link>
+                  <span className="cm-disc-time">{timeAgo(d.created_at)}</span>
+                </p>
+                <div className="cm-disc-stats">
+                  <span className="cm-stat"><ThumbsUp size={17} strokeWidth={1.9} />{formatCount(d.likes_count)}</span>
+                  <span className="cm-stat"><MessageSquare size={17} strokeWidth={1.9} />{formatCount(d.comments_count)}</span>
+                  <span className="cm-stat"><Eye size={17} strokeWidth={1.9} />{formatCount(d.view_count)}</span>
+                  {accessToken && (
+                    <button
+                      type="button"
+                      className={`cm-save ${d.is_saved ? 'on' : ''}`}
+                      aria-label={d.is_saved ? 'Remove from saved' : 'Save discussion'}
+                      aria-pressed={d.is_saved ? 'true' : 'false'}
+                      disabled={!!busy[d.id]}
+                      onClick={() => toggleSave(d)}
+                    >
+                      <Bookmark size={18} strokeWidth={1.9} fill={d.is_saved ? 'currentColor' : 'none'} />
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="cm-disc-meta">
-                {d.author}<span className="cm-sep">•</span>in{' '}
-                <span className="cm-disc-group"><GroupIcon name={d.groupIcon} />{d.group}</span>
-                <span className="cm-disc-time">{d.time}</span>
-              </p>
-              <div className="cm-disc-stats">
-                <span className="cm-stat"><ThumbsUp size={17} strokeWidth={1.9} />{d.likes}</span>
-                <span className="cm-stat"><MessageSquare size={17} strokeWidth={1.9} />{d.comments}</span>
-                <span className="cm-stat"><Eye size={17} strokeWidth={1.9} />{d.views}</span>
-                <button
-                  type="button"
-                  className={`cm-save ${saved[d.id] ? 'on' : ''}`}
-                  aria-label="Save discussion"
-                  onClick={() => setSaved((s) => ({ ...s, [d.id]: !s[d.id] }))}
-                >
-                  <Bookmark size={18} strokeWidth={1.9} fill={saved[d.id] ? 'currentColor' : 'none'} />
-                </button>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* ---------------------------------------------------------- create --- */}
       <section className="cm-create">
@@ -281,6 +432,7 @@ export default function Community() {
         </div>
         <Link to="/home/create/community" className="cm-create-cta">Create community</Link>
       </section>
+
 
       <style>{`
         .cm { --gut: 20px; margin: -24px -20px 0; padding-bottom: 12px; }
@@ -551,6 +703,20 @@ export default function Community() {
           .cm-create-text { flex: 1 1 55%; }
           .cm-create-cta { width: 100%; text-align: center; padding: 13px 18px; }
         }
+        /* ------------------------------------------- loading/empty/error */
+        .cm-state {
+          margin: 0; padding: 4px var(--gut) 6px;
+          font-family: var(--font-body); font-size: 14px; color: var(--ink-faint);
+        }
+        .cm-state-error { color: var(--ink-dim); }
+        .cm-retry {
+          font-family: var(--font-head); font-weight: 600; font-size: 14px;
+          color: var(--accent-ink); text-decoration: underline;
+        }
+
+        /* Real uploaded imagery, when a community or member has one. */
+        .cm-tile-img { width: 100%; height: 100%; object-fit: cover; }
+        .cm-avatar-img { object-fit: cover; }
       `}</style>
     </div>
   )
