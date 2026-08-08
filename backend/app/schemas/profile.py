@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.core.media_url import media_ref_to_url
 from app.models.profile import (
+    AVAILABILITY_CHOICES,
     BUILDING_CHOICES,
     CATEGORY_CHOICES,
     INTENT_CHOICES,
@@ -67,6 +68,10 @@ class OnboardingRequest(BaseModel):
     about: str | None = Field(default=None, max_length=4000)
     timezone: str | None = Field(default=None, max_length=64)
 
+    # About tab: availability strip
+    availability_status: str | None = Field(default=None, max_length=20)
+    availability_note: str | None = Field(default=None, max_length=120)
+
     # Conditional on "find_work" being in intents
     hourly_rate: float | None = Field(default=None, gt=0, le=100000)
 
@@ -101,6 +106,15 @@ class OnboardingRequest(BaseModel):
     @classmethod
     def upper_country(cls, v: str) -> str:
         return v.upper()
+
+    @field_validator("availability_status")
+    @classmethod
+    def check_availability_status(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        if v not in AVAILABILITY_CHOICES:
+            raise ValueError(f"Unknown availability_status: {v}")
+        return v
 
     @field_validator("budget_max")
     @classmethod
@@ -141,6 +155,10 @@ class ProfileOut(BaseModel):
     about: str | None = None
     timezone: str | None = None
 
+    # About tab: availability strip
+    availability_status: str | None = None
+    availability_note: str | None = None
+
     hourly_rate: float | None = None
 
     company_name: str | None = None
@@ -173,18 +191,33 @@ class ProfileOut(BaseModel):
 # section contributes a chunk, capped at 100. Deliberately simple (no ML,
 # no per-field fine-tuning) since this is a motivational UI number, not a
 # scored ranking signal.
+#
+# "Add socials" replaces the old "Add portfolio" checklist item — it's
+# satisfied by any one of the social/website links being filled in,
+# matching the About tab's merged "Links" section (portfolio links no
+# longer have their own tab, so they're no longer weighted on their own).
 _COMPLETION_WEIGHTS = [
     ("photo_ref", 15),
     ("bio", 15),
     ("skills", 15),
     ("headline", 10),
     ("city", 10),
-    ("portfolio_links", 10),
     ("work_experience", 10),
     ("cover_ref", 5),
     ("github_url", 5),
     ("linkedin_url", 5),
 ]
+
+
+def _has_socials(profile) -> bool:
+    return bool(
+        getattr(profile, "github_url", None)
+        or getattr(profile, "linkedin_url", None)
+        or getattr(profile, "website_url", None)
+        or getattr(profile, "twitter_url", None)
+        or getattr(profile, "dribbble_url", None)
+        or getattr(profile, "portfolio_links", None)
+    )
 
 
 def _compute_completion(profile) -> int:
@@ -193,6 +226,8 @@ def _compute_completion(profile) -> int:
         value = getattr(profile, field_name, None)
         if value:
             total += weight
+    if _has_socials(profile):
+        total += 10
     return min(total, 100)
 
 
@@ -286,6 +321,10 @@ class ProfileUpdateRequest(BaseModel):
     is_remote: bool | None = None
     timezone: str | None = Field(default=None, max_length=64)
 
+    # About tab: availability strip
+    availability_status: str | None = Field(default=None, max_length=20)
+    availability_note: str | None = Field(default=None, max_length=120)
+
     portfolio_links: list[str] | None = Field(default=None, max_length=10)
     work_experience: list[WorkExperienceItem] | None = Field(default=None, max_length=20)
     github_url: str | None = Field(default=None, max_length=255)
@@ -332,6 +371,15 @@ class ProfileUpdateRequest(BaseModel):
         if v and len(v) != 2:
             raise ValueError("country_code must be a 2-letter ISO code")
         return v or None
+
+    @field_validator("availability_status")
+    @classmethod
+    def check_availability_status(cls, v):
+        if v is None or v == "":
+            return None
+        if v not in AVAILABILITY_CHOICES:
+            raise ValueError(f"Unknown availability_status: {v}")
+        return v
 
 
 class PrivacyUpdateRequest(BaseModel):

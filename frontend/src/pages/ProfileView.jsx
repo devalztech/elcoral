@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
-  Loader2, Pencil, Share2, Link2, Settings, MapPin, MessageCircle, Bell,
+  Loader2, Pencil, Share2, Settings, MapPin, MessageCircle, Bell,
   Github, Linkedin, Globe, Briefcase, MoreHorizontal, Plus, ImagePlus,
   BadgeCheck, Wifi, ChevronRight, ChevronDown, Check, Clock, SquarePen,
   ArrowLeft, UserPlus, Crown, FlaskConical, Sprout, Rocket, Lock, Users,
-  Heart, Repeat2, Share, Pin, CircleCheck,
+  Heart, Repeat2, Share, Pin, CircleCheck, Twitter, Dribbble,
 } from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import ReportDialog from '../features/settings/components/ReportDialog.jsx'
@@ -17,20 +17,24 @@ import ElcoralMark from '../components/ElcoralMark.jsx'
 //
 //   1. "owner"   — the profile owner viewing their own profile: centred
 //                  header, cover toolbars, Edit Profile / Share Profile,
-//                  profile-completion + currently-building cards,
-//                  availability strip and the full tab strip.
+//                  profile-completion card, and the full tab strip.
 //   2. "visitor" — another logged-in member viewing the profile: back /
 //                  overflow row, left-aligned header, Message / Connect /
-//                  Follow actions, the "What we're building" card, top
-//                  skills, tabs and the post feed.
+//                  Follow actions, top skills, tabs and the post feed.
 //   3. "guest"   — a logged-out visitor: the same left-aligned header and
 //                  public cards, then a join gate in place of the tabs and
 //                  a "Why join Elcoral?" strip.
 //
+// The Portfolio tab was folded into About (Links section) and Currently
+// Building now lives on the Projects tab — neither is a separate tab
+// anymore. Availability moved from a standalone strip at the top of the
+// page into the About tab as well. "Looking for" on About reads the
+// profile's `intents` — the same "what brings you here" goals collected
+// at onboarding — rather than a separate field.
+//
 // Frontend-only placeholders (no backend field yet, deliberately not
-// presented as real data): follower/following/like counts, the badge chips,
-// the "currently building" card, availability, and the Projects tab.
-// Everything else reads from the API when the field exists.
+// presented as real data): follower/following/like counts and the badge
+// chips. Everything else reads from the API when the field exists.
 
 const BADGES = [
   { label: 'Official', Icon: Crown, tone: 'gold' },
@@ -38,13 +42,39 @@ const BADGES = [
   { label: 'Early Supporter', Icon: Sprout, tone: 'lemon' },
 ]
 
+// "Currently building" — still frontend-placeholder copy (no backend
+// field for a pinned project yet), now shown on the Projects tab instead
+// of the top of the profile page.
 const BUILDING = {
   name: 'Elcoral Platform',
   description: 'A professional ecosystem that connects talent with opportunities.',
   lookingFor: ['UI/UX Designer', 'Backend Developer', 'Researchers', 'Beta Testers'],
 }
 
-const TABS = ['Posts', 'Projects', 'Portfolio', 'Skills', 'About']
+const TABS = ['Posts', 'Projects', 'Skills', 'About']
+
+// Mirrors app/models/profile.py's AVAILABILITY_CHOICES + the labels/dot
+// tone shown in the About tab's availability strip.
+const AVAILABILITY_LABELS = {
+  open_to_work: 'Open to work',
+  open_to_collab: 'Open to collaborate',
+  not_available: 'Not available',
+}
+
+// Mirrors OnboardingContext.jsx's INTENT_OPTIONS labels — used to render
+// the profile's `intents` as readable "Looking for" chips on About.
+const INTENT_LABELS = {
+  find_work: 'Freelance work',
+  hire: 'Hiring professionals',
+  build_startup: 'Building a startup',
+  find_collaborators: 'Collaborators',
+  learn: 'Learning new skills',
+  mentor: 'Mentorship',
+  showcase_work: 'Showcasing work',
+  network: 'Growing my network',
+  share_ideas: 'Sharing ideas',
+  recruit: 'Recruiting talent',
+}
 
 export default function ProfileView() {
   const params = useParams()
@@ -252,11 +282,13 @@ function MetaRow({ profile, align = 'center' }) {
       </span>
     )
   }
-  items.push(
-    <span className="pv-meta-item" key="available">
-      <i className="pv-meta-dot" aria-hidden="true" /> Available
-    </span>
-  )
+  if (profile.availability_status && profile.availability_status !== 'not_available') {
+    items.push(
+      <span className="pv-meta-item" key="available">
+        <i className="pv-meta-dot" aria-hidden="true" /> {AVAILABILITY_LABELS[profile.availability_status]}
+      </span>
+    )
+  }
 
   return (
     <div className={`pv-meta pv-meta-${align}`}>
@@ -381,10 +413,7 @@ function OwnerProfile({ profile, posts }) {
 
       <div className="pv-cardgrid">
         <CompletionCard profile={profile} postCount={posts.length} />
-        <BuildingCardOwner />
       </div>
-
-      <AvailabilityStrip />
 
       <ProfileTabs profile={profile} posts={posts} isOwner />
     </>
@@ -392,12 +421,16 @@ function OwnerProfile({ profile, posts }) {
 }
 
 function CompletionCard({ profile, postCount }) {
+  const hasSocials = Boolean(
+    profile.github_url || profile.linkedin_url || profile.website_url
+    || profile.twitter_url || profile.dribbble_url || profile.portfolio_links?.length
+  )
   const checklist = [
     { label: 'Add profile photo', worth: 15, done: Boolean(profile.photo_url) },
     { label: 'Add bio', worth: 10, done: Boolean(profile.bio) },
     { label: 'Add location', worth: 10, done: Boolean(profile.city) },
     { label: 'Add skills', worth: 15, done: Boolean(profile.skills?.length) },
-    { label: 'Add portfolio', worth: 15, done: Boolean(profile.portfolio_links?.length) },
+    { label: 'Add socials', worth: 15, done: hasSocials },
     { label: 'Create first post', worth: 15, done: postCount > 0 },
   ]
   const computed = checklist.reduce((sum, c) => (c.done ? sum + c.worth : sum), 0)
@@ -428,15 +461,11 @@ function CompletionCard({ profile, postCount }) {
   )
 }
 
-function BuildingCardOwner() {
-  return (
-    <section className="pv-card">
-      <Link to="/home/profile/edit" className="pv-card-head">
-        <h2>
-          <Rocket size={17} className="pv-card-head-icon" aria-hidden="true" /> Currently building
-        </h2>
-        <ChevronRight size={17} />
-      </Link>
+// "Currently building" card — shown on the Projects tab (owner gets an
+// edit affordance, visitors/guests get the same card read-only).
+function BuildingCard({ isOwner = false }) {
+  const content = (
+    <>
       <div className="pv-build">
         <div className="pv-build-logo">
           <ElcoralMark size={30} color="var(--lemon)" />
@@ -452,26 +481,65 @@ function BuildingCardOwner() {
           <span className="pv-chip pv-chip-lemon" key={c}>{c}</span>
         ))}
       </div>
+    </>
+  )
+
+  if (!isOwner) {
+    return (
+      <section className="pv-card">
+        <h2 className="pv-card-head-static">
+          <Rocket size={17} className="pv-card-head-icon" aria-hidden="true" /> Currently building
+        </h2>
+        {content}
+      </section>
+    )
+  }
+
+  return (
+    <section className="pv-card">
+      <Link to="/home/profile/edit" className="pv-card-head">
+        <h2>
+          <Rocket size={17} className="pv-card-head-icon" aria-hidden="true" /> Currently building
+        </h2>
+        <ChevronRight size={17} />
+      </Link>
+      {content}
     </section>
   )
 }
 
-function AvailabilityStrip() {
+// Availability strip — now shown inside the About tab rather than at the
+// top of the profile page. Renders nothing if the person hasn't set an
+// availability status (no fake "Available" default).
+function AvailabilityStrip({ profile, isOwner }) {
+  if (!isOwner && !profile.availability_status) return null
+
+  const Wrapper = isOwner ? Link : 'div'
+  const wrapperProps = isOwner ? { to: '/home/profile/edit' } : {}
+
   return (
-    <Link to="/home/profile/edit" className="pv-availability">
+    <Wrapper className="pv-availability" {...wrapperProps}>
       <span className="pv-availability-title">
         <Clock size={19} aria-hidden="true" /> Availability
       </span>
-      <span className="pv-availability-lines">
-        <span className="pv-availability-line">
-          <i className="pv-meta-dot" aria-hidden="true" /> Open to work
+      {profile.availability_status ? (
+        <span className="pv-availability-lines">
+          <span className="pv-availability-line">
+            <i className="pv-meta-dot" aria-hidden="true" /> {AVAILABILITY_LABELS[profile.availability_status]}
+          </span>
+          {profile.availability_note && (
+            <span className="pv-availability-line pv-availability-line-dim">
+              <Clock size={13} aria-hidden="true" /> {profile.availability_note}
+            </span>
+          )}
         </span>
-        <span className="pv-availability-line pv-availability-line-dim">
-          <Clock size={13} aria-hidden="true" /> Usually replies within 15 mins
+      ) : (
+        <span className="pv-availability-lines">
+          <span className="pv-availability-line pv-availability-line-dim">Not set</span>
         </span>
-      </span>
-      <ChevronRight size={18} className="pv-availability-chevron" />
-    </Link>
+      )}
+      {isOwner && <ChevronRight size={18} className="pv-availability-chevron" />}
+    </Wrapper>
   )
 }
 
@@ -574,7 +642,6 @@ function VisitorProfile({ profile, posts }) {
         <StatsRow profile={profile} postCount={posts.length} />
       </div>
 
-      <PublicBuildingCard />
       <TopSkills profile={profile} />
       <ProfileTabs profile={profile} posts={posts} />
     </>
@@ -716,21 +783,31 @@ function ProfileTabs({ profile, posts, isOwner = false }) {
 
       <div className="pv-tabpanel">
         {tab === 'Posts' && <PostsTab profile={profile} posts={posts} isOwner={isOwner} />}
-        {tab === 'Projects' && (
-          <EmptyTab
-            title="No projects yet"
-            body={isOwner
-              ? 'Showcase what you are building to attract collaborators.'
-              : `${profile.full_name} hasn't shared any projects yet.`}
-            action={isOwner ? 'Add a Project' : null}
-            to="/home/profile/edit"
-          />
-        )}
-        {tab === 'Portfolio' && <PortfolioTab profile={profile} isOwner={isOwner} />}
+        {tab === 'Projects' && <ProjectsTab profile={profile} isOwner={isOwner} />}
         {tab === 'Skills' && <SkillsTab profile={profile} isOwner={isOwner} />}
         {tab === 'About' && <AboutTab profile={profile} isOwner={isOwner} />}
       </div>
     </>
+  )
+}
+
+function ProjectsTab({ profile, isOwner }) {
+  // "Currently building" is still frontend-placeholder content (no
+  // backend field for a pinned project yet) — shown above the empty
+  // project list rather than gating it, since it's a preview of what the
+  // Projects tab will hold once real project data exists.
+  return (
+    <div className="pv-projects">
+      <BuildingCard isOwner={isOwner} />
+      <EmptyTab
+        title="No projects yet"
+        body={isOwner
+          ? 'Showcase what you are building to attract collaborators.'
+          : `${profile.full_name} hasn't shared any projects yet.`}
+        action={isOwner ? 'Add a Project' : null}
+        to="/home/profile/edit"
+      />
+    </div>
   )
 }
 
@@ -808,31 +885,6 @@ function PostCard({ post, profile }) {
   )
 }
 
-function PortfolioTab({ profile, isOwner }) {
-  if (!profile.portfolio_links?.length) {
-    return (
-      <EmptyTab
-        title="No portfolio yet"
-        body={isOwner
-          ? 'Add links to your best work so people can see what you do.'
-          : `${profile.full_name} hasn't added any portfolio links yet.`}
-        action={isOwner ? 'Add Portfolio Link' : null}
-        to="/home/profile/edit"
-      />
-    )
-  }
-  return (
-    <div className="pv-portfolio">
-      {profile.portfolio_links.map((l) => (
-        <a key={l} href={l} target="_blank" rel="noreferrer" className="pv-portfolio-link">
-          <Globe size={16} aria-hidden="true" /> <span>{l}</span>
-          <ChevronRight size={16} className="pv-portfolio-chevron" />
-        </a>
-      ))}
-    </div>
-  )
-}
-
 function SkillsTab({ profile, isOwner }) {
   if (!profile.skills?.length) {
     return (
@@ -856,8 +908,13 @@ function SkillsTab({ profile, isOwner }) {
 }
 
 function AboutTab({ profile, isOwner }) {
-  const hasLinks = profile.github_url || profile.linkedin_url || profile.website_url
+  const hasSocials = profile.github_url || profile.linkedin_url || profile.website_url
+    || profile.twitter_url || profile.dribbble_url
+  const hasPortfolio = profile.portfolio_links?.length > 0
+  const hasLinks = hasSocials || hasPortfolio
+  const lookingFor = (profile.intents ?? []).filter((k) => INTENT_LABELS[k])
   const hasAny = profile.bio || profile.work_experience?.length || hasLinks
+    || lookingFor.length > 0 || profile.about || profile.availability_status || isOwner
 
   if (!hasAny) {
     return (
@@ -898,25 +955,87 @@ function AboutTab({ profile, isOwner }) {
         </AboutSection>
       )}
 
-      {hasLinks && (
+      {hasLinks ? (
         <AboutSection title="Links">
-          <div className="pv-social">
-            {profile.github_url && (
-              <a href={profile.github_url} target="_blank" rel="noreferrer" aria-label="GitHub">
-                <Github size={18} />
-              </a>
-            )}
-            {profile.linkedin_url && (
-              <a href={profile.linkedin_url} target="_blank" rel="noreferrer" aria-label="LinkedIn">
-                <Linkedin size={18} />
-              </a>
-            )}
-            {profile.website_url && (
-              <a href={profile.website_url} target="_blank" rel="noreferrer" aria-label="Website">
-                <Globe size={18} />
-              </a>
-            )}
+          {hasSocials && (
+            <div className="pv-social">
+              {profile.github_url && (
+                <a href={profile.github_url} target="_blank" rel="noreferrer" aria-label="GitHub">
+                  <Github size={18} />
+                </a>
+              )}
+              {profile.linkedin_url && (
+                <a href={profile.linkedin_url} target="_blank" rel="noreferrer" aria-label="LinkedIn">
+                  <Linkedin size={18} />
+                </a>
+              )}
+              {profile.website_url && (
+                <a href={profile.website_url} target="_blank" rel="noreferrer" aria-label="Website">
+                  <Globe size={18} />
+                </a>
+              )}
+              {profile.twitter_url && (
+                <a href={profile.twitter_url} target="_blank" rel="noreferrer" aria-label="Twitter">
+                  <Twitter size={18} />
+                </a>
+              )}
+              {profile.dribbble_url && (
+                <a href={profile.dribbble_url} target="_blank" rel="noreferrer" aria-label="Dribbble">
+                  <Dribbble size={18} />
+                </a>
+              )}
+            </div>
+          )}
+          {hasPortfolio && (
+            <div className="pv-portfolio">
+              {profile.portfolio_links.map((l) => (
+                <a key={l} href={l} target="_blank" rel="noreferrer" className="pv-portfolio-link">
+                  <Globe size={16} aria-hidden="true" /> <span>{l}</span>
+                  <ChevronRight size={16} className="pv-portfolio-chevron" />
+                </a>
+              ))}
+            </div>
+          )}
+        </AboutSection>
+      ) : isOwner ? (
+        <AboutSection title="Links">
+          <Link to="/home/profile/edit" className="pv-about-empty-link">
+            <Plus size={15} aria-hidden="true" /> Add socials or a portfolio link
+          </Link>
+        </AboutSection>
+      ) : null}
+
+      {lookingFor.length > 0 ? (
+        <AboutSection title="Looking for">
+          <div className="pv-chips">
+            {lookingFor.map((k) => (
+              <span className="pv-chip pv-chip-lemon" key={k}>{INTENT_LABELS[k]}</span>
+            ))}
           </div>
+        </AboutSection>
+      ) : isOwner ? (
+        <AboutSection title="Looking for">
+          <Link to="/home/profile/edit" className="pv-about-empty-link">
+            <Plus size={15} aria-hidden="true" /> Add what you're looking for
+          </Link>
+        </AboutSection>
+      ) : null}
+
+      {profile.about ? (
+        <AboutSection title="More about">
+          <p className="pv-about-text">{profile.about}</p>
+        </AboutSection>
+      ) : isOwner ? (
+        <AboutSection title="More about">
+          <Link to="/home/profile/edit" className="pv-about-empty-link">
+            <Plus size={15} aria-hidden="true" /> Tell people more about yourself
+          </Link>
+        </AboutSection>
+      ) : null}
+
+      {(isOwner || profile.availability_status) && (
+        <AboutSection title="Availability">
+          <AvailabilityStrip profile={profile} isOwner={isOwner} />
         </AboutSection>
       )}
     </div>
@@ -1152,9 +1271,6 @@ function ProfileStyles() {
       .pv-cardgrid {
         display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 22px;
       }
-      @media (min-width: 720px) {
-        .pv-cardgrid { grid-template-columns: 1fr 1fr; align-items: start; }
-      }
       .pv-card {
         background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
         border-radius: 18px; padding: 18px;
@@ -1170,6 +1286,11 @@ function ProfileStyles() {
       .pv-card-head-icon { color: var(--accent-ink); }
       .pv-card-head-right { display: inline-flex; align-items: center; gap: 7px; }
       .pv-card-head-right strong { color: var(--accent-ink); font-size: 16px; font-weight: 700; }
+      .pv-card-head-static {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--ink);
+        margin: 0 0 2px;
+      }
 
       .pv-progress {
         height: 7px; border-radius: 999px; background: var(--pv-surface-2);
@@ -1265,7 +1386,7 @@ function ProfileStyles() {
         border-bottom: 2px solid transparent; white-space: nowrap;
         transition: color 0.15s ease;
       }
-      .pv-tab-active { color: var(--ink); border-bottom-color: var(--accent-ink); }
+      .pv-tab-active { color: var(--accent-ink); border-bottom-color: var(--accent-ink); }
       .pv-tabpanel { padding: 18px 0 0; min-height: 140px; }
 
       /* ------------------------------- feed ------------------------------ */
@@ -1347,6 +1468,7 @@ function ProfileStyles() {
       .pv-why-body { font-size: 13.5px; color: var(--ink-dim); line-height: 1.45; margin-top: 3px; }
 
       /* ----------------------------- sub-tabs ---------------------------- */
+      .pv-projects { display: flex; flex-direction: column; gap: 14px; }
       .pv-portfolio { display: flex; flex-direction: column; gap: 10px; }
       .pv-portfolio-link {
         display: flex; align-items: center; gap: 10px;
@@ -1384,6 +1506,13 @@ function ProfileStyles() {
         color: var(--ink-dim);
       }
       .pv-social a:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
+      .pv-social + .pv-portfolio { margin-top: 14px; }
+
+      .pv-about-empty-link {
+        display: inline-flex; align-items: center; gap: 7px;
+        font-size: 14px; font-weight: 600; color: var(--accent-ink);
+      }
+      .pv-about-empty-link:hover { text-decoration: underline; }
 
       .pv-emptytab {
         display: flex; flex-direction: column; align-items: center; text-align: center;

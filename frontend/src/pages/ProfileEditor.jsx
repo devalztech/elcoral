@@ -4,11 +4,12 @@ import {
   ArrowLeft, Loader2, Camera, X, Plus, ChevronDown, ChevronRight,
   Link2, MapPin, UsersRound, SlidersHorizontal, Target, FileText, Info,
   Briefcase, UserRound, GraduationCap, MessagesSquare, Twitter, Linkedin, Github, Dribbble,
+  Clock, Globe,
 } from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api, ApiError } from '../api/client.js'
 import {
-  OnboardingProvider, useOnboarding, toApiPayload, SUGGESTED_SKILLS,
+  OnboardingProvider, useOnboarding, toApiPayload, SUGGESTED_SKILLS, AVAILABILITY_OPTIONS,
 } from '../features/onboarding/OnboardingContext.jsx'
 
 // Full-page Edit Profile screen, built to the Elcoral mobile design spec:
@@ -110,6 +111,7 @@ function ProfileEditorBody() {
   const [usernameError, setUsernameError] = useState('')
   const [skillInput, setSkillInput] = useState('')
   const [addingSkill, setAddingSkill] = useState(false)
+  const [portfolioInput, setPortfolioInput] = useState('')
 
   useEffect(() => {
     if (user?.full_name) setFullName(user.full_name)
@@ -151,6 +153,17 @@ function ProfileEditorBody() {
 
   function removeSkill(skill) {
     update({ skills: data.skills.filter((s) => s !== skill) })
+  }
+
+  function addPortfolioLink() {
+    const trimmed = portfolioInput.trim()
+    if (!trimmed || data.portfolio_links.includes(trimmed)) return
+    update({ portfolio_links: [...data.portfolio_links, trimmed] })
+    setPortfolioInput('')
+  }
+
+  function removePortfolioLink(link) {
+    update({ portfolio_links: data.portfolio_links.filter((l) => l !== link) })
   }
 
   function toggleLookingFor(key) {
@@ -375,6 +388,35 @@ function ProfileEditorBody() {
               </Field>
             ))}
           </div>
+
+          <p className="pe-sublabel">Portfolio links</p>
+          <div className="pe-portfolio-row">
+            <div className="pe-field pe-portfolio-field">
+              <Globe size={19} className="pe-lead" />
+              <input
+                className="pe-input"
+                value={portfolioInput}
+                onChange={(e) => setPortfolioInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPortfolioLink() } }}
+                placeholder="Add a link to your work…"
+              />
+            </div>
+            <button type="button" className="pe-portfolio-add" onClick={addPortfolioLink} aria-label="Add portfolio link">
+              <Plus size={18} />
+            </button>
+          </div>
+          {data.portfolio_links.length > 0 && (
+            <div className="pe-chips">
+              {data.portfolio_links.map((link) => (
+                <span className="pe-chip" key={link}>
+                  {link}
+                  <button type="button" onClick={() => removePortfolioLink(link)} aria-label={`Remove ${link}`}>
+                    <X size={15} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Skills ─────────────────────────────────── */}
@@ -454,6 +496,35 @@ function ProfileEditorBody() {
           onChange={(e) => update({ about: e.target.value })}
           placeholder="Anything else people should know about you…"
         />
+
+        {/* ── Availability ───────────────────────────── */}
+        <SectionHeading icon={Clock}>Availability</SectionHeading>
+        <div className="pe-avail-options">
+          {AVAILABILITY_OPTIONS.map(({ key, label }) => {
+            const active = data.availability_status === key
+            return (
+              <button
+                type="button"
+                key={key}
+                className={`pe-avail-option${active ? ' is-active' : ''}`}
+                aria-pressed={active}
+                onClick={() => update({ availability_status: active ? '' : key })}
+              >
+                <span className="pe-avail-dot" aria-hidden="true" />
+                {label}
+              </button>
+            )
+          })}
+        </div>
+        <Field label="Availability note" footer={<span className="pe-counter">{(data.availability_note || '').length}/120</span>}>
+          <input
+            className="pe-input"
+            maxLength={120}
+            value={data.availability_note || ''}
+            onChange={(e) => update({ availability_note: e.target.value })}
+            placeholder="e.g. Usually replies within 15 mins"
+          />
+        </Field>
       </div>
 
       <style>{`
@@ -618,6 +689,15 @@ function ProfileEditorBody() {
           background: var(--ink); color: var(--bg);
           display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
         }
+        .pe-portfolio-row { display: flex; gap: 8px; }
+        .pe-portfolio-field { flex: 1 1 auto; }
+        .pe-portfolio-add {
+          width: 46px; flex-shrink: 0; border-radius: 12px;
+          background: var(--field); border: 1px solid var(--field-border);
+          color: var(--ink-dim);
+          display: flex; align-items: center; justify-content: center;
+        }
+        .pe-portfolio-add:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 
         /* Skills */
         .pe-skill-add { margin-bottom: 12px; }
@@ -679,6 +759,23 @@ function ProfileEditorBody() {
           margin-top: 10px; background: var(--field); border: 1px solid var(--field-border);
           border-radius: 12px; padding: 12px 14px;
         }
+
+        /* Availability */
+        .pe-avail-options { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 12px; }
+        .pe-avail-option {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 10px 16px; border-radius: 999px;
+          background: var(--field); border: 1px solid var(--field-border);
+          font-size: 14px; color: var(--ink-dim);
+        }
+        .pe-avail-dot {
+          width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+          background: var(--ink-faint);
+        }
+        .pe-avail-option.is-active {
+          border-color: var(--accent-ink); color: var(--ink); background: rgba(196, 241, 53, 0.05);
+        }
+        .pe-avail-option.is-active .pe-avail-dot { background: var(--lemon); }
 
         @media (max-width: 400px) {
           .pe-looking { grid-template-columns: repeat(3, minmax(0, 1fr)); }

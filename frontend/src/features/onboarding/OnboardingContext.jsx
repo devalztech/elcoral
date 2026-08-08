@@ -71,6 +71,13 @@ export const SUGGESTED_INTERESTS = [
   'Marketing', 'Web3', 'Open Source', 'Product', 'Writing', 'Fitness', 'Travel',
 ]
 
+// Mirrors app/models/profile.py's AVAILABILITY_CHOICES.
+export const AVAILABILITY_OPTIONS = [
+  { key: 'open_to_work', label: 'Open to work' },
+  { key: 'open_to_collab', label: 'Open to collaborate' },
+  { key: 'not_available', label: 'Not available' },
+]
+
 const emptyData = {
   intents: [],
   categories: [],
@@ -97,6 +104,8 @@ const emptyData = {
   dribbble_url: '',
   about: '',
   timezone: '',
+  availability_status: '',
+  availability_note: '',
   hourly_rate: '',
   company_name: '',
   hiring_for: '',
@@ -143,6 +152,8 @@ function fromApiProfile(profile) {
     dribbble_url: profile.dribbble_url || '',
     about: profile.about || '',
     timezone: profile.timezone || '',
+    availability_status: profile.availability_status || '',
+    availability_note: profile.availability_note || '',
     hourly_rate: profile.hourly_rate != null ? String(profile.hourly_rate) : '',
     company_name: profile.company_name || '',
     hiring_for: profile.hiring_for || '',
@@ -204,6 +215,8 @@ export function toApiPayload(data) {
     dribbble_url: data.dribbble_url || null,
     about: data.about || null,
     timezone: data.timezone || null,
+    availability_status: data.availability_status || null,
+    availability_note: data.availability_note || null,
     hourly_rate: data.hourly_rate ? Number(data.hourly_rate) : null,
     company_name: data.company_name || null,
     hiring_for: data.hiring_for || null,

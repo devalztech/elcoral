@@ -74,6 +74,15 @@ BUILDING_CHOICES = [
     "other",
 ]
 
+# Availability strip shown in the About tab — a small, closed vocabulary
+# (unlike intents/categories/building above) since it drives a colored
+# status dot in the UI and needs to stay renderable without a lookup.
+AVAILABILITY_CHOICES = [
+    "open_to_work",
+    "open_to_collab",
+    "not_available",
+]
+
 
 class Profile(Base):
     """
@@ -116,6 +125,13 @@ class Profile(Base):
     categories: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
     building: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
     interests: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+
+    # --- About tab: availability strip ---
+    # Nullable so a profile that hasn't set this shows no availability
+    # strip at all, rather than defaulting to a false "open to work".
+    availability_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Free-text line under the status, e.g. "Usually replies within 15 mins".
+    availability_note: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
     # --- Shared fields ---
     country_code: Mapped[str | None] = mapped_column(String(2), nullable=True)
