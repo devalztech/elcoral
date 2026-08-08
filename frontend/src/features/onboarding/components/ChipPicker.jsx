@@ -46,11 +46,11 @@ export default function ChipPicker({ options, selected, onToggle, columns = 2 })
         .chip:hover { border-color: var(--ink-faint); }
         .chip-selected {
           background: rgba(196, 241, 53, 0.12);
-          border-color: var(--accent-ink);
+          border-color: var(--lemon);
           color: var(--ink);
         }
-        .chip-selected .chip-icon { color: var(--accent-ink); }
-        .chip-check { color: var(--accent-ink); flex-shrink: 0; }
+        .chip-selected .chip-icon { color: var(--lemon); }
+        .chip-check { color: var(--lemon); flex-shrink: 0; }
         @media (max-width: 480px) {
           .chip-grid { grid-template-columns: repeat(1, 1fr); }
         }

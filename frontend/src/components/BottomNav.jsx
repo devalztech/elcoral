@@ -60,7 +60,7 @@ export default function BottomNav() {
           max-width: 84px;
         }
         .bn-item span { font-size: 11px; font-weight: 600; font-family: var(--font-head); }
-        .bn-item.active { color: var(--accent-ink); }
+        .bn-item.active { color: var(--lemon); }
         .bn-item:active { transform: scale(0.94); }
 
         @media (min-width: 860px) {

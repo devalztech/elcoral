@@ -69,7 +69,7 @@ export default function AppearanceSettings() {
           background: var(--panel); border: 1px solid var(--border);
           font-size: 13px; font-weight: 600; color: var(--ink-dim);
         }
-        .theme-card-on { border-color: var(--accent-ink); color: var(--ink); }
+        .theme-card-on { border-color: var(--lemon); color: var(--ink); }
         .appearance-accents { display: flex; flex-wrap: wrap; gap: 14px; }
         .accent-dot { display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .accent-swatch {

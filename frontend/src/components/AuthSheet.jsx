@@ -196,14 +196,14 @@ export default function AuthSheet({ initialRole = 'client', mode: initialMode = 
           font-family: var(--font-head); font-weight: 600; font-size: 14px;
           padding: 11px 14px; border-radius: 9px; transition: all 0.15s ease;
         }
-        .role-toggle button.active { background: var(--lemon); color: var(--on-accent); }
+        .role-toggle button.active { background: var(--lemon); color: #0B0D0A; }
         .form-error {
           background: rgba(255,107,74,0.1); border: 1px solid rgba(255,107,74,0.3);
           color: var(--danger); font-size: 13.5px; padding: 10px 12px;
           border-radius: 8px; margin: 4px 0 16px;
         }
         .sheet-switch { text-align: center; font-size: 14px; color: var(--ink-faint); margin-top: 18px; }
-        .sheet-switch button { background: none; border: none; color: var(--accent-ink); font-weight: 600; font-size: 14px; padding: 0 2px; }
+        .sheet-switch button { background: none; border: none; color: var(--lemon); font-weight: 600; font-size: 14px; padding: 0 2px; }
 
         @media (min-width: 640px) {
           .sheet-overlay { align-items: center; padding: 24px; }
@@ -237,7 +237,7 @@ function Field({ label, type = 'text', value, onChange, error, autoComplete, hin
           border-radius: 10px; padding: 13px 14px; font-size: 15.5px; color: var(--ink);
           font-family: var(--font-body); transition: border-color 0.15s ease;
         }
-        .field input:focus { outline: none; border-color: var(--accent-ink); }
+        .field input:focus { outline: none; border-color: var(--lemon); }
         .field input.invalid { border-color: var(--danger); }
         .field-error { display: block; font-size: 12.5px; color: var(--danger); margin-top: 6px; }
         .field-hint { display: block; font-size: 12.5px; color: var(--ink-faint); margin-top: 6px; }

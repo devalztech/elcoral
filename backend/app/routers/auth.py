@@ -19,7 +19,6 @@ from app.core.security import (
     verify_verification_token,
 )
 from app.models.user import EmailVerificationToken, PasswordResetToken, RefreshToken, User
-from app.models.profile import Profile
 from app.schemas.auth import (
     ChangePasswordRequest,
     DeleteAccountRequest,
@@ -76,27 +75,6 @@ async def signup(request: Request, response: Response, body: SignupRequest, db: 
     db.add(user)
     await db.commit()
     await db.refresh(user)
-
-    # The signup form also collects a handle and "Join as" choice, so the
-    # profile row is created here instead of waiting for onboarding. The
-    # username is only claimed when it is actually free — signup must not
-    # fail (or leak which handles exist) because of a taken handle; the
-    # onboarding username step asks again when it wasn't claimed.
-    requested_username = (body.username or "").strip() or None
-    if requested_username:
-        taken = await db.scalar(
-            select(Profile).where(func.lower(Profile.username) == requested_username.lower())
-        )
-        if taken or requested_username.lower() in RESERVED_USERNAMES:
-            requested_username = None
-    db.add(
-        Profile(
-            user_id=user.id,
-            username=requested_username,
-            account_type=body.account_type,
-        )
-    )
-    await db.flush()
 
     access_token = create_access_token(subject=str(user.id))
     raw_refresh, hashed_refresh = create_refresh_token(subject=str(user.id))

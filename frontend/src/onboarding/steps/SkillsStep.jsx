@@ -88,12 +88,12 @@ export default function SkillsStep({ progress, onNext, onBack }) {
           color: var(--ink);
           font-family: var(--font-body);
         }
-        .skills-input:focus { outline: none; border-color: var(--accent-ink); }
+        .skills-input:focus { outline: none; border-color: var(--lemon); }
         .skills-add-btn {
           display: flex; align-items: center; gap: 6px;
           margin-top: 8px; padding: 6px 0;
           font-size: 13.5px;
-          color: var(--accent-ink);
+          color: var(--lemon);
           font-weight: 500;
         }
         .skills-suggestions {
@@ -109,7 +109,7 @@ export default function SkillsStep({ progress, onNext, onBack }) {
           border-radius: 999px;
           padding: 7px 12px;
         }
-        .skill-suggestion:hover { border-color: var(--accent-ink); color: var(--ink); }
+        .skill-suggestion:hover { border-color: var(--lemon); color: var(--ink); }
         .skills-selected {
           display: flex; flex-wrap: wrap; gap: 8px;
           margin-top: 22px;

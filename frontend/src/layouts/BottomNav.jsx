@@ -60,12 +60,12 @@ export default function BottomNav() {
           max-width: 84px;
         }
         .bn-item span { font-size: 11px; font-weight: 600; font-family: var(--font-head); }
-        .bn-item.active { color: var(--accent-ink); }
+        .bn-item.active { color: var(--lemon); }
         .bn-create {
-          background: var(--lemon); color: var(--on-accent); border-radius: 999px;
+          background: var(--lemon); color: #0B0D0A; border-radius: 999px;
           width: 34px; height: 34px; padding: 6px; margin: -5px 0 -2px;
         }
-        .bn-item .bn-create + span { color: var(--accent-ink); }
+        .bn-item .bn-create + span { color: var(--lemon); }
         .bn-item:active { transform: scale(0.94); }
 
         @media (min-width: 860px) {

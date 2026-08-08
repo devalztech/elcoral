@@ -55,11 +55,11 @@ export default function PublicShell() {
         }
         .pshell-actions { display: flex; align-items: center; gap: 14px; }
         .pshell-icon-link { color: var(--ink); display: inline-flex; }
-        .pshell-icon-link:hover { color: var(--accent-ink); }
+        .pshell-icon-link:hover { color: var(--lemon); }
         .pshell-login { font-size: 15px; font-weight: 600; color: var(--ink-dim); }
         .pshell-login:hover { color: var(--ink); }
         .pshell-signup {
-          background: var(--lemon); color: var(--on-accent);
+          background: var(--lemon); color: #0B0D0A;
           font-size: 15px; font-weight: 700;
           border-radius: 999px; padding: 11px 20px;
         }

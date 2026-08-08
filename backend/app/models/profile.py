@@ -95,13 +95,6 @@ class Profile(Base):
     # during onboarding (see /api/profile/username-available).
     username: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
 
-    # Chosen on the signup form ("Join as"): individual | organization.
-    # Kept as a plain string (not an Enum) so adding a future kind is a
-    # data change rather than a Postgres type migration.
-    account_type: Mapped[str] = mapped_column(
-        String(20), default="individual", server_default="individual", nullable=False
-    )
-
     # Photo/cover are stored in Telegram (see app/core/telegram_storage.py).
     # These are the compact pointers saved here; the API layer resolves
     # them to real-looking URLs (GET /api/media/{ref}) before they ever

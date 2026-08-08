@@ -25,7 +25,7 @@ export default function FinishedStep({ onContinue, completionPct }) {
           background: rgba(196, 241, 53, 0.12);
           border: 1px solid var(--border);
           display: flex; align-items: center; justify-content: center;
-          color: var(--accent-ink); margin-bottom: 24px;
+          color: var(--lemon); margin-bottom: 24px;
         }
         .finished-title {
           font-family: var(--font-display); font-weight: 800;
@@ -33,7 +33,7 @@ export default function FinishedStep({ onContinue, completionPct }) {
           margin-top: 8px; letter-spacing: -0.01em;
         }
         .finished-sub { margin-top: 14px; font-size: 15px; margin-bottom: 32px; }
-        .finished-sub strong { color: var(--accent-ink); }
+        .finished-sub strong { color: var(--lemon); }
         .btn-lg { padding: 15px 40px; }
       `}</style>
     </div>

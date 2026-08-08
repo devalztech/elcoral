@@ -102,7 +102,7 @@ export default function VerificationSettings() {
           padding: 16px; border-radius: 14px; margin-bottom: 22px;
           background: var(--panel); border: 1px solid var(--border); color: var(--ink-dim);
         }
-        .verif-banner-ok { border-color: var(--accent-ink); color: var(--accent-ink); }
+        .verif-banner-ok { border-color: var(--lemon); color: var(--lemon); }
         .verif-banner-title { margin: 0; font-family: var(--font-head); font-weight: 700; font-size: 15px; color: var(--ink); }
         .verif-banner-desc { margin: 4px 0 0; font-size: 13px; color: var(--ink-faint); }
         .verif-steps { list-style: none; margin: 0; padding: 0; }
@@ -138,11 +138,11 @@ function VerifStep({ icon: Icon, done, title, desc, action }) {
           display: grid; place-items: center;
           background: var(--panel); border: 1px solid var(--border); color: var(--ink-dim);
         }
-        .verif-step-done { color: var(--accent-ink); border-color: var(--accent-ink); }
+        .verif-step-done { color: var(--lemon); border-color: var(--lemon); }
         .verif-step-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
         .verif-step-title { font-size: 14.5px; font-weight: 600; color: var(--ink); }
         .verif-step-desc { font-size: 12.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; }
-        .verif-step-check { color: var(--accent-ink); flex-shrink: 0; }
+        .verif-step-check { color: var(--lemon); flex-shrink: 0; }
       `}</style>
     </li>
   )

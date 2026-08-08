@@ -123,13 +123,13 @@ export default function Login() {
           border-width: 0 2px 2px 0;
           transform: rotate(45deg);
         }
-        .forgot { font-size: 13px; color: var(--accent-ink); font-weight: 600; }
+        .forgot { font-size: 13px; color: var(--lemon); font-weight: 600; }
         .submit-btn {
           width: 100%;
           height: 54px;
           border-radius: 10px;
           background: var(--lemon);
-          color: var(--on-accent);
+          color: #0B0D0A;
           font-family: var(--font-head);
           font-size: 16px;
           font-weight: 700;
@@ -139,7 +139,7 @@ export default function Login() {
         .submit-btn:active { transform: scale(0.99); }
         .submit-btn:disabled { opacity: 0.7; cursor: default; }
         .switch-line { margin: 18px 0 0; text-align: center; font-size: 13.5px; color: var(--ink-dim); }
-        .switch-line a { color: var(--accent-ink); font-weight: 600; }
+        .switch-line a { color: var(--lemon); font-weight: 600; }
         .form-error {
           font-size: 13.5px;
           color: var(--danger);

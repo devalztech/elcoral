@@ -81,7 +81,7 @@ export default function ReportsSettings() {
           padding: 4px 9px; border-radius: 999px; flex-shrink: 0;
           background: var(--panel-raised); color: var(--ink-dim); border: 1px solid var(--border);
         }
-        .rep-status-resolved { color: var(--accent-ink); border-color: var(--accent-ink); }
+        .rep-status-resolved { color: var(--lemon); border-color: var(--lemon); }
         .rep-status-dismissed { color: var(--ink-faint); }
         .rep-reason { margin: 6px 0 0; font-size: 13px; color: var(--ink-dim); }
         .rep-details { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-faint); }

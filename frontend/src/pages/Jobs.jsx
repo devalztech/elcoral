@@ -315,14 +315,14 @@ export default function Jobs() {
           color: var(--ink); background: var(--panel-raised);
           border: 1px solid var(--border);
         }
-        .jb-logo.tone-a { background: linear-gradient(145deg,#1d2415,#0d1108); color: var(--accent-ink); }
+        .jb-logo.tone-a { background: linear-gradient(145deg,#1d2415,#0d1108); color: var(--lemon); }
         .jb-logo.tone-b { background: linear-gradient(145deg,#241a2c,#120d17); color: #E86FA8; }
-        .jb-logo.tone-c { background: linear-gradient(145deg,#16210f,#0b1007); color: var(--accent-ink); }
+        .jb-logo.tone-c { background: linear-gradient(145deg,#16210f,#0b1007); color: var(--lemon); }
         .jb-logo.tone-d { background: linear-gradient(145deg,#eef1f6,#cdd5e4); color: #2C4FE0; }
         .jb-logo.tone-e { background: linear-gradient(145deg,#8B45F0,#6C2BD9); color: #fff; }
         .jb-logo.tone-f { background: linear-gradient(145deg,#f7f9f2,#dfe4d6); color: #14170F; }
 
-        .jb-verified { color: var(--accent-ink); flex: none; }
+        .jb-verified { color: var(--lemon); flex: none; }
 
         /* ------------------------------------------------------- app bar */
         .jb-bar {
@@ -362,7 +362,7 @@ export default function Jobs() {
           position: absolute; top: -1px; right: -1px;
           min-width: 18px; height: 18px; padding: 0 5px;
           display: inline-flex; align-items: center; justify-content: center;
-          border-radius: 999px; background: var(--lemon); color: var(--on-accent);
+          border-radius: 999px; background: var(--lemon); color: #10140B;
           font-size: 11px; font-weight: 800; font-family: var(--font-head);
           border: 2px solid var(--bg);
         }
@@ -384,7 +384,7 @@ export default function Jobs() {
           border: 1px solid transparent; transition: all .16s ease; white-space: nowrap;
         }
         .jb-filter:hover { border-color: var(--border); }
-        .jb-filter.on { background: var(--lemon); color: var(--on-accent); border-color: var(--accent-ink); }
+        .jb-filter.on { background: var(--lemon); color: #10140B; border-color: var(--lemon); }
 
         /* ------------------------------------------------------ promo */
         .jb-promo {
@@ -400,7 +400,7 @@ export default function Jobs() {
           position: relative; flex: none;
           width: 78px; height: 78px; border-radius: 18px;
           display: inline-flex; align-items: center; justify-content: center;
-          color: var(--accent-ink);
+          color: var(--lemon);
           background: radial-gradient(circle at 50% 50%, rgba(196,241,53,.14), transparent 70%);
         }
         .jb-promo-art .c {
@@ -415,13 +415,13 @@ export default function Jobs() {
         .jb-promo-text { flex: 1 1 auto; min-width: 0; padding-right: 4px; }
         .jb-promo-title {
           margin: 0; font-family: var(--font-head); font-weight: 700;
-          font-size: 16px; color: var(--accent-ink);
+          font-size: 16px; color: var(--lemon);
         }
         .jb-promo-sub { margin: 5px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-dim); }
         .jb-promo-cta {
           flex: none; display: inline-flex; align-items: center; justify-content: center;
           height: 44px; padding: 0 18px; border-radius: 12px;
-          background: var(--lemon); color: var(--on-accent);
+          background: var(--lemon); color: #10140B;
           font-family: var(--font-head); font-weight: 700; font-size: 14.5px;
           transition: filter .16s ease;
         }
@@ -443,7 +443,7 @@ export default function Jobs() {
           margin: 0; font-family: var(--font-head); font-weight: 700;
           font-size: 17px; letter-spacing: -.2px; color: var(--ink);
         }
-        .jb-see-all { font-size: 13.5px; font-weight: 600; color: var(--accent-ink); }
+        .jb-see-all { font-size: 13.5px; font-weight: 600; color: var(--lemon); }
 
         /* ---------------------------------------------------- featured */
         .jb-feat-rail { padding-bottom: 2px; }
@@ -462,7 +462,7 @@ export default function Jobs() {
         }
         .jb-pill {
           display: inline-flex; align-items: center; height: 21px; padding: 0 9px;
-          border-radius: 999px; background: rgba(196,241,53,.16); color: var(--accent-ink);
+          border-radius: 999px; background: rgba(196,241,53,.16); color: var(--lemon);
           font-size: 11.5px; font-weight: 700; font-family: var(--font-head);
         }
         .jb-company {
@@ -486,7 +486,7 @@ export default function Jobs() {
           transition: color .16s ease, background .16s ease;
         }
         .jb-save:hover { background: var(--panel-raised); color: var(--ink); }
-        .jb-save.on { color: var(--accent-ink); }
+        .jb-save.on { color: var(--lemon); }
 
         .jb-feat-desc { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-dim); }
         .jb-feat-foot {
@@ -501,7 +501,7 @@ export default function Jobs() {
         .jb-apply {
           flex: none; display: inline-flex; align-items: center; justify-content: center;
           height: 36px; padding: 0 18px; border-radius: 999px;
-          background: var(--lemon); color: var(--on-accent);
+          background: var(--lemon); color: #10140B;
           font-family: var(--font-head); font-weight: 700; font-size: 13.5px;
           transition: filter .16s ease;
         }
@@ -537,7 +537,7 @@ export default function Jobs() {
         .jb-card-top { display: flex; align-items: center; gap: 8px; }
         .jb-new {
           display: inline-flex; align-items: center; height: 20px; padding: 0 8px;
-          border-radius: 6px; background: rgba(196,241,53,.16); color: var(--accent-ink);
+          border-radius: 6px; background: rgba(196,241,53,.16); color: var(--lemon);
           font-size: 11px; font-weight: 700; font-family: var(--font-head);
         }
 
@@ -554,7 +554,7 @@ export default function Jobs() {
         .jb-notice-text { flex: 1 1 auto; min-width: 0; }
         .jb-notice-title {
           margin: 0; font-family: var(--font-head); font-weight: 700;
-          font-size: 15.5px; color: var(--accent-ink);
+          font-size: 15.5px; color: var(--lemon);
         }
         .jb-notice-sub { margin: 5px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-dim); }
         .jb-notice-cta {
@@ -564,7 +564,7 @@ export default function Jobs() {
           font-family: var(--font-head); font-weight: 700; font-size: 13.5px;
           transition: border-color .16s ease, background .16s ease;
         }
-        .jb-notice-cta:hover { border-color: var(--accent-ink); background: var(--panel-raised); }
+        .jb-notice-cta:hover { border-color: var(--lemon); background: var(--panel-raised); }
 
         /* --------------------------------------------------- narrow */
         @media (max-width: 420px) {

@@ -84,7 +84,7 @@ export default function CoverStep({ progress, onNext, onBack }) {
           color: var(--ink-faint);
           font-size: 13.5px;
         }
-        .cover-upload:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+        .cover-upload:hover { border-color: var(--lemon); color: var(--lemon); }
         .spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .cover-remove {

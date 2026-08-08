@@ -105,7 +105,7 @@ export default function LinksStep({ progress, onNext, onBack }) {
           color: var(--ink-dim);
           display: flex; align-items: center; justify-content: center;
         }
-        .portfolio-add:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+        .portfolio-add:hover { border-color: var(--lemon); color: var(--lemon); }
         .portfolio-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
         .portfolio-list li {
           display: flex; align-items: center; justify-content: space-between;
@@ -142,7 +142,7 @@ function LinkField({ icon, placeholder, value, onChange }) {
           padding: 12px 14px;
           flex: 1;
         }
-        .link-field-wrap:focus-within { border-color: var(--accent-ink); }
+        .link-field-wrap:focus-within { border-color: var(--lemon); }
         .link-icon { color: var(--ink-faint); flex-shrink: 0; display: flex; }
         .link-input {
           flex: 1; background: transparent; border: none; outline: none;

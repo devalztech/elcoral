@@ -84,7 +84,7 @@ export default function NetworkGraphic() {
           width: 38px; height: 38px;
           background: var(--bg);
           border: 1px solid var(--border);
-          color: var(--accent-ink);
+          color: var(--lemon);
         }
         .node-avatar {
           width: 46px; height: 46px;

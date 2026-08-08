@@ -102,7 +102,7 @@ export default function Typeahead({
           border-radius: 8px;
           padding: 12px 14px;
         }
-        .typeahead-input-wrap:focus-within { border-color: var(--accent-ink); }
+        .typeahead-input-wrap:focus-within { border-color: var(--lemon); }
         .typeahead-icon { color: var(--ink-faint); flex-shrink: 0; }
         .typeahead-input {
           flex: 1;

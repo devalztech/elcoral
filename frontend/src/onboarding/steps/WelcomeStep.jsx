@@ -33,7 +33,7 @@ export default function WelcomeStep({ onNext, fullName }) {
           background: rgba(196, 241, 53, 0.12);
           border: 1px solid var(--border);
           display: flex; align-items: center; justify-content: center;
-          color: var(--accent-ink);
+          color: var(--lemon);
           margin-bottom: 24px;
         }
         .welcome-title {

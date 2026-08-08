@@ -71,7 +71,7 @@ export default function ResetPassword() {
         </div>
         <style>{`
           .sent-state { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-          .icon-success { color: var(--accent-ink); }
+          .icon-success { color: var(--lemon); }
         `}</style>
       </AuthLayout>
     )
@@ -127,7 +127,7 @@ export default function ResetPassword() {
           font-size: 12.5px;
           color: var(--ink-faint);
         }
-        .password-rules li.rule-pass { color: var(--accent-ink); }
+        .password-rules li.rule-pass { color: var(--lemon); }
         .form-error {
           font-size: 13.5px;
           color: var(--danger);

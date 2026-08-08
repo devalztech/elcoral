@@ -161,7 +161,7 @@ export default function CountrySelect({ value, onSelect }) {
         }
         .country-option:hover { background: var(--panel); }
         .country-error { padding: 16px 14px; font-size: 13.5px; color: var(--danger); text-align: center; }
-        .country-retry { color: var(--accent-ink); font-weight: 600; text-decoration: underline; }
+        .country-retry { color: var(--lemon); font-weight: 600; text-decoration: underline; }
         .country-loading, .country-empty {
           padding: 16px 14px; font-size: 13.5px; color: var(--ink-faint); text-align: center;
         }

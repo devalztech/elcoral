@@ -123,7 +123,7 @@ export default function AuthLayout({
       <style>{`
         .auth-page {
           min-height: 100vh;
-          background: var(--auth-page-bg);
+          background: #000;
           padding: 24px;
           display: flex;
           justify-content: center;
@@ -134,7 +134,7 @@ export default function AuthLayout({
           display: grid;
           grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
           background: var(--bg);
-          border: 1px solid var(--border);
+          border: 1px solid rgba(255,255,255,0.07);
           border-radius: 22px;
           overflow: hidden;
         }
@@ -143,7 +143,7 @@ export default function AuthLayout({
         .auth-brand {
           position: relative;
           padding: 34px 30px 60px;
-          border-right: 1px solid var(--border);
+          border-right: 1px solid rgba(255,255,255,0.07);
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -171,7 +171,7 @@ export default function AuthLayout({
           font-size: 12.5px;
           color: var(--ink-dim);
         }
-        .brand-badge svg { color: var(--accent-ink); flex-shrink: 0; }
+        .brand-badge svg { color: var(--lemon); flex-shrink: 0; }
         .brand-title {
           margin: 22px 0 0;
           font-family: var(--font-display);
@@ -181,7 +181,7 @@ export default function AuthLayout({
           letter-spacing: -0.02em;
           color: var(--ink);
         }
-        .brand-title .accent { color: var(--accent-ink); }
+        .brand-title .accent { color: var(--lemon); }
         .brand-body {
           margin: 14px 0 0;
           font-size: 14.5px;
@@ -204,7 +204,7 @@ export default function AuthLayout({
           gap: 22px;
         }
         .highlight { display: flex; gap: 14px; align-items: flex-start; }
-        .highlight-icon { color: var(--accent-ink); flex-shrink: 0; margin-top: 2px; }
+        .highlight-icon { color: var(--lemon); flex-shrink: 0; margin-top: 2px; }
         .highlight-title {
           margin: 0;
           font-family: var(--font-head);
@@ -220,7 +220,7 @@ export default function AuthLayout({
         }
 
         .testimonial { gap: 16px; }
-        .quote-mark { color: var(--accent-ink); }
+        .quote-mark { color: var(--lemon); }
         .quote-text {
           margin: 0;
           font-size: 14.5px;
@@ -270,7 +270,7 @@ export default function AuthLayout({
           color: var(--ink);
           transition: border-color 0.15s ease, color 0.15s ease;
         }
-        .back-btn:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+        .back-btn:hover { border-color: var(--lemon); color: var(--lemon); }
         .auth-form-wrap { width: 100%; max-width: 470px; padding-top: 26px; }
         .auth-head { text-align: center; }
         .auth-title {

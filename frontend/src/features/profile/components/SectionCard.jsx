@@ -38,9 +38,9 @@ export default function SectionCard({ label, preview, isEmpty, onEdit }) {
           font-size: 14.5px; color: var(--ink);
           overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        .sc-preview-empty { color: var(--accent-ink); font-weight: 600; }
+        .sc-preview-empty { color: var(--lemon); font-weight: 600; }
         .sc-action { color: var(--ink-faint); flex-shrink: 0; }
-        .sc:hover .sc-action { color: var(--accent-ink); }
+        .sc:hover .sc-action { color: var(--lemon); }
       `}</style>
     </button>
   )

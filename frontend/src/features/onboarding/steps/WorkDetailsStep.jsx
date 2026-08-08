@@ -125,7 +125,7 @@ export default function WorkDetailsStep({ progress, onNext, onBack }) {
           border-radius: 999px;
           padding: 9px 16px;
         }
-        .size-chip-selected { background: rgba(196,241,53,0.12); border-color: var(--accent-ink); color: var(--ink); }
+        .size-chip-selected { background: rgba(196,241,53,0.12); border-color: var(--lemon); color: var(--ink); }
         .budget-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
       `}</style>
     </StepShell>
