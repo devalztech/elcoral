@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Loader2, Camera, X, Plus, ChevronDown, ChevronRight, CircleCheck,
+  ArrowLeft, Loader2, Camera, X, Plus, ChevronDown, ChevronRight,
   Link2, MapPin, UsersRound, SlidersHorizontal, Target, FileText, Info,
   Briefcase, UserRound, GraduationCap, MessagesSquare, Twitter, Linkedin, Github, Dribbble,
 } from 'lucide-react'
@@ -280,15 +280,7 @@ function ProfileEditorBody() {
             <input className="pe-input" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your name" />
           </Field>
 
-          <Field
-            label="Username"
-            trailing={
-              <span className="pe-url">
-                elcoral.com/{usernameHandle || 'username'}
-                <CircleCheck size={16} className="pe-url-check" />
-              </span>
-            }
-          >
+          <Field label="Username">
             <input
               className="pe-input"
               value={usernameHandle ? `@${usernameHandle}` : ''}
@@ -299,6 +291,9 @@ function ProfileEditorBody() {
               spellCheck={false}
             />
             {usernameError && <p className="pe-field-error">{usernameError}</p>}
+            {!usernameError && (
+              <p className="pe-url">elcoral.com/{usernameHandle || 'username'}</p>
+            )}
           </Field>
 
           <Field label="Headline">
@@ -359,19 +354,6 @@ function ProfileEditorBody() {
               value={data.website_url}
               onChange={(e) => update({ website_url: e.target.value })}
               placeholder="https://yourwebsite.com"
-            />
-          </Field>
-
-          <Field
-            label="Portfolio / GitHub"
-            leading={<Link2 size={19} className="pe-lead" />}
-            trailing={socials.github ? <ClearBtn onClick={() => setSocials({ ...socials, github: '' })} /> : null}
-          >
-            <input
-              className="pe-input"
-              value={socials.github}
-              onChange={(e) => setSocials({ ...socials, github: e.target.value })}
-              placeholder="https://github.com/username"
             />
           </Field>
 
@@ -486,7 +468,7 @@ function ProfileEditorBody() {
         /* Topbar */
         .pe-topbar {
           position: sticky; top: 0; z-index: 20;
-          background: rgba(11, 13, 10, 0.94);
+          background: rgba(var(--bg-rgb), 0.94);
           backdrop-filter: blur(14px);
           padding-top: env(safe-area-inset-top);
         }
@@ -623,10 +605,8 @@ function ProfileEditorBody() {
         .pe-clear { display: flex; color: var(--ink-dim); flex: 0 0 auto; padding: 4px; }
         .pe-clear:hover { color: var(--ink); }
         .pe-url {
-          display: inline-flex; align-items: center; gap: 7px;
-          font-size: 13px; color: var(--ink-dim); white-space: nowrap;
+          margin: 6px 0 0; font-size: 12.5px; color: var(--ink-faint);
         }
-        .pe-url-check { color: var(--accent-ink); }
         .pe-counter {
           display: block; text-align: right;
           font-size: 12.5px; color: var(--ink-faint); margin-top: 6px;
