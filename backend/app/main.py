@@ -20,6 +20,7 @@ from app.core import telegram_storage
 from app.routers import (
     auth,
     communities,
+    community_ws,
     lookup,
     media,
     messages,
@@ -69,6 +70,7 @@ app.include_router(settings_router.router)
 app.include_router(social.router)
 app.include_router(messages.router)
 app.include_router(communities.router)
+app.include_router(community_ws.router)
 
 
 @app.on_event("startup")

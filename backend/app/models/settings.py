@@ -50,6 +50,13 @@ class ReportStatus(str, PyEnum):
 class ReportTargetType(str, PyEnum):
     user = "user"
     post = "post"
+    # Community surfaces. Added in migration 0007 with ALTER TYPE ... ADD
+    # VALUE so existing rows keep working.
+    community = "community"
+    discussion = "discussion"
+    comment = "comment"
+    message = "message"
+    member = "member"
 
 
 # Accent colors the appearance screen offers. Validated in the schema
