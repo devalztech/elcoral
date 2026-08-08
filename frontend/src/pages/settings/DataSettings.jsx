@@ -94,7 +94,7 @@ export default function DataSettings() {
         }
         .data-btn:disabled { opacity: 0.6; }
         .data-btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-        .data-done { margin: 10px 0 0; font-size: 12.5px; color: var(--lemon); }
+        .data-done { margin: 10px 0 0; font-size: 12.5px; color: var(--accent-ink); }
       `}</style>
     </SettingsSubpage>
   )

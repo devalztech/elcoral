@@ -135,7 +135,7 @@ export default function ReportDialog({ targetType, targetId, targetUsername, lab
           padding: 11px 12px; border-radius: 10px; font-size: 13.5px; color: var(--ink-dim);
         }
         .rd-reason-on { background: var(--panel-raised); color: var(--ink); }
-        .rd-reason input { accent-color: var(--lemon); width: 16px; height: 16px; }
+        .rd-reason input { accent-color: var(--accent-ink); width: 16px; height: 16px; }
         .rd-details {
           width: 100%; resize: vertical; padding: 11px 12px; font: inherit; font-size: 13.5px;
           color: var(--ink); background: var(--panel-raised);

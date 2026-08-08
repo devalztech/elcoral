@@ -8,10 +8,13 @@ import { AuthField, SocialButton, ChoiceCard, AuthDivider } from '../features/au
 
 // Mirrors app/schemas/auth.py's SignupRequest.password_strength validator.
 const PASSWORD_RULES = [
-  { key: 'length', test: (v) => v.length >= 8 },
-  { key: 'letter', test: (v) => /[A-Za-z]/.test(v) },
+  { key: 'length', test: (v) => v.length >= 10 },
+  { key: 'upper', test: (v) => /[A-Z]/.test(v) },
+  { key: 'lower', test: (v) => /[a-z]/.test(v) },
   { key: 'digit', test: (v) => /\d/.test(v) },
 ]
+
+const PASSWORD_HINT = 'At least 10 characters with an uppercase letter, a lowercase letter and a number.'
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -39,7 +42,7 @@ export default function Signup() {
     setFormError('')
 
     if (!passwordValid) {
-      setFormError('Use at least 8 characters with letters and numbers.')
+      setFormError(PASSWORD_HINT)
       return
     }
     if (form.password !== form.confirm) {
@@ -120,7 +123,7 @@ export default function Signup() {
           placeholder="Create a password"
           autoComplete="new-password"
           required
-          hint="At least 8 characters with letters and numbers."
+          hint={PASSWORD_HINT}
           value={form.password}
           onChange={(e) => update('password', e.target.value)}
         />
@@ -134,6 +137,25 @@ export default function Signup() {
           value={form.confirm}
           onChange={(e) => update('confirm', e.target.value)}
         />
+
+        <AuthDivider label="Join as" />
+
+        <div className="join-as">
+          <ChoiceCard
+            icon={User}
+            title="Individual"
+            body="For individuals looking to connect and grow"
+            selected={accountType === 'individual'}
+            onSelect={() => setAccountType('individual')}
+          />
+          <ChoiceCard
+            icon={Building2}
+            title="Organization"
+            body="For teams and companies recruiting or collaborating"
+            selected={accountType === 'organization'}
+            onSelect={() => setAccountType('organization')}
+          />
+        </div>
 
         <label className="terms">
           <input
@@ -159,27 +181,9 @@ export default function Signup() {
         </p>
       </form>
 
-      <AuthDivider label="Join as" />
-
-      <div className="join-as">
-        <ChoiceCard
-          icon={User}
-          title="Individual"
-          body="For individuals looking to connect and grow"
-          selected={accountType === 'individual'}
-          onSelect={() => setAccountType('individual')}
-        />
-        <ChoiceCard
-          icon={Building2}
-          title="Organization"
-          body="For teams and companies recruiting or collaborating"
-          selected={accountType === 'organization'}
-          onSelect={() => setAccountType('organization')}
-        />
-      </div>
-
       <style>{`
         .social-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 26px; }
+        .join-as { margin-bottom: 20px; }
         .terms {
           display: flex;
           align-items: flex-start;
@@ -208,13 +212,13 @@ export default function Signup() {
           transform: rotate(45deg);
         }
         .terms-text { font-size: 13px; line-height: 1.5; color: var(--ink-dim); }
-        .terms-text a { color: var(--lemon); }
+        .terms-text a { color: var(--accent-ink); }
         .submit-btn {
           width: 100%;
           height: 54px;
           border-radius: 10px;
           background: var(--lemon);
-          color: #0B0D0A;
+          color: var(--on-accent);
           font-family: var(--font-head);
           font-size: 16px;
           font-weight: 700;
@@ -229,7 +233,7 @@ export default function Signup() {
           font-size: 13.5px;
           color: var(--ink-dim);
         }
-        .switch-line a { color: var(--lemon); font-weight: 600; }
+        .switch-line a { color: var(--accent-ink); font-weight: 600; }
         .join-as { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .form-error {
           font-size: 13.5px;

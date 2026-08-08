@@ -40,7 +40,7 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, footer 
           justify-content: space-between;
         }
         .logo { font-family: var(--font-display); font-weight: 900; font-size: 20px; letter-spacing: -0.02em; color: var(--ink); }
-        .logo-mark { color: var(--lemon); }
+        .logo-mark { color: var(--accent-ink); }
         .auth-brand-copy h2 {
           font-family: var(--font-head);
           font-weight: 600;
@@ -66,7 +66,7 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, footer 
         }
         .auth-subtitle { margin-top: 8px; font-size: 14.5px; }
         .auth-footer { margin-top: 28px; font-size: 14px; color: var(--ink-dim); text-align: center; }
-        .auth-footer a { color: var(--lemon); font-weight: 600; }
+        .auth-footer a { color: var(--accent-ink); font-weight: 600; }
         @media (max-width: 900px) {
           .auth-shell { grid-template-columns: 1fr; }
           .auth-brand { display: none; }

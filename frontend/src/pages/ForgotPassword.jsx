@@ -41,7 +41,7 @@ export default function ForgotPassword() {
         </div>
         <style>{`
           .sent-state { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-          .icon-success { color: var(--lemon); }
+          .icon-success { color: var(--accent-ink); }
         `}</style>
       </AuthLayout>
     )

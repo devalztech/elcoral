@@ -497,7 +497,7 @@ function ProfileEditorBody() {
           padding: 14px 16px 12px;
         }
         .pe-back { display: flex; align-items: center; color: var(--ink); }
-        .pe-back:hover { color: var(--lemon); }
+        .pe-back:hover { color: var(--accent-ink); }
         .pe-title {
           margin: 0; text-align: center;
           font-family: var(--font-head); font-size: 21px; font-weight: 700;
@@ -506,7 +506,7 @@ function ProfileEditorBody() {
         .pe-save {
           justify-self: end; display: inline-flex; align-items: center;
           font-family: var(--font-head); font-size: 17px; font-weight: 600;
-          color: var(--lemon); white-space: nowrap;
+          color: var(--accent-ink); white-space: nowrap;
         }
         .pe-save:disabled { opacity: 0.6; }
 
@@ -522,7 +522,7 @@ function ProfileEditorBody() {
 
         /* Media card */
         .pe-card {
-          background: #101210; border: 1px solid #191C16;
+          background: var(--field); border: 1px solid var(--field-border);
           border-radius: 16px; padding: 14px;
         }
         .pe-media { margin-bottom: 22px; }
@@ -530,14 +530,14 @@ function ProfileEditorBody() {
           display: block; width: 100%; aspect-ratio: 16 / 6.4;
           border: 1px dashed rgba(196, 241, 53, 0.38);
           border-radius: 12px; overflow: hidden;
-          background-color: #0E110C;
+          background-color: var(--field);
           background-size: cover; background-position: center;
           background-image:
             radial-gradient(120% 150% at 50% 120%, rgba(196, 241, 53, 0.14), transparent 62%),
             repeating-linear-gradient(78deg, rgba(196, 241, 53, 0.09) 0 1px, transparent 1px 7px);
-          color: var(--lemon);
+          color: var(--accent-ink);
         }
-        .pe-cover:hover { border-color: var(--lemon); }
+        .pe-cover:hover { border-color: var(--accent-ink); }
         .pe-cover-inner {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           gap: 6px; height: 100%; padding: 10px;
@@ -554,7 +554,7 @@ function ProfileEditorBody() {
         .pe-avatar-wrap { position: relative; flex: 0 0 auto; }
         .pe-avatar {
           width: 108px; height: 108px; border-radius: 50%;
-          background: var(--panel-raised); border: 3px solid #101210;
+          background: var(--panel-raised); border: 3px solid var(--field);
           display: flex; align-items: center; justify-content: center;
           overflow: hidden; color: var(--ink-faint);
         }
@@ -562,9 +562,9 @@ function ProfileEditorBody() {
         .pe-avatar-btn {
           position: absolute; right: -4px; bottom: 4px;
           width: 40px; height: 40px; border-radius: 50%;
-          background: #0E110C; border: 1.5px solid var(--lemon);
+          background: var(--field); border: 1.5px solid var(--lemon);
           display: flex; align-items: center; justify-content: center;
-          color: var(--lemon);
+          color: var(--accent-ink);
         }
         .pe-avatar-btn:hover { background: rgba(196, 241, 53, 0.12); }
         .pe-avatar-copy { padding-top: 42px; min-width: 0; }
@@ -576,7 +576,7 @@ function ProfileEditorBody() {
           display: flex; align-items: center; gap: 10px;
           margin: 26px 0 12px;
         }
-        .pe-section-head svg { color: var(--lemon); flex: 0 0 auto; }
+        .pe-section-head svg { color: var(--accent-ink); flex: 0 0 auto; }
         .pe-section-head h2 {
           margin: 0; font-family: var(--font-head);
           font-size: 18.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink);
@@ -590,7 +590,7 @@ function ProfileEditorBody() {
           display: inline-flex; align-items: center; gap: 6px;
           padding: 9px 16px; border-radius: 999px;
           border: 1px solid rgba(196, 241, 53, 0.5);
-          color: var(--lemon); font-size: 14px; font-weight: 600;
+          color: var(--accent-ink); font-size: 14px; font-weight: 600;
         }
         .pe-add-skill:hover { background: rgba(196, 241, 53, 0.1); }
 
@@ -598,7 +598,7 @@ function ProfileEditorBody() {
         .pe-stack { display: flex; flex-direction: column; gap: 10px; }
         .pe-field {
           position: relative; display: flex; align-items: center; gap: 12px;
-          background: #101210; border: 1px solid #1B1F17;
+          background: var(--field); border: 1px solid var(--field-border);
           border-radius: 12px; padding: 11px 14px;
           transition: border-color 0.15s ease;
         }
@@ -614,7 +614,7 @@ function ProfileEditorBody() {
           font-family: var(--font-body); font-size: 16px; color: var(--ink);
           line-height: 1.45;
         }
-        .pe-input::placeholder { color: #4E5847; }
+        .pe-input::placeholder { color: var(--field-placeholder); }
         .pe-input:focus { outline: none; }
         .pe-textarea { resize: vertical; min-height: 46px; }
         .pe-select { appearance: none; }
@@ -626,7 +626,7 @@ function ProfileEditorBody() {
           display: inline-flex; align-items: center; gap: 7px;
           font-size: 13px; color: var(--ink-dim); white-space: nowrap;
         }
-        .pe-url-check { color: var(--lemon); }
+        .pe-url-check { color: var(--accent-ink); }
         .pe-counter {
           display: block; text-align: right;
           font-size: 12.5px; color: var(--ink-faint); margin-top: 6px;
@@ -635,28 +635,28 @@ function ProfileEditorBody() {
         .pe-sublabel { margin: 16px 0 8px; font-size: 13.5px; color: var(--ink-dim); }
         .pe-social-badge {
           width: 40px; height: 40px; border-radius: 50%;
-          background: #F7FBEE; color: #0B0D0A;
+          background: var(--ink); color: var(--bg);
           display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
         }
 
         /* Skills */
         .pe-skill-add { margin-bottom: 12px; }
         .pe-skill-input {
-          background: #101210; border: 1px solid #1B1F17;
+          background: var(--field); border: 1px solid var(--field-border);
           border-radius: 12px; padding: 12px 14px;
         }
         .pe-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
         .pe-suggestion {
           padding: 7px 13px; border-radius: 999px;
-          border: 1px dashed #2A2F21; color: var(--ink-dim); font-size: 13.5px;
+          border: 1px dashed var(--border); color: var(--ink-dim); font-size: 13.5px;
         }
-        .pe-suggestion:hover { border-color: var(--lemon); color: var(--lemon); }
+        .pe-suggestion:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
         .pe-chips { display: flex; flex-wrap: wrap; gap: 9px; }
         .pe-empty { margin: 0; font-size: 13.5px; color: var(--ink-faint); }
         .pe-chip {
           display: inline-flex; align-items: center; gap: 9px;
           padding: 9px 14px; border-radius: 999px;
-          background: #101210; border: 1px solid #22271C;
+          background: var(--field); border: 1px solid var(--field-border);
           font-size: 14.5px; color: var(--ink);
         }
         .pe-chip button { display: flex; color: var(--ink-dim); }
@@ -669,25 +669,25 @@ function ProfileEditorBody() {
         .pe-look {
           display: flex; flex-direction: column; align-items: center; gap: 9px;
           padding: 14px 6px 12px; border-radius: 12px;
-          background: #101210; border: 1px solid #1B1F17;
+          background: var(--field); border: 1px solid var(--field-border);
           text-align: center; transition: border-color 0.15s ease, background 0.15s ease;
         }
         .pe-look-icon { color: var(--ink-dim); }
         .pe-look-label { font-size: 11.5px; line-height: 1.25; color: var(--ink-dim); }
         .pe-look-box {
           width: 18px; height: 18px; border-radius: 4px;
-          border: 1.5px solid #3A4132; display: flex; align-items: center; justify-content: center;
+          border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center;
         }
-        .pe-look.is-active { border-color: var(--lemon); background: rgba(196, 241, 53, 0.05); }
-        .pe-look.is-active .pe-look-icon { color: var(--lemon); }
+        .pe-look.is-active { border-color: var(--accent-ink); background: rgba(196, 241, 53, 0.05); }
+        .pe-look.is-active .pe-look-icon { color: var(--accent-ink); }
         .pe-look.is-active .pe-look-label { color: var(--ink); }
-        .pe-look.is-active .pe-look-box { background: var(--lemon); border-color: var(--lemon); }
+        .pe-look.is-active .pe-look-box { background: var(--lemon); border-color: var(--accent-ink); }
 
         /* About you */
         .pe-row {
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
           width: 100%; padding: 16px 14px; border-radius: 12px;
-          background: #101210; border: 1px solid #1B1F17;
+          background: var(--field); border: 1px solid var(--field-border);
         }
         .pe-row:hover { border-color: rgba(196, 241, 53, 0.4); }
         .pe-row-label { font-size: 15.5px; color: var(--ink); }
@@ -696,7 +696,7 @@ function ProfileEditorBody() {
           font-size: 13.5px; color: var(--ink-faint);
         }
         .pe-about {
-          margin-top: 10px; background: #101210; border: 1px solid #1B1F17;
+          margin-top: 10px; background: var(--field); border: 1px solid var(--field-border);
           border-radius: 12px; padding: 12px 14px;
         }
 
@@ -747,7 +747,7 @@ function ClearBtn({ onClick }) {
 
 function CheckMark() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B0D0A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M20 6 9 17l-5-5" />
     </svg>
   )

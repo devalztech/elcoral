@@ -93,7 +93,7 @@ export default function LocationStep({ progress, onNext, onBack }) {
           border-radius: 8px;
           cursor: pointer;
         }
-        .remote-toggle input { accent-color: var(--lemon); width: 16px; height: 16px; }
+        .remote-toggle input { accent-color: var(--accent-ink); width: 16px; height: 16px; }
       `}</style>
     </StepShell>
   )

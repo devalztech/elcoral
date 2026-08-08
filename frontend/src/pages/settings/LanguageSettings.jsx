@@ -52,7 +52,7 @@ export default function LanguageSettings() {
         .lang-text { display: flex; flex-direction: column; gap: 2px; }
         .lang-label { font-size: 14.5px; font-weight: 600; color: var(--ink); }
         .lang-native { font-size: 12.5px; color: var(--ink-faint); }
-        .lang-check { color: var(--lemon); flex-shrink: 0; }
+        .lang-check { color: var(--accent-ink); flex-shrink: 0; }
       `}</style>
     </SettingsSubpage>
   )

@@ -77,7 +77,7 @@ export default function ActivityFeed({ dense = false }) {
         }
         .feed-tag-accent {
           background: rgba(196, 241, 53, 0.14);
-          color: var(--lemon);
+          color: var(--accent-ink);
         }
         .feed-text {
           margin: 0;

@@ -12,6 +12,38 @@
   --ink-faint: #6B7560;
   --danger: #FF6B4A;
 
+  /* ---------------------------------------------------------------------
+     Theme-aware surface tokens.
+
+     Screens used to hard-code their own near-black hexes (#101210, #121316,
+     #0B0D0A ...). Those survive a theme switch and produce dark text on dark
+     panels in light mode, so every one of them now points at a token below
+     and the light theme re-declares the same names.
+
+       --surface / --surface-2   cards and nested cards
+       --surface-line(-soft)     hairlines on those cards
+       --field / --field-border  form controls, --field-placeholder
+       --cover                   profile cover fallback gradient
+       --tile                    decorative icon/logo tiles
+       --scrim / --shadow-drop   dialog overlay and popover shadow
+       --on-accent               text/icons drawn on top of --lemon
+       --accent-ink              accent-coloured *text* on a page background
+  --------------------------------------------------------------------- */
+  --surface: #121316;
+  --surface-2: #1A1C20;
+  --surface-line: #2B2E34;
+  --surface-line-soft: #24272C;
+  --field: #101210;
+  --field-border: #1B1F17;
+  --field-placeholder: #4E5847;
+  --cover: linear-gradient(140deg, #14170F 0%, #0F1210 55%, #101410 100%);
+  --tile: #0F1309;
+  --scrim: rgba(0, 0, 0, 0.62);
+  --shadow-drop: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --on-accent: #0B0D0A;
+  --accent-ink: var(--lemon);
+  --auth-page-bg: #000000;
+
   --font-display: "Archivo", sans-serif;
   --font-head: "Space Grotesk", sans-serif;
   --font-body: "Inter", sans-serif;
@@ -44,6 +76,20 @@
   --ink-faint: #7C856F;
   --lemon-dim: #6E9922;
   --lemon-deep: #4E6E17;
+
+  --surface: #FFFFFF;
+  --surface-2: #F4F6EC;
+  --surface-line: #DDE2D0;
+  --surface-line-soft: #E8EBDE;
+  --field: #FFFFFF;
+  --field-border: #D7DDC8;
+  --field-placeholder: #8B9480;
+  --cover: linear-gradient(140deg, #E8EFD6 0%, #DDE6CB 55%, #E4EBD5 100%);
+  --tile: #EFF3E3;
+  --scrim: rgba(21, 24, 15, 0.45);
+  --shadow-drop: 0 12px 32px rgba(21, 24, 15, 0.14);
+  --accent-ink: var(--lemon-deep);
+  --auth-page-bg: #F4F6EC;
 }
 
 :root[data-accent='coral'] { --lemon: #FF7A5A; --lemon-dim: #E45C3C; --lemon-deep: #B94327; }

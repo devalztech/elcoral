@@ -139,14 +139,14 @@ export default function MultiSelectDropdown({ options, selected, onToggle, place
         .msd-option:hover { background: var(--panel); }
         .msd-option-selected { color: var(--ink); }
         .msd-option-icon { color: var(--ink-faint); flex-shrink: 0; }
-        .msd-option-selected .msd-option-icon { color: var(--lemon); }
+        .msd-option-selected .msd-option-icon { color: var(--accent-ink); }
         .msd-checkbox {
           width: 16px; height: 16px; flex-shrink: 0;
           border: 1.5px solid var(--border); border-radius: 4px;
           display: flex; align-items: center; justify-content: center;
-          color: #0B0D0A;
+          color: var(--on-accent);
         }
-        .msd-checkbox-checked { background: var(--lemon); border-color: var(--lemon); }
+        .msd-checkbox-checked { background: var(--lemon); border-color: var(--accent-ink); }
         .msd-empty { padding: 16px 14px; font-size: 13.5px; color: var(--ink-faint); text-align: center; }
       `}</style>
     </div>

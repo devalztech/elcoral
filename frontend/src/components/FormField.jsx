@@ -41,7 +41,7 @@ export function TextInput(props) {
           transition: border-color 0.15s ease;
         }
         .text-input::placeholder { color: var(--ink-faint); }
-        .text-input:focus { outline: none; border-color: var(--lemon); }
+        .text-input:focus { outline: none; border-color: var(--accent-ink); }
       `}</style>
     </>
   )

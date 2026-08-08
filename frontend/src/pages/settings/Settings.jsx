@@ -162,7 +162,7 @@ export default function Settings() {
         .st-avatar-cam {
           position: absolute; right: -2px; bottom: -2px;
           width: 22px; height: 22px; border-radius: 999px;
-          background: var(--lemon); color: #0B0D0A;
+          background: var(--lemon); color: var(--on-accent);
           display: flex; align-items: center; justify-content: center;
           border: 2px solid var(--panel);
         }
@@ -175,7 +175,7 @@ export default function Settings() {
         }
         .st-check {
           flex-shrink: 0; width: 15px; height: 15px; border-radius: 999px;
-          background: var(--lemon); color: #0B0D0A;
+          background: var(--lemon); color: var(--on-accent);
           display: inline-flex; align-items: center; justify-content: center;
         }
         .st-handle { margin: 3px 0 0; font-size: 13.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -188,7 +188,7 @@ export default function Settings() {
           font-family: var(--font-head); font-weight: 600; font-size: 13.5px; color: var(--ink);
           white-space: nowrap;
         }
-        .st-view:hover { border-color: var(--lemon); color: var(--lemon); }
+        .st-view:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 
         .st-group { margin-bottom: 26px; }
         .st-group-title {
@@ -207,13 +207,13 @@ export default function Settings() {
         }
         .st-row:last-child { border-bottom: none; }
         .st-row:active { background: var(--panel-raised); }
-        .st-row-icon { color: var(--lemon); display: inline-flex; align-items: center; justify-content: center; }
+        .st-row-icon { color: var(--accent-ink); display: inline-flex; align-items: center; justify-content: center; }
         .st-row-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
         .st-row-label { font-size: 15px; font-weight: 600; color: var(--ink); }
         .st-row-desc { font-size: 13px; line-height: 1.35; color: var(--ink-faint); }
         .st-pill {
           font-size: 11.5px; font-weight: 700; font-family: var(--font-head);
-          color: var(--lemon); background: rgba(196, 241, 53, 0.12);
+          color: var(--accent-ink); background: rgba(196, 241, 53, 0.12);
           border-radius: 999px; padding: 5px 10px; white-space: nowrap;
         }
         .st-row-chevron { color: var(--ink-faint); }

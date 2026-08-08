@@ -54,7 +54,7 @@ export function AuthField({
           height: 50px;
           transition: border-color 0.15s ease;
         }
-        .auth-input-wrap:focus-within { border-color: var(--lemon); }
+        .auth-input-wrap:focus-within { border-color: var(--accent-ink); }
         .auth-input-wrap.has-error { border-color: var(--danger); }
         .lead-icon { color: var(--ink-faint); flex-shrink: 0; }
         .auth-input {
@@ -69,7 +69,7 @@ export function AuthField({
         }
         .auth-input::placeholder { color: var(--ink-faint); }
         .reveal { color: var(--ink-faint); display: grid; place-items: center; }
-        .reveal:hover { color: var(--lemon); }
+        .reveal:hover { color: var(--accent-ink); }
         .auth-hint { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-faint); }
         .auth-hint.error { color: var(--danger); }
       `}</style>
@@ -100,7 +100,7 @@ export function SocialButton({ provider, label, onClick }) {
           color: var(--ink);
           transition: border-color 0.15s ease, transform 0.15s ease;
         }
-        .social-btn:hover { border-color: var(--lemon); }
+        .social-btn:hover { border-color: var(--accent-ink); }
         .social-btn:active { transform: scale(0.99); }
       `}</style>
     </button>
@@ -151,11 +151,11 @@ export function ChoiceCard({ icon: Icon, title, body, selected, onSelect }) {
           transition: border-color 0.15s ease, background 0.15s ease;
         }
         .choice.is-selected {
-          border-color: var(--lemon);
+          border-color: var(--accent-ink);
           background: rgba(196,241,53,0.05);
         }
         .choice-top { display: flex; align-items: center; justify-content: space-between; }
-        .choice-icon { color: var(--lemon); }
+        .choice-icon { color: var(--accent-ink); }
         .radio {
           width: 18px; height: 18px;
           border-radius: 50%;
@@ -163,7 +163,7 @@ export function ChoiceCard({ icon: Icon, title, body, selected, onSelect }) {
           display: inline-block;
           position: relative;
         }
-        .radio.on { border-color: var(--lemon); background: var(--lemon); }
+        .radio.on { border-color: var(--accent-ink); background: var(--lemon); }
         .radio.on::after {
           content: '';
           position: absolute;
