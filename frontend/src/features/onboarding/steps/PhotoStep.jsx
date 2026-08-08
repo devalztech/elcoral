@@ -82,7 +82,7 @@ export default function PhotoStep({ progress, onNext, onBack }) {
           color: var(--ink-faint);
           overflow: hidden;
         }
-        .photo-circle:hover { border-color: var(--lemon); color: var(--lemon); }
+        .photo-circle:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
         .photo-circle img { width: 100%; height: 100%; object-fit: cover; }
         .spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }

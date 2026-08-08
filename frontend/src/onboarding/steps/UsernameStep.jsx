@@ -71,7 +71,7 @@ export default function UsernameStep({ progress, onNext, onBack }) {
           border-radius: 8px;
           padding: 12px 14px;
         }
-        .username-field:focus-within { border-color: var(--lemon); }
+        .username-field:focus-within { border-color: var(--accent-ink); }
         .username-icon { color: var(--ink-faint); flex-shrink: 0; }
         .username-input {
           flex: 1; background: transparent; border: none; outline: none;
@@ -80,7 +80,7 @@ export default function UsernameStep({ progress, onNext, onBack }) {
         .username-input::placeholder { color: var(--ink-faint); }
         .username-hint { font-size: 13px; margin-top: 8px; }
         .hint-error { color: var(--danger); }
-        .hint-success { color: var(--lemon); }
+        .hint-success { color: var(--accent-ink); }
         .spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>

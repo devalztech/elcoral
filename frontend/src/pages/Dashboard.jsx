@@ -345,14 +345,14 @@ export default function Dashboard() {
           font-family: var(--font-head); font-weight: 700; letter-spacing: .3px;
           color: var(--ink); background: var(--panel-raised);
         }
-        .hm-av.tone-a { background: linear-gradient(145deg,#1d2415,#0f1309); color: var(--lemon); }
+        .hm-av.tone-a { background: linear-gradient(145deg,#1d2415,#0f1309); color: var(--accent-ink); }
         .hm-av.tone-b { background: linear-gradient(145deg,#3a2a20,#1a130e); }
         .hm-av.tone-c { background: linear-gradient(145deg,#151a10,#0c0f08); }
         .hm-av.tone-d { background: linear-gradient(145deg,#101410,#0a0c07); }
         .hm-av.tone-e { background: linear-gradient(145deg,#28303a,#12161b); }
         .hm-av.tone-f { background: linear-gradient(145deg,#2b2233,#141019); }
 
-        .hm-verified { color: var(--lemon); flex: none; }
+        .hm-verified { color: var(--accent-ink); flex: none; }
 
         /* -------------------------------------------------------- app bar */
         .hm-bar {
@@ -372,10 +372,10 @@ export default function Dashboard() {
           width: 40px; height: 40px; border-radius: 999px; color: var(--ink);
           transition: background .15s ease, color .15s ease;
         }
-        .hm-icon-btn:hover { background: var(--panel); color: var(--lemon); }
+        .hm-icon-btn:hover { background: var(--panel); color: var(--accent-ink); }
         .hm-badge {
           position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px;
-          padding: 0 4px; border-radius: 999px; background: var(--lemon); color: #0B0D0A;
+          padding: 0 4px; border-radius: 999px; background: var(--lemon); color: var(--on-accent);
           font-family: var(--font-head); font-size: 10.5px; font-weight: 700;
           display: grid; place-items: center; border: 2px solid var(--bg);
         }
@@ -397,9 +397,9 @@ export default function Dashboard() {
           display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
           color: var(--ink); transition: border-color .15s ease;
         }
-        .hm-story-create:hover { border-color: var(--lemon); }
+        .hm-story-create:hover { border-color: var(--accent-ink); }
         .hm-story-plus {
-          width: 46px; height: 46px; border-radius: 999px; background: var(--lemon); color: #0B0D0A;
+          width: 46px; height: 46px; border-radius: 999px; background: var(--lemon); color: var(--on-accent);
           display: grid; place-items: center;
         }
         .hm-story-create-label {
@@ -412,10 +412,10 @@ export default function Dashboard() {
           display: grid; place-items: center;
           border: 2px solid var(--border);
         }
-        .hm-story-ring.on { border-color: var(--lemon); }
+        .hm-story-ring.on { border-color: var(--accent-ink); }
         .hm-live {
           position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
-          background: var(--lemon); color: #0B0D0A; border: 2px solid var(--bg);
+          background: var(--lemon); color: var(--on-accent); border: 2px solid var(--bg);
           font-family: var(--font-head); font-size: 9.5px; font-weight: 700; letter-spacing: .6px;
           padding: 2px 7px; border-radius: 999px;
         }
@@ -436,7 +436,7 @@ export default function Dashboard() {
         }
         .hm-greet-art {
           width: 58px; height: 58px; flex: none; border-radius: 12px;
-          background: var(--panel-raised); color: var(--lemon);
+          background: var(--panel-raised); color: var(--accent-ink);
           display: grid; place-items: center;
         }
         .hm-greet-text { flex: 1; min-width: 0; }
@@ -452,7 +452,7 @@ export default function Dashboard() {
         .hm-progress-text { display: flex; flex-direction: column; gap: 2px; }
         .hm-progress-label { font-family: var(--font-head); font-size: 13px; font-weight: 600; }
         .hm-progress-value { font-size: 11.5px; color: var(--ink-dim); }
-        .hm-progress-value b { color: var(--lemon); font-weight: 700; }
+        .hm-progress-value b { color: var(--accent-ink); font-weight: 700; }
         .hm-ring {
           width: 34px; height: 34px; border-radius: 999px; flex: none;
           -webkit-mask: radial-gradient(circle, transparent 10px, #000 11px);
@@ -471,7 +471,7 @@ export default function Dashboard() {
         .hm-section-head h2 {
           margin: 0; font-family: var(--font-head); font-size: 17px; font-weight: 700; color: var(--ink);
         }
-        .hm-see-all { font-family: var(--font-head); font-size: 14px; font-weight: 600; color: var(--lemon); }
+        .hm-see-all { font-family: var(--font-head); font-size: 14px; font-weight: 600; color: var(--accent-ink); }
 
         /* ----------------------------------------------------- recommended */
         .hm-rec-rail { padding-bottom: 4px; }
@@ -494,11 +494,11 @@ export default function Dashboard() {
           border-radius: 999px; padding: 5px 11px;
           font-size: 12px; font-weight: 600; color: var(--ink-dim);
         }
-        .hm-chip svg { color: var(--lemon); }
+        .hm-chip svg { color: var(--accent-ink); }
         .hm-chip-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--lemon); }
         .hm-rec-cta {
           width: 100%; border: 0; border-radius: 10px; padding: 11px 12px;
-          background: var(--lemon); color: #0B0D0A; cursor: pointer;
+          background: var(--lemon); color: var(--on-accent); cursor: pointer;
           font-family: var(--font-head); font-size: 14.5px; font-weight: 700;
           transition: background .15s ease;
         }
@@ -520,7 +520,7 @@ export default function Dashboard() {
           transition: color .15s ease;
         }
         .hm-tab:hover { color: var(--ink); }
-        .hm-tab.on { color: var(--lemon); border-bottom-color: var(--lemon); }
+        .hm-tab.on { color: var(--accent-ink); border-bottom-color: var(--accent-ink); }
 
         /* ------------------------------------------------------------ feed */
         .hm-feed { display: flex; flex-direction: column; gap: 12px; padding: 14px var(--gut) 0; }
@@ -553,7 +553,7 @@ export default function Dashboard() {
           background: var(--panel-raised); border: 1px solid var(--border); border-radius: 12px;
           transition: border-color .15s ease;
         }
-        .hm-attach:hover { border-color: var(--lemon); }
+        .hm-attach:hover { border-color: var(--accent-ink); }
         .hm-attach-thumb {
           width: 108px; height: 74px; flex: none; border-radius: 8px;
           background:
@@ -588,9 +588,9 @@ export default function Dashboard() {
         }
         .hm-action:hover { color: var(--ink); }
         .hm-action:active { transform: scale(0.93); }
-        .hm-action.liked { color: var(--lemon); }
+        .hm-action.liked { color: var(--accent-ink); }
         .hm-action-save { margin-left: auto; }
-        .hm-action-save.on { color: var(--lemon); }
+        .hm-action-save.on { color: var(--accent-ink); }
 
         /* ------------------------------------------------------------- fab */
         .hm-fab {
@@ -598,7 +598,7 @@ export default function Dashboard() {
           bottom: calc(92px + env(safe-area-inset-bottom));
           width: 62px; height: 62px; border-radius: 999px;
           display: grid; place-items: center;
-          background: var(--lemon); color: #0B0D0A;
+          background: var(--lemon); color: var(--on-accent);
           box-shadow: 0 10px 26px rgba(196,241,53,.28);
           transition: transform .15s ease;
         }

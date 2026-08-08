@@ -172,7 +172,7 @@ function ProfileEditor() {
           font-family: var(--font-body);
           margin-bottom: 10px;
         }
-        .profile-input:focus, .profile-textarea:focus { outline: none; border-color: var(--lemon); }
+        .profile-input:focus, .profile-textarea:focus { outline: none; border-color: var(--accent-ink); }
         .interest-chips { display: flex; flex-wrap: wrap; gap: 8px; }
         .interest-chip {
           font-size: 13px; color: var(--ink-dim);
@@ -181,7 +181,7 @@ function ProfileEditor() {
           border-radius: 999px;
           padding: 8px 14px;
         }
-        .interest-chip-selected { background: rgba(196,241,53,0.12); border-color: var(--lemon); color: var(--ink); }
+        .interest-chip-selected { background: rgba(196,241,53,0.12); border-color: var(--accent-ink); color: var(--ink); }
         .profile-save-error { color: var(--danger); font-size: 13.5px; text-align: center; margin-top: 16px; }
       `}</style>
     </div>
@@ -227,7 +227,7 @@ function EditSection({ title, children, onSave, saving, saved }) {
           border-radius: 999px;
           padding: 6px 12px;
         }
-        .save-btn:hover { border-color: var(--lemon); color: var(--ink); }
+        .save-btn:hover { border-color: var(--accent-ink); color: var(--ink); }
         .spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>

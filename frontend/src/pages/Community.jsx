@@ -305,10 +305,10 @@ export default function Community() {
           display: inline-flex; align-items: center; justify-content: center;
           color: var(--ink); transition: background .15s ease, color .15s ease;
         }
-        .cm-icon-btn:hover { background: var(--panel); color: var(--lemon); }
+        .cm-icon-btn:hover { background: var(--panel); color: var(--accent-ink); }
         .cm-badge {
           position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px;
-          padding: 0 4px; border-radius: 999px; background: var(--lemon); color: #0B0D0A;
+          padding: 0 4px; border-radius: 999px; background: var(--lemon); color: var(--on-accent);
           font-family: var(--font-head); font-size: 11px; font-weight: 700;
           display: inline-flex; align-items: center; justify-content: center;
           border: 2px solid var(--bg);
@@ -322,7 +322,7 @@ export default function Community() {
           background: var(--panel); border: 1px solid var(--border);
           color: var(--ink-faint);
         }
-        .cm-search:focus-within { border-color: var(--lemon); }
+        .cm-search:focus-within { border-color: var(--accent-ink); }
         .cm-search input {
           flex: 1; min-width: 0; background: none; border: none; outline: none;
           color: var(--ink); font-family: var(--font-body); font-size: 15px;
@@ -344,7 +344,7 @@ export default function Community() {
           color: var(--ink-dim); transition: all .15s ease; white-space: nowrap;
         }
         .cm-filter:hover { color: var(--ink); border-color: var(--lemon-deep); }
-        .cm-filter.on { background: var(--lemon); border-color: var(--lemon); color: #0B0D0A; }
+        .cm-filter.on { background: var(--lemon); border-color: var(--accent-ink); color: var(--on-accent); }
         .cm-filter.more { display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0; }
 
         /* -------------------------------------------------- section heads */
@@ -357,7 +357,7 @@ export default function Community() {
           font-size: 18px; letter-spacing: -.2px; color: var(--ink);
         }
         .cm-see-all {
-          font-family: var(--font-head); font-weight: 600; font-size: 14px; color: var(--lemon);
+          font-family: var(--font-head); font-weight: 600; font-size: 14px; color: var(--accent-ink);
         }
         .cm-see-all:hover { text-decoration: underline; }
 
@@ -381,7 +381,7 @@ export default function Community() {
         .cm-tile.tone-dark { background: radial-gradient(120% 120% at 30% 20%, #191d13, #0b0e07); }
         .cm-word {
           font-family: var(--font-head); font-weight: 800; font-size: 24px;
-          color: var(--lemon); letter-spacing: -.5px;
+          color: var(--accent-ink); letter-spacing: -.5px;
         }
         .cm-word.code { font-size: 22px; }
         .cm-emoji { line-height: 1; }
@@ -389,7 +389,7 @@ export default function Community() {
           position: absolute; top: 10px; right: 10px;
           width: 22px; height: 22px; border-radius: 999px;
           display: inline-flex; align-items: center; justify-content: center;
-          background: var(--lemon); color: #0B0D0A;
+          background: var(--lemon); color: var(--on-accent);
         }
         .cm-mine-name {
           margin: 0; font-family: var(--font-head); font-weight: 700; font-size: 15px;
@@ -419,7 +419,7 @@ export default function Community() {
         .cm-promo-text { flex: 1 1 auto; min-width: 0; padding-right: 22px; }
         .cm-promo-title {
           margin: 0; font-family: var(--font-head); font-weight: 700; font-size: 15px;
-          color: var(--lemon); letter-spacing: -.3px; white-space: nowrap;
+          color: var(--accent-ink); letter-spacing: -.3px; white-space: nowrap;
         }
         .cm-promo-sub {
           margin: 6px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink-dim);
@@ -429,7 +429,7 @@ export default function Community() {
           margin-top: 14px; float: right;
           display: inline-flex; align-items: center; gap: 8px;
           padding: 11px 18px; border-radius: 12px;
-          background: var(--lemon); color: #0B0D0A;
+          background: var(--lemon); color: var(--on-accent);
           font-family: var(--font-head); font-weight: 700; font-size: 14.5px;
           white-space: nowrap; transition: background .15s ease, transform .15s ease;
         }
@@ -473,23 +473,23 @@ export default function Community() {
           font-size: 12.5px; color: var(--ink-faint);
         }
         .cm-sep { color: var(--ink-faint); }
-        .cm-fresh { color: var(--lemon); font-weight: 600; }
+        .cm-fresh { color: var(--accent-ink); font-weight: 600; }
         .cm-join {
           flex: none; padding: 9px 20px; border-radius: 10px;
-          border: 1px solid var(--lemon); color: var(--lemon); background: transparent;
+          border: 1px solid var(--lemon); color: var(--accent-ink); background: transparent;
           font-family: var(--font-head); font-weight: 700; font-size: 14px;
           transition: background .15s ease, color .15s ease, transform .15s ease;
         }
         .cm-join:hover { background: color-mix(in srgb, var(--lemon) 14%, transparent); }
         .cm-join:active { transform: scale(.96); }
-        .cm-join.on { background: var(--lemon); color: #0B0D0A; }
+        .cm-join.on { background: var(--lemon); color: var(--on-accent); }
 
         /* ---------------------------------------------------- discussions */
         .cm-disc { display: flex; gap: 12px; padding: 14px 14px 12px; }
         .cm-avatar {
           width: 46px; height: 46px; border-radius: 999px; flex: none;
           display: inline-flex; align-items: center; justify-content: center;
-          font-family: var(--font-head); font-weight: 700; font-size: 15px; color: #0B0D0A;
+          font-family: var(--font-head); font-weight: 700; font-size: 15px; color: var(--on-accent);
         }
         .cm-avatar.av-a { background: linear-gradient(150deg,#E7C98F,#B07B4C); }
         .cm-avatar.av-b { background: linear-gradient(150deg,#9FC7E8,#4B7BA8); }
@@ -515,7 +515,7 @@ export default function Community() {
         }
         .cm-stat { display: inline-flex; align-items: center; gap: 7px; }
         .cm-save { margin-left: auto; color: var(--ink-dim); line-height: 0; }
-        .cm-save:hover, .cm-save.on { color: var(--lemon); }
+        .cm-save:hover, .cm-save.on { color: var(--accent-ink); }
 
         /* -------------------------------------------------------- create */
         .cm-create {
@@ -527,19 +527,19 @@ export default function Community() {
         .cm-create-art {
           width: 60px; height: 60px; border-radius: 16px; flex: none;
           display: inline-flex; align-items: center; justify-content: center;
-          color: var(--lemon); border: 1px solid color-mix(in srgb, var(--lemon) 45%, transparent);
+          color: var(--accent-ink); border: 1px solid color-mix(in srgb, var(--lemon) 45%, transparent);
           background: radial-gradient(120% 120% at 30% 20%, #1a220f, #0d1108);
           box-shadow: 0 0 22px -12px var(--lemon);
         }
         .cm-create-text { flex: 1 1 auto; min-width: 0; }
         .cm-create-title {
           margin: 0; font-family: var(--font-head); font-weight: 700; font-size: 15.5px;
-          line-height: 1.25; color: var(--lemon);
+          line-height: 1.25; color: var(--accent-ink);
         }
         .cm-create-sub { margin: 5px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--ink-dim); }
         .cm-create-cta {
           flex: none; padding: 12px 18px; border-radius: 12px;
-          background: var(--lemon); color: #0B0D0A;
+          background: var(--lemon); color: var(--on-accent);
           font-family: var(--font-head); font-weight: 700; font-size: 14px;
           white-space: nowrap; transition: background .15s ease, transform .15s ease;
         }

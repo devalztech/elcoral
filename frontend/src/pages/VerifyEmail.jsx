@@ -82,11 +82,11 @@ export default function VerifyEmail() {
           gap: 6px;
         }
         .logo { font-family: var(--font-display); font-weight: 900; font-size: 18px; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 20px; }
-        .logo-mark { color: var(--lemon); }
+        .logo-mark { color: var(--accent-ink); }
         h1 { font-family: var(--font-head); font-size: 22px; color: var(--ink); margin: 14px 0 4px; }
         p { font-size: 14.5px; margin-bottom: 20px; }
         .icon-neutral { color: var(--ink-faint); }
-        .icon-success { color: var(--lemon); }
+        .icon-success { color: var(--accent-ink); }
         .icon-error { color: var(--danger); }
         .spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }

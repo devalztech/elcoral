@@ -127,7 +127,7 @@ function Hero({ onSignup }) {
           margin-top: 14px;
           color: var(--ink);
         }
-        .hero-title .accent { color: var(--lemon); }
+        .hero-title .accent { color: var(--accent-ink); }
         .hero-badge {
           display: inline-flex;
           align-items: center;
@@ -139,7 +139,7 @@ function Hero({ onSignup }) {
           font-size: 12.5px;
           color: var(--ink-dim);
         }
-        .hero-badge svg { color: var(--lemon); }
+        .hero-badge svg { color: var(--accent-ink); }
         .hero-sub { font-size: 17px; max-width: 480px; margin-top: 22px; }
         .hero-ctas { display: flex; gap: 14px; margin-top: 32px; flex-wrap: wrap; }
         .btn-lg { padding: 16px 30px; font-size: 16px; }
@@ -239,7 +239,7 @@ function Highlights() {
           gap: 22px;
         }
         .hl-item { display: flex; gap: 14px; align-items: flex-start; }
-        .hl-icon { color: var(--lemon); flex-shrink: 0; margin-top: 2px; }
+        .hl-icon { color: var(--accent-ink); flex-shrink: 0; margin-top: 2px; }
         .hl-title { margin: 0; font-family: var(--font-head); font-size: 15px; font-weight: 600; color: var(--ink); }
         .hl-body { margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-dim); }
         .hl-quote { gap: 16px; }
@@ -289,7 +289,7 @@ function IntentBar() {
           padding: 10px 18px;
           transition: border-color 0.15s ease, color 0.15s ease;
         }
-        .intent-chip:hover { border-color: var(--lemon); color: var(--ink); }
+        .intent-chip:hover { border-color: var(--accent-ink); color: var(--ink); }
       `}</style>
     </section>
   )
@@ -352,7 +352,7 @@ function Categories() {
           border-radius: var(--radius); padding: 22px;
           transition: border-color 0.15s ease, transform 0.15s ease;
         }
-        .cat-card:hover { border-color: var(--lemon); transform: translateY(-2px); }
+        .cat-card:hover { border-color: var(--accent-ink); transform: translateY(-2px); }
         .cat-name { font-family: var(--font-head); font-weight: 600; font-size: 16.5px; color: var(--ink); }
         .cat-desc { font-size: 13px; color: var(--ink-faint); }
         @media (max-width: 768px) { .cats-grid { grid-template-columns: 1fr 1fr; } }
@@ -392,7 +392,7 @@ function SecurityBlock() {
         .sec-title { font-size: clamp(26px, 4vw, 34px); font-weight: 700; margin-top: 10px; line-height: 1.2; }
         .sec-sub { margin-top: 16px; max-width: 380px; }
         .sec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .sec-item h3 { font-size: 16.5px; font-weight: 600; color: var(--lemon); margin-bottom: 8px; }
+        .sec-item h3 { font-size: 16.5px; font-weight: 600; color: var(--accent-ink); margin-bottom: 8px; }
         .sec-item p { font-size: 14.5px; }
         @media (max-width: 860px) { .sec-inner { grid-template-columns: 1fr; } }
         @media (max-width: 480px) { .sec-grid { grid-template-columns: 1fr; } }

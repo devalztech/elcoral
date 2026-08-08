@@ -100,8 +100,8 @@ export default function Create() {
           font-family: var(--font-head); font-weight: 600; font-size: 14px;
           color: var(--ink); white-space: nowrap;
         }
-        .cr-templates svg { color: var(--lemon); }
-        .cr-templates:hover { border-color: var(--lemon); }
+        .cr-templates svg { color: var(--accent-ink); }
+        .cr-templates:hover { border-color: var(--accent-ink); }
         .cr-templates:active { transform: scale(0.97); }
 
         .cr-section {
@@ -120,7 +120,7 @@ export default function Create() {
         }
         .cr-card-icon {
           width: 42px; height: 42px; border-radius: 12px;
-          background: var(--panel-raised); color: var(--lemon);
+          background: var(--panel-raised); color: var(--accent-ink);
           display: inline-flex; align-items: center; justify-content: center;
           margin-bottom: 14px;
         }
@@ -131,7 +131,7 @@ export default function Create() {
         .cr-card-desc {
           font-size: 13px; line-height: 1.42; color: var(--ink-dim); flex: 1;
         }
-        .cr-card-arrow { color: var(--lemon); margin-top: 14px; }
+        .cr-card-arrow { color: var(--accent-ink); margin-top: 14px; }
         .cr-card:hover { border-color: rgba(196, 241, 53, 0.35); }
         .cr-card:active { transform: scale(0.99); }
 
@@ -144,7 +144,7 @@ export default function Create() {
         }
         .cr-row-icon {
           width: 44px; height: 44px; border-radius: 12px;
-          background: var(--panel-raised); color: var(--lemon);
+          background: var(--panel-raised); color: var(--accent-ink);
           display: inline-flex; align-items: center; justify-content: center;
         }
         .cr-row-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -163,18 +163,18 @@ export default function Create() {
         .cr-promo-art {
           width: 82px; height: 82px; border-radius: 12px; flex-shrink: 0;
           background: radial-gradient(circle at 50% 45%, rgba(196, 241, 53, 0.16), rgba(196, 241, 53, 0.03) 65%, transparent 72%), #0B0D0A;
-          color: var(--lemon);
+          color: var(--accent-ink);
           display: flex; align-items: center; justify-content: center;
         }
         .cr-promo-text { min-width: 0; }
         .cr-promo-title {
           margin: 0; font-family: var(--font-head); font-weight: 700;
-          font-size: 16.5px; color: var(--lemon);
+          font-size: 16.5px; color: var(--accent-ink);
         }
         .cr-promo-desc { margin: 5px 0 0; font-size: 13px; line-height: 1.42; color: var(--ink-dim); }
         .cr-promo-cta {
           flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
-          background: var(--lemon); color: #0B0D0A;
+          background: var(--lemon); color: var(--on-accent);
           border-radius: 999px; padding: 12px 16px;
           font-family: var(--font-head); font-weight: 700; font-size: 14px;
           white-space: nowrap;

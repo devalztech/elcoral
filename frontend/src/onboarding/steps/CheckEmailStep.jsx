@@ -71,7 +71,7 @@ export default function CheckEmailStep({ onVerified }) {
           background: rgba(196, 241, 53, 0.12);
           border: 1px solid var(--border);
           display: flex; align-items: center; justify-content: center;
-          color: var(--lemon); margin-bottom: 24px;
+          color: var(--accent-ink); margin-bottom: 24px;
         }
         .check-email-title {
           font-family: var(--font-display); font-weight: 800;

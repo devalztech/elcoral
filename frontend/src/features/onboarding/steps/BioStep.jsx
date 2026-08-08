@@ -60,7 +60,7 @@ export default function BioStep({ progress, onNext, onBack }) {
           resize: vertical;
           min-height: 120px;
         }
-        .bio-textarea:focus { outline: none; border-color: var(--lemon); }
+        .bio-textarea:focus { outline: none; border-color: var(--accent-ink); }
         .bio-textarea::placeholder { color: var(--ink-faint); }
         .bio-counter {
           display: block;

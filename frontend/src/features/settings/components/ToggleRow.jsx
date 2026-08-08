@@ -35,7 +35,7 @@ export default function ToggleRow({ label, desc, checked, onChange, disabled = f
           position: relative; transition: background 0.15s ease, border-color 0.15s ease;
         }
         .toggle:disabled { opacity: 0.5; cursor: not-allowed; }
-        .toggle-on { background: var(--lemon); border-color: var(--lemon); }
+        .toggle-on { background: var(--lemon); border-color: var(--accent-ink); }
         .toggle-knob {
           position: absolute; top: 2px; left: 2px;
           width: 20px; height: 20px; border-radius: 50%;

@@ -1,7 +1,8 @@
 import re
 import uuid
+from typing import Literal
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 def _check_password_strength(v: str) -> str:
@@ -20,6 +21,13 @@ class SignupRequest(BaseModel):
     email: EmailStr
     password: str
     full_name: str
+    # Both chosen on the signup form itself. Optional so older clients (and
+    # the "sign up, pick a handle during onboarding" path) still work: the
+    # username is only reserved here when one was supplied and is free.
+    username: str | None = Field(
+        default=None, min_length=3, max_length=30, pattern=r"^[a-zA-Z0-9_]+$"
+    )
+    account_type: Literal["individual", "organization"] = "individual"
 
     @field_validator("password")
     @classmethod

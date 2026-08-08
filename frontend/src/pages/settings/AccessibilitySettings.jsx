@@ -56,7 +56,7 @@ export default function AccessibilitySettings() {
           flex: 1; height: 56px; border-radius: 12px;
           background: var(--panel); border: 1px solid var(--border); color: var(--ink-dim);
         }
-        .a11y-scale-on { border-color: var(--lemon); color: var(--ink); }
+        .a11y-scale-on { border-color: var(--accent-ink); color: var(--ink); }
       `}</style>
     </SettingsSubpage>
   )

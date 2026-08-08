@@ -50,18 +50,18 @@ export default function PublicShell() {
         .pshell-logo { display: inline-flex; align-items: center; gap: 10px; }
         .pshell-logo-mark {
           font-family: var(--font-display); font-weight: 800; font-size: 26px;
-          line-height: 1; color: var(--lemon);
+          line-height: 1; color: var(--accent-ink);
         }
         .pshell-logo-word {
           font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--ink);
         }
         .pshell-actions { display: flex; align-items: center; gap: 14px; }
         .pshell-icon-link { color: var(--ink); display: inline-flex; }
-        .pshell-icon-link:hover { color: var(--lemon); }
+        .pshell-icon-link:hover { color: var(--accent-ink); }
         .pshell-login { font-size: 15px; font-weight: 600; color: var(--ink-dim); }
         .pshell-login:hover { color: var(--ink); }
         .pshell-signup {
-          background: var(--lemon); color: #0B0D0A;
+          background: var(--lemon); color: var(--on-accent);
           font-size: 15px; font-weight: 700;
           border-radius: 999px; padding: 11px 20px;
         }
