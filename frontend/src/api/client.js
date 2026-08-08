@@ -196,12 +196,21 @@ export const api = {
   getCommunity: (slug, token) => request(`/communities/${encodeURIComponent(slug)}`, { token }),
   updateCommunity: (slug, payload, token) =>
     request(`/communities/${encodeURIComponent(slug)}`, { method: 'PATCH', body: payload, token }),
+  deleteCommunity: (slug, token) =>
+    request(`/communities/${encodeURIComponent(slug)}`, { method: 'DELETE', token }),
   joinCommunity: (slug, token) =>
     request(`/communities/${encodeURIComponent(slug)}/join`, { method: 'POST', token }),
   leaveCommunity: (slug, token) =>
     request(`/communities/${encodeURIComponent(slug)}/join`, { method: 'DELETE', token }),
-  listCommunityMembers: (slug, token) =>
-    request(`/communities/${encodeURIComponent(slug)}/members`, { token }),
+  // Simple member list (no role breakdown) — used where we only need
+  // "who's in this community", e.g. an @mention picker.
+  listCommunityMembers: (slug, { limit, offset } = {}, token) => {
+    const params = new URLSearchParams()
+    if (limit != null) params.set('limit', String(limit))
+    if (offset != null) params.set('offset', String(offset))
+    const qs = params.toString()
+    return request(`/communities/${encodeURIComponent(slug)}/members${qs ? `?${qs}` : ''}`, { token })
+  },
 
   // Discussions. The cross-community feed powers the "Top discussions"
   // section; the per-community one powers a community's own page.
@@ -213,8 +222,13 @@ export const api = {
     if (offset != null) params.set('offset', String(offset))
     return request(`/communities/discussions?${params.toString()}`, { token })
   },
-  listCommunityDiscussions: (slug, token) =>
-    request(`/communities/${encodeURIComponent(slug)}/discussions`, { token }),
+  listCommunityDiscussions: (slug, { limit, offset } = {}, token) => {
+    const params = new URLSearchParams()
+    if (limit != null) params.set('limit', String(limit))
+    if (offset != null) params.set('offset', String(offset))
+    const qs = params.toString()
+    return request(`/communities/${encodeURIComponent(slug)}/discussions${qs ? `?${qs}` : ''}`, { token })
+  },
   createDiscussion: (slug, payload, token) =>
     request(`/communities/${encodeURIComponent(slug)}/discussions`, {
       method: 'POST',
@@ -222,6 +236,8 @@ export const api = {
       token,
     }),
   getDiscussion: (id, token) => request(`/communities/discussions/${id}`, { token }),
+  updateDiscussion: (id, payload, token) =>
+    request(`/communities/discussions/${id}`, { method: 'PATCH', body: payload, token }),
   deleteDiscussion: (id, token) =>
     request(`/communities/discussions/${id}`, { method: 'DELETE', token }),
   likeDiscussion: (id, liked, token) =>
@@ -231,6 +247,112 @@ export const api = {
   listDiscussionComments: (id, token) => request(`/communities/discussions/${id}/comments`, { token }),
   createDiscussionComment: (id, body, token) =>
     request(`/communities/discussions/${id}/comments`, { method: 'POST', body: { body }, token }),
+  deleteDiscussionComment: (commentId, token) =>
+    request(`/communities/comments/${commentId}`, { method: 'DELETE', token }),
+
+  // -------------------------------------------------- members, roles, bans
+  // Full roster with roles — powers the Members tab and manage screens.
+  // Distinct from listCommunityMembers above (that one has no role/ban info).
+  communityRoster: (slug, { role, q, limit, offset } = {}, token) => {
+    const params = new URLSearchParams()
+    if (role) params.set('role', role)
+    if (q) params.set('q', q)
+    if (limit != null) params.set('limit', String(limit))
+    if (offset != null) params.set('offset', String(offset))
+    const qs = params.toString()
+    return request(`/communities/${encodeURIComponent(slug)}/roster${qs ? `?${qs}` : ''}`, { token })
+  },
+  setMemberRole: (slug, userId, role, token) =>
+    request(`/communities/${encodeURIComponent(slug)}/members/${userId}/role`, {
+      method: 'PATCH',
+      body: { role },
+      token,
+    }),
+  removeMember: (slug, userId, { ban = false, reason } = {}, token) =>
+    request(`/communities/${encodeURIComponent(slug)}/members/${userId}`, {
+      method: 'DELETE',
+      body: { ban, reason: reason ?? null },
+      token,
+    }),
+  unbanMember: (slug, userId, token) =>
+    request(`/communities/${encodeURIComponent(slug)}/bans/${userId}`, { method: 'DELETE', token }),
+  updateCommunityPermissions: (slug, payload, token) =>
+    request(`/communities/${encodeURIComponent(slug)}/permissions`, {
+      method: 'PATCH',
+      body: payload,
+      token,
+    }),
+
+  // ------------------------------------------------------------- projects
+  listCommunityProjects: (slug, { status, limit, offset } = {}, token) => {
+    const params = new URLSearchParams()
+    if (status) params.set('status', status)
+    if (limit != null) params.set('limit', String(limit))
+    if (offset != null) params.set('offset', String(offset))
+    const qs = params.toString()
+    return request(`/communities/${encodeURIComponent(slug)}/projects${qs ? `?${qs}` : ''}`, { token })
+  },
+  createProject: (slug, payload, token) =>
+    request(`/communities/${encodeURIComponent(slug)}/projects`, { method: 'POST', body: payload, token }),
+  getProject: (id, token) => request(`/communities/projects/${id}`, { token }),
+  updateProject: (id, payload, token) =>
+    request(`/communities/projects/${id}`, { method: 'PATCH', body: payload, token }),
+  deleteProject: (id, token) => request(`/communities/projects/${id}`, { method: 'DELETE', token }),
+  requestToCollaborate: (projectId, note, token) =>
+    request(`/communities/projects/${projectId}/join`, { method: 'POST', body: { note: note ?? null }, token }),
+  withdrawCollaboration: (projectId, token) =>
+    request(`/communities/projects/${projectId}/join`, { method: 'DELETE', token }),
+  listCollaborators: (projectId, state, token) =>
+    request(
+      `/communities/projects/${projectId}/collaborators${state ? `?state=${encodeURIComponent(state)}` : ''}`,
+      { token },
+    ),
+  decideCollaborator: (projectId, collaboratorId, state, token) =>
+    request(`/communities/projects/${projectId}/collaborators/${collaboratorId}`, {
+      method: 'PATCH',
+      body: { state },
+      token,
+    }),
+
+  // ----------------------------------------------------------------- chat
+  // The socket (see wsUrl below) is receive-only — sending always goes
+  // through this REST call, which persists the message and fans it out.
+  listCommunityMessages: (slug, { before, limit } = {}, token) => {
+    const params = new URLSearchParams()
+    if (before) params.set('before', before)
+    if (limit != null) params.set('limit', String(limit))
+    const qs = params.toString()
+    return request(`/communities/${encodeURIComponent(slug)}/messages${qs ? `?${qs}` : ''}`, { token })
+  },
+  sendCommunityMessage: (slug, { body, mediaRefs } = {}, token) =>
+    request(`/communities/${encodeURIComponent(slug)}/messages`, {
+      method: 'POST',
+      body: { body: body || null, media_refs: mediaRefs && mediaRefs.length ? mediaRefs : null },
+      token,
+    }),
+  deleteCommunityMessage: (messageId, token) =>
+    request(`/communities/messages/${messageId}`, { method: 'DELETE', token }),
+  // Builds the chat socket URL from the same base `request()` uses, so
+  // dev (relative, proxied by Vite) and prod (VITE_API_URL) stay in sync
+  // with zero extra config. http(s) -> ws(s); an empty base means
+  // "same origin as the page", which is also correct for a raw WebSocket.
+  wsUrl: (slug, token) => {
+    const apiBase = import.meta.env.VITE_API_URL ?? ''
+    let wsBase
+    if (apiBase) {
+      wsBase = apiBase.replace(/^http/, 'ws')
+    } else {
+      wsBase = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
+    }
+    return `${wsBase}/api/communities/ws/${encodeURIComponent(slug)}?token=${encodeURIComponent(token ?? '')}`
+  },
+
+  // --------------------------------------------------------------- discovery
+  discoveryCategories: () => request('/communities/discovery/categories'),
+
+  // ----------------------------------------------------------------- reports
+  reportCommunityContent: (payload, token) =>
+    request('/communities/reports', { method: 'POST', body: payload, token }),
 }
 
 

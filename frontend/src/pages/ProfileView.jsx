@@ -10,7 +10,6 @@ import {
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import ReportDialog from '../features/settings/components/ReportDialog.jsx'
 import { api } from '../api/client.js'
-import ElcoralMark from '../components/ElcoralMark.jsx'
 import { useFollow } from '../features/social/useFollow.js'
 import { formatCount } from '../features/social/format.js'
 
@@ -47,12 +46,6 @@ const BADGES = [
 // "Currently building" — still frontend-placeholder copy (no backend
 // field for a pinned project yet), now shown on the Projects tab instead
 // of the top of the profile page.
-const BUILDING = {
-  name: 'Elcoral Platform',
-  description: 'A professional ecosystem that connects talent with opportunities.',
-  lookingFor: ['UI/UX Designer', 'Backend Developer', 'Researchers', 'Beta Testers'],
-}
-
 const TABS = ['Posts', 'Projects', 'Skills', 'About']
 
 // Mirrors app/models/profile.py's AVAILABILITY_CHOICES + the labels/dot
@@ -477,62 +470,6 @@ function CompletionCard({ profile, postCount }) {
       <div className="pv-progress">
         <i style={{ width: `${pct}%` }} />
       </div>
-      <ul className="pv-checklist">
-        {checklist.map((c) => (
-          <li key={c.label} className={c.done ? 'pv-check-done' : ''}>
-            <span className="pv-check-tick">{c.done && <Check size={13} strokeWidth={3.5} />}</span>
-            <span className="pv-check-label">{c.label}</span>
-            <span className="pv-check-worth">+{c.worth}%</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-// "Currently building" card — shown on the Projects tab (owner gets an
-// edit affordance, visitors/guests get the same card read-only).
-function BuildingCard({ isOwner = false }) {
-  const content = (
-    <>
-      <div className="pv-build">
-        <div className="pv-build-logo">
-          <ElcoralMark size={30} color="var(--lemon)" />
-        </div>
-        <div>
-          <p className="pv-build-name">{BUILDING.name}</p>
-          <p className="pv-build-desc">{BUILDING.description}</p>
-        </div>
-      </div>
-      <p className="pv-build-sub">Looking for</p>
-      <div className="pv-chips">
-        {BUILDING.lookingFor.map((c) => (
-          <span className="pv-chip pv-chip-lemon" key={c}>{c}</span>
-        ))}
-      </div>
-    </>
-  )
-
-  if (!isOwner) {
-    return (
-      <section className="pv-card">
-        <h2 className="pv-card-head-static">
-          <Rocket size={17} className="pv-card-head-icon" aria-hidden="true" /> Currently building
-        </h2>
-        {content}
-      </section>
-    )
-  }
-
-  return (
-    <section className="pv-card">
-      <Link to="/home/profile/edit" className="pv-card-head">
-        <h2>
-          <Rocket size={17} className="pv-card-head-icon" aria-hidden="true" /> Currently building
-        </h2>
-        <ChevronRight size={17} />
-      </Link>
-      {content}
     </section>
   )
 }
@@ -738,7 +675,6 @@ function GuestProfile({ profile, posts }) {
         <StatsRow profile={profile} postCount={posts.length} follow={follow} />
       </div>
 
-      <PublicBuildingCard />
       <TopSkills profile={profile} />
 
       <section className="pv-gate">
@@ -782,31 +718,6 @@ function WhyItem({ Icon, title, body }) {
 }
 
 /* --------------------------- public sub-blocks -------------------------- */
-
-function PublicBuildingCard() {
-  return (
-    <section className="pv-card pv-building-card">
-      <div className="pv-building-main">
-        <div className="pv-build-logo pv-build-logo-lg">
-          <ElcoralMark size={38} color="var(--lemon)" />
-        </div>
-        <div className="pv-building-text">
-          <p className="pv-building-eyebrow">What we're building</p>
-          <p className="pv-build-name">{BUILDING.name}</p>
-          <p className="pv-build-desc">{BUILDING.description}</p>
-        </div>
-      </div>
-      <div className="pv-building-side">
-        <p className="pv-building-eyebrow">Looking for</p>
-        <div className="pv-chips">
-          {BUILDING.lookingFor.map((c) => (
-            <span className="pv-chip" key={c}>{c}</span>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
 
 function TopSkills({ profile }) {
   const skills = profile.skills ?? []
@@ -860,13 +771,8 @@ function ProfileTabs({ profile, posts, isOwner = false }) {
 }
 
 function ProjectsTab({ profile, isOwner }) {
-  // "Currently building" is still frontend-placeholder content (no
-  // backend field for a pinned project yet) — shown above the empty
-  // project list rather than gating it, since it's a preview of what the
-  // Projects tab will hold once real project data exists.
   return (
     <div className="pv-projects">
-      <BuildingCard isOwner={isOwner} />
       <EmptyTab
         title="No projects yet"
         body={isOwner
@@ -1366,33 +1272,6 @@ function ProfileStyles() {
       }
       .pv-progress i { display: block; height: 100%; background: var(--lemon); border-radius: 999px; }
 
-      .pv-checklist { margin-top: 20px; display: flex; flex-direction: column; gap: 13px; }
-      .pv-checklist li { display: flex; align-items: center; gap: 12px; }
-      .pv-check-tick {
-        width: 23px; height: 23px; border-radius: 50%; flex-shrink: 0;
-        border: 2px solid var(--pv-line);
-        display: inline-flex; align-items: center; justify-content: center;
-        color: var(--on-accent);
-      }
-      .pv-check-done .pv-check-tick { background: var(--lemon); border-color: var(--accent-ink); }
-      .pv-check-label { flex: 1; font-size: 14.5px; color: var(--ink); }
-      .pv-check-worth {
-        font-size: 12.5px; font-weight: 700; color: var(--ink-faint);
-        background: var(--pv-surface-2); border-radius: 999px; padding: 5px 10px;
-      }
-      .pv-check-done .pv-check-worth { color: var(--accent-ink); background: rgba(196, 241, 53, 0.12); }
-
-      .pv-build { display: flex; gap: 14px; margin-top: 16px; }
-      .pv-build-logo {
-        width: 58px; height: 58px; flex-shrink: 0; border-radius: 14px;
-        background: var(--tile); border: 1px solid var(--pv-line-soft);
-        display: flex; align-items: center; justify-content: center;
-      }
-      .pv-build-logo-lg { width: 68px; height: 68px; border-radius: 16px; }
-      .pv-build-name { font-size: 16px; font-weight: 700; color: var(--ink); font-family: var(--font-head); }
-      .pv-build-desc { font-size: 14px; color: var(--ink-dim); line-height: 1.45; margin-top: 4px; }
-      .pv-build-sub { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-top: 22px; }
-
       .pv-chips { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 10px; }
       .pv-chip {
         font-size: 13px; color: var(--ink);
@@ -1401,21 +1280,6 @@ function ProfileStyles() {
       }
       .pv-chip-lemon { color: var(--accent-ink); border-color: var(--lemon-deep); }
       .pv-chip-more { background: var(--pv-surface); color: var(--ink); }
-
-      /* ------------------------- public building card -------------------- */
-      .pv-building-card {
-        display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 22px;
-      }
-      @media (min-width: 560px) {
-        .pv-building-card { grid-template-columns: 1.05fr 1fr; gap: 20px; }
-        .pv-building-side { border-left: 1px solid var(--pv-line-soft); padding-left: 20px; }
-      }
-      .pv-building-main { display: flex; gap: 14px; align-items: flex-start; }
-      .pv-building-text { min-width: 0; }
-      .pv-building-eyebrow {
-        font-size: 13.5px; font-weight: 600; color: var(--accent-ink); margin-bottom: 6px;
-      }
-      .pv-building-side .pv-chips { margin-top: 0; }
 
       /* ---------------------------- top skills --------------------------- */
       .pv-skills { margin-top: 24px; }

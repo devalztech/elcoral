@@ -9,6 +9,10 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        // Required for the community chat WebSocket
+        // (ws /api/communities/ws/{slug}) to reach the backend in dev —
+        // without this Vite only proxies plain HTTP requests.
+        ws: true,
       },
     },
   },

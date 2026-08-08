@@ -11,6 +11,8 @@ import Dashboard from '../pages/Dashboard.jsx'
 import Create from '../pages/Create.jsx'
 import Jobs from '../pages/Jobs.jsx'
 import Community from '../pages/Community.jsx'
+import CommunityDetail from '../pages/CommunityDetail.jsx'
+import CommunityCreate from '../pages/CommunityCreate.jsx'
 import ProfileView from '../pages/ProfileView.jsx'
 import ProfileEditor from '../pages/ProfileEditor.jsx'
 import Settings from '../pages/settings/Settings.jsx'
@@ -65,9 +67,10 @@ export default function App() {
             <Route path="/home/stories/:id" element={<ComingSoon label="Story" />} />
             <Route path="/home/projects/:slug" element={<ComingSoon label="Project" />} />
             <Route path="/home/create" element={<Create />} />
+            <Route path="/home/create/community" element={<CommunityCreate />} />
             <Route path="/home/create/:slug" element={<ComingSoon label="Create" />} />
             <Route path="/home/community" element={<Community />} />
-            <Route path="/home/community/:slug" element={<ComingSoon label="Community" />} />
+            <Route path="/home/community/:slug" element={<CommunityDetail />} />
             <Route path="/home/messages" element={<ComingSoon label="Messages" />} />
             <Route path="/home/notifications" element={<ComingSoon label="Notifications" />} />
             <Route path="/home/more" element={<ComingSoon label="More" />} />
