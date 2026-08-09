@@ -3,6 +3,7 @@ import { Flag } from 'lucide-react'
 import { useAuth } from '../../features/auth/hooks/useAuth.jsx'
 import { api } from '../../api/client.js'
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
+import Spinner from '../../components/Spinner.jsx'
 
 const REASON_LABELS = {
   spam: 'Spam',
@@ -44,7 +45,7 @@ export default function ReportsSettings() {
     <SettingsSubpage title="Report history">
       <p className="set-intro">Everything you've reported, and where each one got to.</p>
       {error && <p className="set-error" role="alert">{error}</p>}
-      {loading && <p className="set-loading">Loading…</p>}
+      {loading && <Spinner page label="Loading settings" />}
 
       {!loading && reports.length === 0 && (
         <div className="rep-empty">

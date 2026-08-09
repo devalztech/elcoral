@@ -227,7 +227,7 @@ function EditSection({ title, children, onSave, saving, saved }) {
           border-radius: 999px;
           padding: 6px 12px;
         }
-        .save-btn:hover { border-color: var(--accent-ink); color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .save-btn:hover { border-color: var(--accent-ink); color: var(--ink); } }
         .spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>

@@ -9,6 +9,7 @@ import ElcoralMark from '../components/ElcoralMark.jsx'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api } from '../api/client.js'
 import { avatarTone, displayName, formatCount, initialsOf, pluralize, timeAgo } from '../features/social/format.js'
+import Spinner from '../components/Spinner.jsx'
 
 /* ---------------------------------------------------------------- data ---- */
 
@@ -89,7 +90,7 @@ function Avatar({ person }) {
 }
 
 function SectionState({ loading, error, empty, emptyText, onRetry }) {
-  if (loading) return <p className="cm-state">Loading…</p>
+  if (loading) return <Spinner page label="Loading communities" />
   if (error) {
     return (
       <p className="cm-state cm-state-error">
@@ -457,7 +458,7 @@ export default function Community() {
           display: inline-flex; align-items: center; justify-content: center;
           color: var(--ink); transition: background .15s ease, color .15s ease;
         }
-        .cm-icon-btn:hover { background: var(--panel); color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .cm-icon-btn:hover { background: var(--panel); color: var(--accent-ink); } }
         .cm-badge {
           position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px;
           padding: 0 4px; border-radius: 999px; background: var(--lemon); color: var(--on-accent);
@@ -495,7 +496,7 @@ export default function Community() {
           font-family: var(--font-head); font-weight: 600; font-size: 14px;
           color: var(--ink-dim); transition: all .15s ease; white-space: nowrap;
         }
-        .cm-filter:hover { color: var(--ink); border-color: var(--lemon-deep); }
+        @media (hover: hover) and (pointer: fine) { .cm-filter:hover { color: var(--ink); border-color: var(--lemon-deep); } }
         .cm-filter.on { background: var(--lemon); border-color: var(--accent-ink); color: var(--on-accent); }
         .cm-filter.more { display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0; }
 
@@ -511,7 +512,7 @@ export default function Community() {
         .cm-see-all {
           font-family: var(--font-head); font-weight: 600; font-size: 14px; color: var(--accent-ink);
         }
-        .cm-see-all:hover { text-decoration: underline; }
+        @media (hover: hover) and (pointer: fine) { .cm-see-all:hover { text-decoration: underline; } }
 
         /* ------------------------------------------------ my communities */
         .cm-mine-rail { padding-bottom: 4px; }
@@ -522,7 +523,7 @@ export default function Community() {
           display: flex; flex-direction: column; gap: 10px;
           transition: transform .15s ease;
         }
-        .cm-mine:hover .cm-mine-name { color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .cm-mine:hover .cm-mine-name { color: var(--accent-ink); } }
         .cm-mine:active { transform: scale(.98); }
         .cm-tile {
           width: 64px; height: 64px; border-radius: 14px; flex: none;
@@ -585,14 +586,14 @@ export default function Community() {
           font-family: var(--font-head); font-weight: 700; font-size: 14.5px;
           white-space: nowrap; transition: background .15s ease, transform .15s ease;
         }
-        .cm-promo-cta:hover { background: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .cm-promo-cta:hover { background: var(--ink); } }
         .cm-promo-cta:active { transform: scale(.97); }
         .cm-promo-close {
           position: absolute; top: 12px; right: 12px; color: var(--ink-dim);
           width: 28px; height: 28px; border-radius: 999px;
           display: inline-flex; align-items: center; justify-content: center;
         }
-        .cm-promo-close:hover { color: var(--ink); background: var(--panel-raised); }
+        @media (hover: hover) and (pointer: fine) { .cm-promo-close:hover { color: var(--ink); background: var(--panel-raised); } }
 
         /* ---------------------------------------------------- card lists */
         /* Flat list: the same hairline-separated rows the feed uses —
@@ -633,7 +634,7 @@ export default function Community() {
           font-family: var(--font-head); font-weight: 700; font-size: 14px;
           transition: background .15s ease, color .15s ease, transform .15s ease;
         }
-        .cm-join:hover { background: color-mix(in srgb, var(--lemon) 14%, transparent); }
+        @media (hover: hover) and (pointer: fine) { .cm-join:hover { background: color-mix(in srgb, var(--lemon) 14%, transparent); } }
         .cm-join:active { transform: scale(.96); }
         .cm-join.on { background: var(--lemon); color: var(--on-accent); }
 
@@ -655,7 +656,7 @@ export default function Community() {
           line-height: 1.3; color: var(--ink);
         }
         .cm-more { flex: none; color: var(--ink-dim); line-height: 0; }
-        .cm-more:hover { color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .cm-more:hover { color: var(--ink); } }
         .cm-disc-meta {
           margin: 5px 0 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
           font-size: 12.5px; color: var(--ink-dim);
@@ -668,7 +669,7 @@ export default function Community() {
         }
         .cm-stat { display: inline-flex; align-items: center; gap: 7px; }
         .cm-save { margin-left: auto; color: var(--ink-dim); line-height: 0; }
-        .cm-save:hover, .cm-save.on { color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .cm-save:hover, .cm-save.on { color: var(--accent-ink); } }
 
         /* -------------------------------------------------------- create */
         .cm-create {
@@ -696,7 +697,7 @@ export default function Community() {
           font-family: var(--font-head); font-weight: 700; font-size: 14px;
           white-space: nowrap; transition: background .15s ease, transform .15s ease;
         }
-        .cm-create-cta:hover { background: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .cm-create-cta:hover { background: var(--ink); } }
         .cm-create-cta:active { transform: scale(.97); }
 
         @media (max-width: 520px) {

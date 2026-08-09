@@ -84,7 +84,7 @@ export default function CoverStep({ progress, onNext, onBack }) {
           color: var(--ink-faint);
           font-size: 13.5px;
         }
-        .cover-upload:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .cover-upload:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
         .spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .cover-remove {
@@ -92,7 +92,7 @@ export default function CoverStep({ progress, onNext, onBack }) {
           font-size: 13px; color: var(--ink-faint);
           margin-top: 12px; padding: 6px 0;
         }
-        .cover-remove:hover { color: var(--danger); }
+        @media (hover: hover) and (pointer: fine) { .cover-remove:hover { color: var(--danger); } }
         .cover-error { font-size: 13px; color: var(--danger); margin-top: 10px; }
       `}</style>
     </StepShell>

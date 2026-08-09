@@ -65,8 +65,12 @@ class PostUpdateRequest(BaseModel):
 
 
 class CommentCreateRequest(BaseModel):
-    body: str = Field(min_length=1, max_length=2000)
+    # A comment is valid with text, with a photo, or with both — the
+    # router rejects the empty case.
+    body: str | None = Field(default=None, max_length=2000)
     parent_id: uuid.UUID | None = None
+    media_ref: str | None = Field(default=None, max_length=512)
+    media_type: str | None = Field(default=None, max_length=120)
 
 
 class RepostRequest(BaseModel):
@@ -117,18 +121,26 @@ class CommentOut(BaseModel):
     id: uuid.UUID
     post_id: uuid.UUID
     parent_id: uuid.UUID | None = None
-    body: str
+    body: str = ""
+    # Photo comments: a resolved URL plus the MIME type it was uploaded
+    # with, so the client renders an <img> without sniffing the URL.
+    media_url: str | None = None
+    media_type: str | None = None
+    reply_count: int = 0
     created_at: datetime
     author: PostAuthorOut
     is_mine: bool = False
 
     @staticmethod
-    def from_model(comment, viewer_id=None) -> "CommentOut":
+    def from_model(comment, viewer_id=None, reply_count: int = 0) -> "CommentOut":
         return CommentOut(
             id=comment.id,
             post_id=comment.post_id,
             parent_id=comment.parent_id,
-            body=comment.body,
+            body=comment.body or "",
+            media_url=media_ref_to_url(getattr(comment, "media_ref", None)),
+            media_type=getattr(comment, "media_type", None),
+            reply_count=reply_count,
             created_at=comment.created_at,
             author=PostAuthorOut.from_user(comment.author),
             is_mine=viewer_id is not None and comment.author_id == viewer_id,

@@ -3,6 +3,7 @@ import { UserX } from 'lucide-react'
 import { useAuth } from '../../features/auth/hooks/useAuth.jsx'
 import { api } from '../../api/client.js'
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
+import Spinner from '../../components/Spinner.jsx'
 
 function initialsOf(name) {
   if (!name) return 'EL'
@@ -80,7 +81,7 @@ export default function BlockedSettings() {
 
       {error && <p className="set-error" role="alert">{error}</p>}
 
-      {loading && <p className="set-loading">Loading…</p>}
+      {loading && <Spinner page label="Loading settings" />}
 
       {!loading && blocked.length === 0 && (
         <div className="block-empty">

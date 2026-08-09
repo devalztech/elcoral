@@ -347,7 +347,7 @@ export default function CreatePost() {
         .cp { display: grid; gap: 10px; padding-bottom: 20px; }
         .cp-bar { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; }
         .cp-back { width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; color: var(--ink); }
-        .cp-back:hover { background: var(--panel); }
+        @media (hover: hover) and (pointer: fine) { .cp-back:hover { background: var(--panel); } }
         .cp-heading { margin: 0; font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--ink); }
         .cp-publish {
           display: inline-flex; align-items: center; gap: 7px;
@@ -418,7 +418,7 @@ export default function CreatePost() {
           border-radius: 999px; background: var(--panel-raised);
           font-family: var(--font-head); font-weight: 600; font-size: 13px; color: var(--ink-dim);
         }
-        .cp-tool:hover { color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .cp-tool:hover { color: var(--accent-ink); } }
 
         .cp-tag-input { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px; background: var(--panel-raised); border-radius: 10px; padding: 4px 12px; color: var(--ink-faint); }
         .cp-tag-input input { background: none; border: none; padding: 11px 0; color: var(--ink); font-size: 14px; width: 100%; }

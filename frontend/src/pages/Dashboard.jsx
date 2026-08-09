@@ -10,6 +10,7 @@ import { api } from '../api/client.js'
 import { avatarTone, formatCount, initialsOf, pluralize } from '../features/social/format.js'
 import { RECOMMENDED as JOBS } from '../features/jobs/jobs.js'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
+import Spinner from '../components/Spinner.jsx'
 
 /**
  * Home feed.
@@ -56,7 +57,15 @@ function SectionHead({ title, to }) {
   )
 }
 
-/** One card in the "Recommended for you" rail — a person or a community. */
+/**
+ * One card in the "Recommended for you" rail — a person or a community.
+ *
+ * Layout is fixed so people and communities are interchangeable tiles:
+ *   avatar/icon 52px on the left, name on the same row
+ *   one grey sub-line underneath (role, or "Community · N members")
+ *   one small status chip
+ *   one full-width accent CTA (Connect / Join)
+ */
 function RecommendCard({ item, busy, onAct }) {
   const isPerson = item.kind === 'person'
   const href = isPerson
@@ -64,32 +73,42 @@ function RecommendCard({ item, busy, onAct }) {
     : `/home/community/${item.slug}`
   const sub = isPerson
     ? (item.headline || (item.username ? `@${item.username}` : 'On Elcoral'))
-    : (item.topic || pluralize(item.members_count, 'member'))
+    : `Community · ${pluralize(item.members_count ?? 0, 'member')}`
+  const chip = isPerson
+    ? (item.is_open_to_work ? 'Open to work' : (item.location || 'Member'))
+    : (item.topic || 'Open to join')
 
   return (
     <div className="hm-rec-card">
       <Link to={href} className="hm-rec-main">
-        {isPerson
-          ? <PersonAvatar person={item} size={44} />
-          : (
-            <span className="hm-tile hm-rec-tile" aria-hidden="true">
-              {item.icon_url ? <img src={item.icon_url} alt="" /> : <Users size={20} strokeWidth={1.9} />}
-            </span>
-          )}
-        <span className="hm-rec-name">{isPerson ? item.full_name : item.name}</span>
+        <span className="hm-rec-top">
+          {isPerson
+            ? <PersonAvatar person={item} size={52} />
+            : (
+              <span className="hm-tile hm-rec-tile" aria-hidden="true">
+                {item.icon_url ? <img src={item.icon_url} alt="" /> : <Users size={24} strokeWidth={1.9} />}
+              </span>
+            )}
+          <span className="hm-rec-name">{isPerson ? item.full_name : item.name}</span>
+        </span>
         <span className="hm-rec-sub">{sub}</span>
       </Link>
+      <span className="hm-rec-chip">
+        {isPerson && item.is_open_to_work && <span className="hm-rec-dot" aria-hidden="true" />}
+        {chip}
+      </span>
       <button
         type="button"
         className="hm-rec-cta"
         disabled={busy}
         onClick={() => onAct(item)}
       >
-        {isPerson ? 'Connect' : 'Join'}
+        {busy ? <Spinner size={16} /> : (isPerson ? 'Connect' : 'Join')}
       </button>
     </div>
   )
 }
+
 
 export default function Dashboard() {
   const { user, accessToken, authLoading } = useAuth()
@@ -141,7 +160,7 @@ export default function Dashboard() {
     if (token) {
       setPeopleError('')
       api.followSuggestions(token, 10)
-        .then((data) => { if (!cancelled) setPeople(data.items ?? []) })
+        .then((data) => { if (!cancelled) setPeople((data.items ?? []).filter((p) => !p.is_following && !p.followed_by_me)) })
         .catch((err) => { if (!cancelled) { setPeople([]); setPeopleError(err.message) } })
       api.myProfile(token)
         .then((data) => { if (!cancelled) setProfile(data) })
@@ -312,12 +331,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {loading && (
-          <>
-            <div className="hm-skeleton" />
-            <div className="hm-skeleton" />
-          </>
-        )}
+        {loading && <Spinner page label="Loading posts" />}
 
         {/* ------------------------------------------------ posts feed --- */}
         {!loading && FEED_TABS.has(tab) && posts?.length === 0 && !error && (
@@ -346,7 +360,7 @@ export default function Dashboard() {
 
         {!loading && FEED_TABS.has(tab) && posts?.length > 0 && !exhausted && (
           <button type="button" className="hm-more" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? 'Loading…' : 'Load more'}
+            {loadingMore ? <Spinner size={18} label="Loading more posts" /> : 'Load more'}
           </button>
         )}
 
@@ -422,7 +436,7 @@ export default function Dashboard() {
           position: relative; display: grid; place-items: center;
           width: 40px; height: 40px; border-radius: 999px; color: var(--ink);
         }
-        .hm-icon-btn:hover { color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .hm-icon-btn:hover { color: var(--accent-ink); } }
         .hm-badge {
           position: absolute; top: -2px; right: -3px;
           min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
@@ -446,7 +460,7 @@ export default function Dashboard() {
           font-family: var(--font-head); font-size: 14px; font-weight: 600;
           color: var(--ink-dim);
         }
-        .hm-tab:hover { color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .hm-tab:hover { color: var(--ink); } }
         .hm-tab.on { color: var(--accent-ink); }
         .hm-tab.on::after {
           content: ''; position: absolute; left: 50%; bottom: -1px;
@@ -482,13 +496,13 @@ export default function Dashboard() {
           font-size: 16px; font-weight: 700; color: var(--ink);
         }
         .hm-see-all { font-family: var(--font-head); font-size: 13.5px; font-weight: 600; color: var(--accent-ink); }
-        .hm-see-all:hover { text-decoration: underline; }
+        @media (hover: hover) and (pointer: fine) { .hm-see-all:hover { text-decoration: underline; } }
 
         .hm-row {
           display: flex; align-items: center; gap: 12px;
           padding: 10px var(--gut);
         }
-        .hm-row:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+        @media (hover: hover) and (pointer: fine) { .hm-row:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
         .hm-row-main { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
         .hm-row-text { display: flex; flex-direction: column; min-width: 0; }
         .hm-row-title {
@@ -515,47 +529,68 @@ export default function Dashboard() {
         .hm-tile img { width: 100%; height: 100%; object-fit: cover; }
 
         /* Recommended rail: horizontal scroll of mixed person/community
-           cards, each a self-contained tile with its own CTA. Snaps to
-           card edges; scrollbar hidden so it reads as a carousel, not a
-           table with overflow. */
+           cards. Every card is exactly the same width AND height, so a
+           person tile and a community tile are interchangeable and the
+           row of CTAs lines up across the whole rail. Snaps to card
+           edges; scrollbar hidden so it reads as a carousel. */
         .hm-rec-rail {
-          display: flex; gap: 10px; padding: 4px var(--gut) 14px;
-          overflow-x: auto; scroll-snap-type: x proximity;
+          display: flex; gap: 12px; padding: 6px var(--gut) 16px;
+          overflow-x: auto; scroll-snap-type: x mandatory;
           scrollbar-width: none;
         }
         .hm-rec-rail::-webkit-scrollbar { display: none; }
 
         .hm-rec-card {
-          flex: none; width: 152px; scroll-snap-align: start;
-          display: flex; flex-direction: column; gap: 8px;
-          padding: 14px 12px; border-radius: 16px;
+          flex: none; width: 250px; min-height: 200px; scroll-snap-align: start;
+          display: grid; grid-template-rows: auto auto 1fr auto; gap: 10px;
+          padding: 14px; border-radius: 14px;
           background: var(--panel-raised); border: 1px solid var(--border);
         }
-        .hm-rec-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-        .hm-rec-tile { width: 44px; height: 44px; border-radius: 12px; }
+        .hm-rec-main { display: grid; gap: 8px; min-width: 0; }
+        .hm-rec-top {
+          display: grid; grid-template-columns: 52px minmax(0, 1fr);
+          align-items: center; gap: 12px;
+        }
+        .hm-rec-tile { width: 52px; height: 52px; border-radius: 999px; }
         .hm-rec-name {
-          font-family: var(--font-head); font-size: 14px; font-weight: 700; line-height: 18px;
+          font-family: var(--font-head); font-size: 16px; font-weight: 700; line-height: 20px;
           color: var(--ink);
           overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
-          -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2; -webkit-box-orient: vertical;
         }
         .hm-rec-sub {
-          font-size: 12.5px; line-height: 16px; color: var(--ink-faint);
+          font-size: 14px; line-height: 18px; color: var(--ink-dim);
           overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
           -webkit-line-clamp: 1; -webkit-box-orient: vertical;
         }
-        .hm-rec-cta {
-          margin-top: 2px; padding: 8px 0; border-radius: 999px; border: 0;
-          background: var(--lemon); color: var(--on-accent);
-          font-family: var(--font-head); font-size: 13px; font-weight: 700;
+        /* Status chip: a pill outline, self-sized to its label. */
+        .hm-rec-chip {
+          justify-self: start; align-self: start;
+          display: inline-flex; align-items: center; gap: 7px;
+          max-width: 100%; padding: 7px 13px; border-radius: 999px;
+          border: 1px solid var(--border);
+          font-family: var(--font-head); font-size: 12.5px; font-weight: 600;
+          color: var(--ink-dim);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .hm-rec-cta:disabled { opacity: .5; }
+        .hm-rec-dot {
+          width: 8px; height: 8px; flex: none; border-radius: 999px;
+          background: var(--lemon);
+        }
+        .hm-rec-cta {
+          display: grid; place-items: center;
+          min-height: 44px; padding: 10px; border-radius: 12px; border: 0;
+          background: var(--lemon); color: var(--on-accent);
+          font-family: var(--font-head); font-size: 15px; font-weight: 700;
+        }
+        .hm-rec-cta:disabled { opacity: .6; }
+
 
         .hm-feed { display: grid; }
 
         /* Community / job rows in the feed body match the post cell. */
         .hm-item { display: block; padding: 12px var(--gut); border-bottom: 1px solid var(--border); }
-        .hm-item:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+        @media (hover: hover) and (pointer: fine) { .hm-item:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
         .hm-item-eyebrow { margin: 0; font-size: 12.5px; color: var(--accent-ink); font-weight: 600; }
         .hm-item-title { margin: 3px 0 0; font-family: var(--font-head); font-size: 15px; line-height: 20px; font-weight: 700; color: var(--ink); }
         .hm-item-body {
@@ -582,7 +617,7 @@ export default function Dashboard() {
           font-family: var(--font-head); font-weight: 700; font-size: 13.5px;
         }
         .hm-more {
-          padding: 15px; border: 0; border-bottom: 1px solid var(--border); background: none;
+          display: grid; place-items: center; padding: 15px; border: 0; border-bottom: 1px solid var(--border); background: none;
           font-family: var(--font-head); font-weight: 600; font-size: 14px; color: var(--accent-ink);
         }
         .hm-end { margin: 0; padding: 16px; text-align: center; font-size: 12.5px; color: var(--ink-faint); }

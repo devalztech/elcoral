@@ -107,14 +107,14 @@ input:-webkit-autofill:focus {
   background: var(--lemon);
   color: #0B0D0A;
 }
-.btn-primary:hover { background: var(--ink); }
+@media (hover: hover) and (pointer: fine) { .btn-primary:hover { background: var(--ink); } }
 
 .btn-ghost {
   background: transparent;
   color: var(--ink);
   border-color: var(--border);
 }
-.btn-ghost:hover { border-color: var(--lemon); color: var(--lemon); }
+@media (hover: hover) and (pointer: fine) { .btn-ghost:hover { border-color: var(--lemon); color: var(--lemon); } }
 
 .btn-block { width: 100%; }
 

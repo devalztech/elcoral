@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 import { useSettings } from '../../features/settings/hooks/useSettings.jsx'
+import Spinner from '../../components/Spinner.jsx'
 
 // Label + native name so someone who can't read the English name can
 // still find their language.
@@ -17,7 +18,7 @@ const LANGUAGES = [
 export default function LanguageSettings() {
   const { settings, loading, error, updateLanguage } = useSettings()
 
-  if (loading) return <SettingsSubpage title="Language"><p className="set-loading">Loading…</p></SettingsSubpage>
+  if (loading) return <SettingsSubpage title="Language"><Spinner page label="Loading settings" /></SettingsSubpage>
 
   return (
     <SettingsSubpage title="Language">

@@ -86,7 +86,7 @@ export default function CheckEmailStep({ onVerified }) {
         .check-email-logout {
           margin-top: 28px; padding: 8px 0; font-size: 13px; color: var(--ink-faint);
         }
-        .check-email-logout:hover { color: var(--ink-dim); }
+        @media (hover: hover) and (pointer: fine) { .check-email-logout:hover { color: var(--ink-dim); } }
       `}</style>
     </div>
   )

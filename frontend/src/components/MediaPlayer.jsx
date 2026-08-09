@@ -24,7 +24,10 @@ function clock(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, rounded = true }) {
+/* `fill` makes the player fill its parent box instead of taking the
+   clip's own aspect ratio — used by message bubbles, where every photo
+   and clip shares one fixed frame size. */
+export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, rounded = true, fill = false }) {
   const wrapRef = useRef(null)
   const videoRef = useRef(null)
   const [ratio, setRatio] = useState(ratioProp ?? null)
@@ -72,8 +75,8 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
   return (
     <div
       ref={wrapRef}
-      className={`mp ${rounded ? 'mp-round' : ''} ${playing ? 'mp-playing' : ''} ${started ? 'mp-started' : ''}`}
-      style={ratio ? { aspectRatio: ratio } : undefined}
+      className={`mp ${rounded ? 'mp-round' : ''} ${fill ? 'mp-fill-box' : ''} ${playing ? 'mp-playing' : ''} ${started ? 'mp-started' : ''}`}
+      style={!fill && ratio ? { aspectRatio: ratio } : undefined}
       data-stop="true"
     >
       <video
@@ -149,6 +152,9 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
           background: color-mix(in srgb, var(--ink) 7%, transparent);
         }
         .mp-round { border-radius: 16px; }
+        /* Fixed-frame mode (message bubbles): fill the parent exactly. */
+        .mp-fill-box { width: 100%; height: 100%; max-height: none; }
+        .mp-fill-box .mp-video { object-fit: cover; }
         .mp-video {
           display: block; width: 100%; height: 100%;
           object-fit: contain; background: #000;
@@ -162,7 +168,7 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
           box-shadow: 0 8px 26px rgba(0,0,0,.38);
           transition: transform 160ms ease;
         }
-        .mp-play:hover { transform: translate(-50%, -50%) scale(1.06); }
+        @media (hover: hover) and (pointer: fine) { .mp-play:hover { transform: translate(-50%, -50%) scale(1.06); } }
         .mp-started .mp-play {
           width: 52px; height: 52px;
           background: color-mix(in srgb, var(--lemon) 92%, transparent);
@@ -190,7 +196,7 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
           width: 28px; height: 28px; border: 0; border-radius: 999px;
           background: none; color: #fff; cursor: pointer;
         }
-        .mp-btn:hover { background: rgba(255,255,255,.16); }
+        @media (hover: hover) and (pointer: fine) { .mp-btn:hover { background: rgba(255,255,255,.16); } }
         .mp-time {
           flex: none; font-size: 11.5px; color: #fff; opacity: .9;
           font-variant-numeric: tabular-nums;

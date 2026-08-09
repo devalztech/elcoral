@@ -241,7 +241,7 @@ function EmptyState({ title, body, actionTo, actionLabel }) {
           font-size: 13.5px; padding: 10px 20px; border-radius: 999px;
         }
         .pv-stat-link { text-decoration: none; color: inherit; cursor: pointer; }
-        .pv-stat-link:hover .pv-stat-label { color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .pv-stat-link:hover .pv-stat-label { color: var(--ink); } }
         .pv-inline-error { margin: 8px 16px 0; font-size: 13px; color: var(--danger, #d33); text-align: center; }
 
       `}</style>
@@ -1066,7 +1066,7 @@ function ProfileStyles() {
         backdrop-filter: blur(8px);
         transition: color 0.15s ease, border-color 0.15s ease;
       }
-      .pv-round-btn:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
+      @media (hover: hover) and (pointer: fine) { .pv-round-btn:hover { color: var(--accent-ink); border-color: var(--accent-ink); } }
       .pv-round-btn-lg { width: 48px; height: 48px; background: var(--pv-surface); }
       .pv-round-btn-on { color: var(--accent-ink); border-color: var(--accent-ink); }
 
@@ -1079,7 +1079,7 @@ function ProfileStyles() {
         border-radius: 999px; padding: 10px 18px;
         backdrop-filter: blur(8px);
       }
-      .pv-cover-edit:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+      @media (hover: hover) and (pointer: fine) { .pv-cover-edit:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
 
       .pv-avatar-slot { position: absolute; z-index: 4; }
       .pv-avatar-slot-center { left: 50%; bottom: -30px; transform: translateX(-50%); }
@@ -1186,11 +1186,11 @@ function ProfileStyles() {
         transition: border-color 0.15s ease, background 0.15s ease;
         white-space: nowrap;
       }
-      .pv-btn:hover { border-color: var(--accent-ink); }
+      @media (hover: hover) and (pointer: fine) { .pv-btn:hover { border-color: var(--accent-ink); } }
       .pv-btn-primary {
         background: var(--lemon); color: var(--on-accent); border-color: var(--accent-ink); font-weight: 700;
       }
-      .pv-btn-primary:hover { background: var(--lemon-dim); border-color: var(--lemon-dim); }
+      @media (hover: hover) and (pointer: fine) { .pv-btn-primary:hover { background: var(--lemon-dim); border-color: var(--lemon-dim); } }
       .pv-btn-square { flex: 0 0 62px; padding: 14px 0; }
       .pv-actionrow .pv-follow { flex: 0 0 auto; padding: 14px 28px; gap: 10px; }
       .pv-actionrow .pv-follow-on {
@@ -1209,10 +1209,10 @@ function ProfileStyles() {
         padding: 13px 16px; border-bottom: 1px solid var(--pv-line-soft);
       }
       .pv-menu-item:last-child { border-bottom: none; }
-      .pv-menu-item:hover { color: var(--accent-ink); background: var(--pv-surface-2); }
+      @media (hover: hover) and (pointer: fine) { .pv-menu-item:hover { color: var(--accent-ink); background: var(--pv-surface-2); } }
       .pv-menu-item-danger { color: var(--danger); }
       .pv-inline-error { margin: 0 16px 8px; font-size: 13px; color: var(--danger); }
-      .pv-menu-item-danger:hover { color: var(--danger); }
+      @media (hover: hover) and (pointer: fine) { .pv-menu-item-danger:hover { color: var(--danger); } }
 
       /* ------------------------------- cards ----------------------------- */
       .pv-cardgrid {
@@ -1271,7 +1271,7 @@ function ProfileStyles() {
         background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
         border-radius: 18px; padding: 18px; margin-top: 12px;
       }
-      .pv-availability:hover { border-color: var(--accent-ink); }
+      @media (hover: hover) and (pointer: fine) { .pv-availability:hover { border-color: var(--accent-ink); } }
       .pv-availability-title {
         display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0;
         font-family: var(--font-head); font-size: 15.5px; font-weight: 700; color: var(--ink);
@@ -1327,7 +1327,7 @@ function ProfileStyles() {
         font-size: 13px; font-weight: 600; color: var(--accent-ink);
       }
       .pv-post-more { color: var(--ink-faint); display: inline-flex; }
-      .pv-post-more:hover { color: var(--ink); }
+      @media (hover: hover) and (pointer: fine) { .pv-post-more:hover { color: var(--ink); } }
       .pv-post-body {
         font-size: 15px; line-height: 1.55; color: var(--ink);
         white-space: pre-wrap; margin-top: 14px;
@@ -1340,7 +1340,7 @@ function ProfileStyles() {
         display: inline-flex; align-items: center; gap: 9px;
         font-size: 14px; color: var(--ink-dim);
       }
-      .pv-post-action:hover { color: var(--accent-ink); }
+      @media (hover: hover) and (pointer: fine) { .pv-post-action:hover { color: var(--accent-ink); } }
 
       /* ------------------------------- gate ------------------------------ */
       .pv-gate {
@@ -1391,7 +1391,7 @@ function ProfileStyles() {
       .pv-portfolio-link span { flex: 1; min-width: 0; word-break: break-all; }
       .pv-portfolio-link svg:first-child { color: var(--accent-ink); flex-shrink: 0; }
       .pv-portfolio-chevron { color: var(--ink-faint); flex-shrink: 0; }
-      .pv-portfolio-link:hover { border-color: var(--accent-ink); }
+      @media (hover: hover) and (pointer: fine) { .pv-portfolio-link:hover { border-color: var(--accent-ink); } }
 
       .pv-about-section { padding: 18px 0; border-top: 1px solid var(--pv-line-soft); }
       .pv-about-section:first-child { border-top: none; padding-top: 0; }
@@ -1417,14 +1417,14 @@ function ProfileStyles() {
         background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
         color: var(--ink-dim);
       }
-      .pv-social a:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
+      @media (hover: hover) and (pointer: fine) { .pv-social a:hover { color: var(--accent-ink); border-color: var(--accent-ink); } }
       .pv-social + .pv-portfolio { margin-top: 14px; }
 
       .pv-about-empty-link {
         display: inline-flex; align-items: center; gap: 7px;
         font-size: 14px; font-weight: 600; color: var(--accent-ink);
       }
-      .pv-about-empty-link:hover { text-decoration: underline; }
+      @media (hover: hover) and (pointer: fine) { .pv-about-empty-link:hover { text-decoration: underline; } }
 
       .pv-emptytab {
         display: flex; flex-direction: column; align-items: center; text-align: center;

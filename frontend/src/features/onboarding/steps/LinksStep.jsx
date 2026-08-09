@@ -105,7 +105,7 @@ export default function LinksStep({ progress, onNext, onBack }) {
           color: var(--ink-dim);
           display: flex; align-items: center; justify-content: center;
         }
-        .portfolio-add:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .portfolio-add:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
         .portfolio-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
         .portfolio-list li {
           display: flex; align-items: center; justify-content: space-between;
@@ -117,7 +117,7 @@ export default function LinksStep({ progress, onNext, onBack }) {
           color: var(--ink-dim);
         }
         .portfolio-list button { color: var(--ink-faint); }
-        .portfolio-list button:hover { color: var(--danger); }
+        @media (hover: hover) and (pointer: fine) { .portfolio-list button:hover { color: var(--danger); } }
       `}</style>
     </StepShell>
   )

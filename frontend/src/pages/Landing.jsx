@@ -77,7 +77,7 @@ function Nav({ onLogin, onSignup }) {
         .logo { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 800; font-size: 21px; letter-spacing: -0.02em; }
         .nav-links { display: flex; gap: 32px; }
         .nav-links a { font-size: 14.5px; color: var(--ink-dim); font-weight: 500; }
-        .nav-links a:hover { color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .nav-links a:hover { color: var(--ink); } }
         .nav-actions { display: flex; gap: 10px; align-items: center; }
         @media (max-width: 860px) { .nav-links { display: none; } }
         @media (max-width: 480px) { .nav-actions .btn-ghost { display: none; } }
@@ -289,7 +289,7 @@ function IntentBar() {
           padding: 10px 18px;
           transition: border-color 0.15s ease, color 0.15s ease;
         }
-        .intent-chip:hover { border-color: var(--accent-ink); color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .intent-chip:hover { border-color: var(--accent-ink); color: var(--ink); } }
       `}</style>
     </section>
   )
@@ -352,7 +352,7 @@ function Categories() {
           border-radius: var(--radius); padding: 22px;
           transition: border-color 0.15s ease, transform 0.15s ease;
         }
-        .cat-card:hover { border-color: var(--accent-ink); transform: translateY(-2px); }
+        @media (hover: hover) and (pointer: fine) { .cat-card:hover { border-color: var(--accent-ink); transform: translateY(-2px); } }
         .cat-name { font-family: var(--font-head); font-weight: 600; font-size: 16.5px; color: var(--ink); }
         .cat-desc { font-size: 13px; color: var(--ink-faint); }
         @media (max-width: 768px) { .cats-grid { grid-template-columns: 1fr 1fr; } }

@@ -224,7 +224,7 @@ export default function Signup() {
           font-weight: 700;
           transition: background 0.15s ease, transform 0.15s ease;
         }
-        .submit-btn:hover:not(:disabled) { background: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .submit-btn:hover:not(:disabled) { background: var(--ink); } }
         .submit-btn:active { transform: scale(0.99); }
         .submit-btn:disabled { opacity: 0.7; cursor: default; }
         .switch-line {

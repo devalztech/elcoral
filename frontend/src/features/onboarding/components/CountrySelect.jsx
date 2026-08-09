@@ -124,7 +124,7 @@ export default function CountrySelect({ value, onSelect }) {
           font-size: 15px;
           color: var(--ink);
         }
-        .country-trigger:hover { border-color: var(--ink-faint); }
+        @media (hover: hover) and (pointer: fine) { .country-trigger:hover { border-color: var(--ink-faint); } }
         .country-trigger-value { display: flex; align-items: center; gap: 10px; }
         .country-placeholder { color: var(--ink-faint); }
         .chevron { color: var(--ink-faint); transition: transform 0.15s ease; flex-shrink: 0; }
@@ -159,7 +159,7 @@ export default function CountrySelect({ value, onSelect }) {
           font-size: 14.5px;
           color: var(--ink);
         }
-        .country-option:hover { background: var(--panel); }
+        @media (hover: hover) and (pointer: fine) { .country-option:hover { background: var(--panel); } }
         .country-error { padding: 16px 14px; font-size: 13.5px; color: var(--danger); text-align: center; }
         .country-retry { color: var(--accent-ink); font-weight: 600; text-decoration: underline; }
         .country-loading, .country-empty {

@@ -188,7 +188,7 @@ export default function Settings() {
           font-family: var(--font-head); font-weight: 600; font-size: 13.5px; color: var(--ink);
           white-space: nowrap;
         }
-        .st-view:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .st-view:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
 
         .st-group { margin-bottom: 26px; }
         .st-group-title {
@@ -225,7 +225,7 @@ export default function Settings() {
           background: transparent; border: 1px solid rgba(255, 107, 74, 0.45);
           border-radius: 14px; padding: 15px 16px;
         }
-        .st-logout:hover { border-color: var(--danger); background: rgba(255, 107, 74, 0.07); }
+        @media (hover: hover) and (pointer: fine) { .st-logout:hover { border-color: var(--danger); background: rgba(255, 107, 74, 0.07); } }
         .st-logout:active { transform: scale(0.99); }
 
         @media (max-width: 380px) {

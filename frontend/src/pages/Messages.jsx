@@ -13,6 +13,7 @@ import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
 import { OnlineDot, TypingDots } from '../features/messages/Presence.jsx'
 import { avatarTone, displayName, initialsOf, timeAgo } from '../features/social/format.js'
+import Spinner from '../components/Spinner.jsx'
 
 function previewOf(message) {
   if (!message) return 'Say hello'
@@ -121,7 +122,7 @@ export default function Messages() {
 
       {items === null && (
         <ul className="mi-list">
-          {[0, 1, 2, 3].map((i) => <li key={i} className="mi-skeleton" />)}
+          <Spinner page label="Loading conversations" />
         </ul>
       )}
 

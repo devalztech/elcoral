@@ -471,7 +471,16 @@ async def list_comments(
         .limit(200)
     )
     viewer_id = viewer.id if viewer else None
-    return [CommentOut.from_model(c, viewer_id) for c in rows.scalars().all()]
+    comments = list(rows.scalars().all())
+    # Reply counts are computed here so the client can render
+    # "View N replies" without loading a thread it may never open.
+    reply_counts: dict = {}
+    for c in comments:
+        if c.parent_id is not None:
+            reply_counts[c.parent_id] = reply_counts.get(c.parent_id, 0) + 1
+    return [
+        CommentOut.from_model(c, viewer_id, reply_counts.get(c.id, 0)) for c in comments
+    ]
 
 
 @router.post("/{post_id}/comments", response_model=CommentOut, status_code=status.HTTP_201_CREATED)
@@ -483,6 +492,10 @@ async def create_comment(
 ):
     await _load_post(db, post_id)
 
+    body = (payload.body or "").strip()
+    if not body and not payload.media_ref:
+        raise HTTPException(status_code=400, detail="Write something or attach a photo.")
+
     if payload.parent_id is not None:
         parent = await db.get(PostComment, payload.parent_id)
         if parent is None or parent.post_id != post_id:
@@ -493,7 +506,12 @@ async def create_comment(
             payload.parent_id = parent.parent_id
 
     comment = PostComment(
-        post_id=post_id, author_id=user.id, parent_id=payload.parent_id, body=payload.body.strip()
+        post_id=post_id,
+        author_id=user.id,
+        parent_id=payload.parent_id,
+        body=body or None,
+        media_ref=payload.media_ref,
+        media_type=payload.media_type,
     )
     db.add(comment)
     await db.commit()

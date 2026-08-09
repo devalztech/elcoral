@@ -22,6 +22,7 @@ import Lightbox from '../components/Lightbox.jsx'
 import {
   avatarTone, dayLabel, displayName, initialsOf, timeOfDay,
 } from '../features/social/format.js'
+import Spinner from '../components/Spinner.jsx'
 
 // How long we can go without re-telling the server "still typing".
 const TYPING_PING_MS = 3000
@@ -217,7 +218,7 @@ export default function MessageThread() {
       <div className="mt-scroll" ref={scrollRef}>
         {cursor && (
           <button type="button" className="mt-more" onClick={loadOlder} disabled={loadingMore}>
-            {loadingMore ? 'Loading…' : 'Load earlier messages'}
+            {loadingMore ? <Spinner size={17} label="Loading earlier messages" /> : 'Load earlier messages'}
           </button>
         )}
 

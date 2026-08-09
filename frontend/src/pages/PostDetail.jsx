@@ -13,6 +13,7 @@ import { ArrowLeft, RefreshCw } from 'lucide-react'
 import PostCard from '../features/feed/PostCard.jsx'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api } from '../api/client.js'
+import Spinner from '../components/Spinner.jsx'
 
 export default function PostDetail() {
   const { postId } = useParams()
@@ -44,7 +45,7 @@ export default function PostDetail() {
         <h1>Post</h1>
       </header>
 
-      {!post && !error && <p className="pd-state">Loading…</p>}
+      {!post && !error && <Spinner page label="Loading post" />}
 
       {error && (
         <div className="pd-state">
@@ -83,7 +84,7 @@ export default function PostDetail() {
           display: grid; place-items: center; width: 36px; height: 36px;
           margin-left: -6px; border-radius: 999px; color: var(--ink); background: none;
         }
-        .pd-back:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+        @media (hover: hover) and (pointer: fine) { .pd-back:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); } }
         .pd-state {
           display: grid; gap: 12px; justify-items: center;
           padding: 40px 20px; text-align: center;

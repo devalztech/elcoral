@@ -110,7 +110,13 @@ class PostComment(Base):
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("post_comments.id", ondelete="CASCADE"), nullable=True
     )
-    body: Mapped[str] = mapped_column(String(2000), nullable=False)
+    # A comment can be a photo with a caption, so the body is optional as
+    # long as media_ref is set (enforced in the API layer).
+    body: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    # One image per comment — same Telegram-backed storage pointer as
+    # Post.media_refs, resolved to a URL by the schema layer.
+    media_ref: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    media_type: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
 
     author: Mapped["User"] = relationship()

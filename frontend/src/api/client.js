@@ -124,10 +124,17 @@ export const api = {
     request(`/posts/${postId}/poll/vote`, { method: 'POST', body: { option_index: optionIndex }, token }),
 
   listComments: (postId, token) => request(`/posts/${postId}/comments`, { token }),
-  createComment: (postId, { body, parentId } = {}, token) =>
+  // A comment can carry one photo (uploaded first via uploadMedia) with
+  // the text acting as its caption; either half may be empty, not both.
+  createComment: (postId, { body, parentId, mediaRef, mediaType } = {}, token) =>
     request(`/posts/${postId}/comments`, {
       method: 'POST',
-      body: { body, parent_id: parentId ?? null },
+      body: {
+        body: body || null,
+        parent_id: parentId ?? null,
+        media_ref: mediaRef ?? null,
+        media_type: mediaType ?? null,
+      },
       token,
     }),
   deleteComment: (commentId, token) =>
