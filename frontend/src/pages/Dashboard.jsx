@@ -14,15 +14,12 @@ import { useMessaging } from '../features/messages/useMessaging.jsx'
 /**
  * Home feed.
  *
- * "Recommended for you" is a horizontal-scroll rail mixing real people
- * and real communities into one set of cards, each with its own CTA
- * (Connect / Join) — no jobs card here, since jobs has no live API yet
- * and this rail never shows placeholder data.
- *
- * Below it, "Public profiles" and "Communities" are the same suggestions
- * as plain row lists, each with a "See all" that opens the full screen —
- * same pattern the community page uses. No greeting, no progress ring,
- * no cards stacked inside cards: rows share the hairline the posts use.
+ * The For you tab has exactly one suggestion surface: "Recommended for
+ * you", a horizontal-scroll rail mixing real people and real communities
+ * the viewer hasn't followed/joined yet, each card its own CTA (Connect
+ * / Join) plus a tap-through to the full profile or community. No jobs
+ * card — jobs has no live API and this rail never shows placeholder
+ * data. Nothing else sits between the rail and the posts feed.
  */
 
 const TABS = [
@@ -106,6 +103,7 @@ export default function Dashboard() {
   const [error, setError] = useState('')
 
   const [people, setPeople] = useState([])
+  const [peopleError, setPeopleError] = useState('')
   const [communities, setCommunities] = useState([])
   const [discussions, setDiscussions] = useState([])
   const [followBusy, setFollowBusy] = useState({})
@@ -141,9 +139,10 @@ export default function Dashboard() {
     const token = accessToken ?? undefined
 
     if (token) {
+      setPeopleError('')
       api.followSuggestions(token, 10)
         .then((data) => { if (!cancelled) setPeople(data.items ?? []) })
-        .catch(() => { if (!cancelled) setPeople([]) })
+        .catch((err) => { if (!cancelled) { setPeople([]); setPeopleError(err.message) } })
       api.myProfile(token)
         .then((data) => { if (!cancelled) setProfile(data) })
         .catch(() => { if (!cancelled) setProfile(null) })
@@ -278,6 +277,15 @@ export default function Dashboard() {
         </Link>
       )}
 
+      {showSuggestions && peopleError && communities.length === 0 && (
+        <section className="hm-block">
+          <SectionHead title="Recommended for you" to="/home/discover" />
+          <div className="hm-empty">
+            <p>{peopleError}</p>
+          </div>
+        </section>
+      )}
+
       {showSuggestions && recommended.length > 0 && (
         <section className="hm-block">
           <SectionHead title="Recommended for you" to="/home/discover" />
@@ -291,66 +299,6 @@ export default function Dashboard() {
               />
             ))}
           </div>
-        </section>
-      )}
-
-      {showSuggestions && people.length > 0 && (
-        <section className="hm-block">
-          <SectionHead title="Public profiles" to="/home/discover" />
-          {people.slice(0, 4).map((person) => (
-            <div key={person.id} className="hm-row">
-              <Link to={person.username ? `/u/${person.username}` : '/home'} className="hm-row-main">
-                <PersonAvatar person={person} />
-                <span className="hm-row-text">
-                  <span className="hm-row-title">{person.full_name}</span>
-                  <span className="hm-row-sub">
-                    {person.headline || (person.username ? `@${person.username}` : 'On Elcoral')}
-                    {person.follows_you && ' · follows you'}
-                  </span>
-                </span>
-              </Link>
-              <button
-                type="button"
-                className="hm-row-cta"
-                disabled={!!followBusy[person.id]}
-                onClick={() => follow(person)}
-              >
-                Connect
-              </button>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {showSuggestions && communities.length > 0 && (
-        <section className="hm-block">
-          <SectionHead title="Communities" to="/home/community" />
-          {communities.slice(0, 4).map((community) => (
-            <div key={community.id} className="hm-row">
-              <Link to={`/home/community/${community.slug}`} className="hm-row-main">
-                <span className="hm-tile" aria-hidden="true">
-                  {community.icon_url
-                    ? <img src={community.icon_url} alt="" />
-                    : <Users size={18} strokeWidth={1.9} />}
-                </span>
-                <span className="hm-row-text">
-                  <span className="hm-row-title">{community.name}</span>
-                  <span className="hm-row-sub">
-                    {pluralize(community.members_count, 'member')}
-                    {community.topic ? ` · ${community.topic}` : ''}
-                  </span>
-                </span>
-              </Link>
-              <button
-                type="button"
-                className="hm-row-cta"
-                disabled={!accessToken || !!joinBusy[community.id]}
-                onClick={() => join(community)}
-              >
-                Join
-              </button>
-            </div>
-          ))}
         </section>
       )}
 
