@@ -11,6 +11,8 @@
   --ink-dim: #A8B39A;
   --ink-faint: #6B7560;
   --danger: #FF6B4A;
+  /* X-style verification rosette (Twitter blue). */
+  --verified: #1D9BF0;
 
   /* ---------------------------------------------------------------------
      Theme-aware surface tokens.
@@ -78,6 +80,7 @@
   --lemon-deep: #4E6E17;
 
   --surface: #FFFFFF;
+  --verified: #1D9BF0;
   --surface-2: #F4F6EC;
   --surface-line: #DDE2D0;
   --surface-line-soft: #E8EBDE;

@@ -71,7 +71,7 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
         onClick={toggle}
         aria-label={playing ? `Pause ${title}` : `Play ${title}`}
       >
-        {playing ? <Pause size={16} /> : <Play size={16} />}
+        {playing ? <Pause size={20} /> : <Play size={20} />}
       </button>
 
       <div className="vn-track">
@@ -94,15 +94,24 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
       </div>
 
       <style>{`
+        /* --------------------------------------------------------------
+           Voice note — WhatsApp metrics:
+             row height ....... 56px
+             play button ...... 34px circle, icon 20px
+             play -> track .... 12px
+             track ............ 3px tall, 4px radius, full width
+             scrub handle ..... 12px circle
+             duration ......... 11px, 6px under the track
+             pill width ....... 246px min, 330px max (media bubble cap)
+           -------------------------------------------------------------- */
         .vn {
-          display: flex; align-items: center; gap: 10px;
-          padding: 8px 12px 8px 8px; border-radius: 999px;
+          display: flex; align-items: center; gap: 12px;
+          min-height: 56px; padding: 8px 12px 8px 8px; border-radius: 8px;
           background: color-mix(in srgb, var(--ink) 6%, transparent);
-          border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
-          color: inherit; width: 100%; max-width: 300px; min-width: 220px;
+          color: inherit; width: 100%; min-width: 246px; max-width: 330px;
         }
         .vn-play {
-          flex: none; width: 36px; height: 36px; border: 0; border-radius: 999px;
+          flex: none; width: 34px; height: 34px; border: 0; border-radius: 999px;
           display: grid; place-items: center; cursor: pointer;
           background: var(--lemon, var(--accent-ink)); color: var(--on-accent, #111);
           transition: transform 120ms ease, filter 120ms ease;
@@ -110,10 +119,10 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
         .vn-play:hover { filter: brightness(1.05); }
         .vn-play:active { transform: scale(0.94); }
         .vn-play:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
-        .vn-track { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+        .vn-track { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
         .vn-range {
           -webkit-appearance: none; appearance: none;
-          width: 100%; height: 4px; border-radius: 999px; cursor: pointer;
+          width: 100%; height: 3px; border-radius: 4px; cursor: pointer;
           background: linear-gradient(
             to right,
             currentColor 0 var(--vn-pct),
@@ -122,21 +131,22 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
         }
         .vn-range::-webkit-slider-thumb {
           -webkit-appearance: none; appearance: none;
-          width: 13px; height: 13px; border-radius: 999px;
-          background: currentColor; border: 2px solid var(--panel);
+          width: 12px; height: 12px; border-radius: 999px;
+          background: currentColor; border: 0;
           box-shadow: 0 1px 3px rgba(0,0,0,.35);
         }
         .vn-range::-moz-range-thumb {
-          width: 13px; height: 13px; border: 2px solid var(--panel); border-radius: 999px;
+          width: 12px; height: 12px; border: 0; border-radius: 999px;
           background: currentColor; box-shadow: 0 1px 3px rgba(0,0,0,.35);
         }
         .vn-range:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
         .vn-time {
           display: flex; justify-content: space-between;
-          font-size: 10.5px; font-variant-numeric: tabular-nums; opacity: 0.7;
+          font-size: 11px; line-height: 15px; font-variant-numeric: tabular-nums; opacity: 0.6;
         }
-        @media (max-width: 420px) { .vn { max-width: 100%; } }
+        @media (max-width: 420px) { .vn { max-width: 100%; min-width: 0; } }
       `}</style>
+
     </div>
   )
 }

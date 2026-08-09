@@ -7,6 +7,7 @@ import {
   ArrowLeft, UserPlus, Crown, FlaskConical, Sprout, Rocket, Lock, Users,
   CircleCheck, Twitter, Dribbble,
 } from 'lucide-react'
+import VerifiedBadge from '../components/VerifiedBadge.jsx'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import ReportDialog from '../features/settings/components/ReportDialog.jsx'
 import { api } from '../api/client.js'
@@ -367,7 +368,7 @@ function NameBlock({ profile, align = 'center' }) {
     <>
       <h1 className={`pv-name pv-name-${align}`}>
         {profile.full_name}
-        <BadgeCheck size={22} className="pv-verified" aria-label="Verified account" />
+        <VerifiedBadge size={22} className="pv-verified" />
       </h1>
       {profile.username && <p className={`pv-username pv-username-${align}`}>@{profile.username}</p>}
     </>
@@ -1126,7 +1127,7 @@ function ProfileStyles() {
         font-family: var(--font-display); font-weight: 800;
         font-size: 27px; line-height: 1.2; color: var(--ink);
       }
-      .pv-verified { color: var(--accent-ink); flex-shrink: 0; }
+      .pv-verified { color: var(--verified, #1D9BF0); flex-shrink: 0; }
       .pv-username { color: var(--ink-faint); font-size: 15px; margin-top: 4px; }
 
       .pv-bio {

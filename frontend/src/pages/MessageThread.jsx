@@ -231,12 +231,23 @@ export default function MessageThread() {
         {groups.map((group) => (
           <section key={group.label} className="mt-day">
             <h2 className="mt-day-label"><span>{group.label}</span></h2>
-            {group.items.map((message) => {
+            {group.items.map((message, i) => {
               const seen = message.is_mine && !message.pending && theirReadAt
                 && new Date(theirReadAt) >= new Date(message.created_at)
+              // WhatsApp only draws the little tail on the first bubble of
+              // a run from the same sender; the rest sit 2px apart with a
+              // plain corner, and a new run starts 12px lower.
+              const prev = group.items[i - 1]
+              const startsRun = !prev || prev.is_mine !== message.is_mine
+              const mediaOnly = message.attachments?.length > 0 && !message.body
               return (
-                <article key={message.id} className={`mt-msg ${message.is_mine ? 'mt-mine' : 'mt-theirs'}`}>
-                  <div className={`mt-bubble ${message.failed ? 'mt-failed' : ''}`}>
+                <article
+                  key={message.id}
+                  className={`mt-msg ${message.is_mine ? 'mt-mine' : 'mt-theirs'} ${startsRun ? 'mt-run-start' : ''}`}
+                >
+                  <div
+                    className={`mt-bubble ${startsRun ? 'mt-tail' : ''} ${mediaOnly ? 'mt-bubble-media' : ''} ${message.failed ? 'mt-failed' : ''}`}
+                  >
                     {message.attachments?.length > 0 && (
                       <div className="mt-media">
                         {message.attachments.map((attachment) => (
@@ -248,15 +259,23 @@ export default function MessageThread() {
                         ))}
                       </div>
                     )}
-                    {message.body && <p className="mt-text">{message.body}</p>}
-                    <span className="mt-meta">
+                    {message.body && (
+                      <p className="mt-text">
+                        {message.body}
+                        {/* Reserves the exact width of the timestamp so the
+                            last line of text never runs underneath it —
+                            the same trick WhatsApp uses. */}
+                        <span className="mt-gap" aria-hidden="true" />
+                      </p>
+                    )}
+                    <span className={`mt-meta ${mediaOnly ? 'mt-meta-over' : ''}`}>
                       {timeOfDay(message.created_at)}
                       {message.is_mine && (
                         message.pending
-                          ? <Clock size={12} aria-label="Sending" />
+                          ? <Clock size={15} aria-label="Sending" />
                           : seen
-                            ? <CheckCheck size={13} aria-label="Seen" />
-                            : <Check size={13} aria-label="Sent" />
+                            ? <CheckCheck size={15} aria-label="Seen" />
+                            : <Check size={15} aria-label="Sent" />
                       )}
                     </span>
                     {message.failed && <span className="mt-retry">Not sent</span>}
@@ -269,6 +288,7 @@ export default function MessageThread() {
         <div ref={bottomRef} />
       </div>
 
+
       <Lightbox src={preview} onClose={() => setPreview(null)} />
 
       <Composer
@@ -279,59 +299,123 @@ export default function MessageThread() {
       />
 
       <style>{`
+        /* --------------------------------------------------------------
+           Thread metrics — measured off WhatsApp:
+
+             header .................. 59px tall, avatar 40px, name 16px,
+                                       presence line 13px
+             scroll padding .......... 8px 9px (phone) / 9px 6.5% (wide)
+             bubble .................. max-width 85% (65% wide), radius
+                                       7.5px, padding 6px 7px 8px 9px,
+                                       shadow 0 1px .5px rgba(11,20,26,.13)
+             text .................... 14.2px / 19px
+             timestamp ............... 11px, bottom-right, 4px from text
+             tail .................... 8px triangle on the first bubble
+                                       of a run only
+             spacing ................. 2px inside a run, 12px between runs
+             media bubble ............ 3px padding, 6px inner radius,
+                                       max-width 330px
+           -------------------------------------------------------------- */
         .mt { display: flex; flex-direction: column; height: 100vh; }
         .mt-head {
-          display: flex; align-items: center; gap: 4px;
-          padding: 10px 12px; border-bottom: 1px solid var(--border);
+          display: flex; align-items: center; gap: 8px; height: 59px;
+          padding: 0 12px; border-bottom: 1px solid var(--border);
           background: var(--panel); position: sticky; top: 0; z-index: 5;
         }
-        .mt-back { display: grid; place-items: center; width: 34px; height: 34px; color: var(--ink-dim); }
-        .mt-who { display: flex; align-items: center; gap: 10px; color: inherit; min-width: 0; }
-        .mt-av-wrap { position: relative; display: block; width: 38px; height: 38px; flex: none; }
+        .mt-back { display: grid; place-items: center; width: 34px; height: 34px; color: var(--ink-dim); flex: none; }
+        .mt-who { display: flex; align-items: center; gap: 12px; color: inherit; min-width: 0; }
+        .mt-av-wrap { position: relative; display: block; width: 40px; height: 40px; flex: none; }
         .mt-av {
-          width: 38px; height: 38px; border-radius: 999px; object-fit: cover;
-          display: grid; place-items: center; font-family: var(--font-head); font-size: 13px;
+          width: 40px; height: 40px; border-radius: 999px; object-fit: cover;
+          display: grid; place-items: center; font-family: var(--font-head); font-size: 14px;
           background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--ink);
         }
         .mt-av.tone-a { background: color-mix(in srgb, var(--lemon) 45%, transparent); }
         .mt-av.tone-b { background: color-mix(in srgb, var(--accent-ink) 18%, transparent); }
         .mt-who-text { display: flex; flex-direction: column; min-width: 0; }
-        .mt-name { font-family: var(--font-head); font-size: 15px; font-weight: 600; color: var(--ink); }
-        .mt-status { font-size: 12px; color: var(--ink-faint); }
-        .mt-scroll { flex: 1; overflow-y: auto; padding: 10px 10px 4px; display: flex; flex-direction: column; }
-        .mt-more { align-self: center; font-size: 12.5px; color: var(--accent-ink); padding: 6px 12px; margin-bottom: 8px; }
+        .mt-name { font-family: var(--font-head); font-size: 16px; line-height: 21px; font-weight: 600; color: var(--ink); }
+        .mt-status { font-size: 13px; line-height: 17px; color: var(--ink-faint); }
+
+        .mt-scroll { flex: 1; overflow-y: auto; padding: 8px 9px 6px; display: flex; flex-direction: column; }
+        .mt-more { align-self: center; font-size: 13px; color: var(--accent-ink); padding: 6px 12px; margin-bottom: 8px; }
         .mt-note { text-align: center; font-size: 13px; color: var(--ink-faint); margin: 24px 0; }
         .mt-error { text-align: center; font-size: 13px; color: crimson; }
-        .mt-day-label { display: flex; align-items: center; justify-content: center; margin: 8px 0; }
+        .mt-day-label { display: flex; align-items: center; justify-content: center; margin: 12px 0; }
         .mt-day-label span {
-          font-size: 11.5px; font-weight: 600; color: var(--ink-faint);
-          background: color-mix(in srgb, var(--ink) 6%, transparent);
-          padding: 3px 10px; border-radius: 999px;
+          font-size: 12.5px; font-weight: 500; color: var(--ink-faint);
+          background: var(--panel); box-shadow: 0 1px .5px rgba(11,20,26,.13);
+          padding: 5px 12px; border-radius: 7.5px; text-transform: uppercase; letter-spacing: .3px;
         }
-        .mt-msg { display: flex; margin-bottom: 3px; }
+
+        .mt-msg { display: flex; margin-top: 2px; }
+        .mt-msg.mt-run-start { margin-top: 12px; }
         .mt-mine { justify-content: flex-end; }
         .mt-bubble {
-          max-width: 78%; padding: 8px 13px 6px; border-radius: 20px;
-          background: var(--panel); border: 1px solid var(--border);
-          display: flex; flex-direction: column; gap: 4px;
+          position: relative;
+          max-width: 85%; padding: 6px 7px 8px 9px; border-radius: 7.5px;
+          background: var(--panel); color: var(--ink);
+          box-shadow: 0 1px .5px rgba(11, 20, 26, .13);
+          display: flex; flex-direction: column;
         }
-        .mt-mine .mt-bubble {
-          background: var(--lemon); color: var(--on-accent); border-color: transparent;
-          border-bottom-right-radius: 8px;
+        .mt-mine .mt-bubble { background: var(--lemon); color: var(--on-accent); }
+        /* Tail: an 8px triangle tucked into the top corner of the first
+           bubble in a run, matching WhatsApp's tail-out sprite. */
+        .mt-mine .mt-tail { border-top-right-radius: 0; }
+        .mt-theirs .mt-tail { border-top-left-radius: 0; }
+        .mt-tail::before {
+          content: ''; position: absolute; top: 0; width: 8px; height: 13px;
         }
-        .mt-theirs .mt-bubble { border-bottom-left-radius: 8px; }
-        .mt-failed { border-color: crimson; }
-        .mt-text { margin: 0; font-size: 14.5px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
-        .mt-media { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+        .mt-mine .mt-tail::before {
+          right: -8px;
+          background: var(--lemon);
+          clip-path: polygon(0 0, 100% 0, 0 100%);
+        }
+        .mt-theirs .mt-tail::before {
+          left: -8px;
+          background: var(--panel);
+          clip-path: polygon(0 0, 100% 0, 100% 100%);
+        }
+        .mt-failed { outline: 1px solid crimson; }
+
+        .mt-text {
+          margin: 0; font-size: 14.2px; line-height: 19px;
+          white-space: pre-wrap; overflow-wrap: anywhere;
+        }
+        /* 62px covers "12:34 ✓✓" at 11px; 46px would clip the ticks. */
+        .mt-gap { display: inline-block; width: 62px; height: 1px; }
+        .mt-theirs .mt-gap { width: 46px; }
+
+        .mt-media {
+          display: flex; flex-direction: column; gap: 3px;
+          width: 100%; max-width: 330px;
+        }
+        /* A bubble that is only media shrinks its padding to 3px, the way
+           a WhatsApp photo message does. */
+        .mt-bubble-media { padding: 3px; }
+        .mt-bubble-media .mt-media { margin: 0; }
+
         .mt-meta {
-          display: inline-flex; align-items: center; gap: 4px; align-self: flex-end;
-          font-size: 10.5px; opacity: 0.7;
+          position: absolute; right: 9px; bottom: 5px;
+          display: inline-flex; align-items: center; gap: 3px;
+          font-size: 11px; line-height: 15px; opacity: .6;
+          font-variant-numeric: tabular-nums; pointer-events: none;
         }
-        .mt-retry { font-size: 11px; color: crimson; align-self: flex-end; }
+        .mt-meta svg { width: 15px; height: 15px; }
+        /* On a photo-only bubble the stamp floats over the image on the
+           dark scrim WhatsApp paints there. */
+        .mt-meta-over {
+          right: 10px; bottom: 8px; opacity: 1; color: #fff;
+          padding: 2px 7px; border-radius: 999px; background: rgba(11, 20, 26, .45);
+        }
+        .mt-retry { font-size: 11px; color: crimson; align-self: flex-end; margin-top: 2px; }
+
         @media (min-width: 860px) {
           .mt { height: 100vh; }
+          .mt-scroll { padding: 9px 6.5% 6px; }
+          .mt-bubble { max-width: 65%; }
         }
       `}</style>
+
     </div>
   )
 }

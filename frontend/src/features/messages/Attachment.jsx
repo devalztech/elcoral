@@ -29,18 +29,24 @@ const MIN_RATIO = 4 / 5
 const MAX_RATIO = 16 / 9
 const clampRatio = (r) => (Number.isFinite(r) && r > 0 ? Math.min(MAX_RATIO, Math.max(MIN_RATIO, r)) : MAX_RATIO)
 
+/* WhatsApp media metrics: a photo/video bubble is at most 330px wide,
+   the media itself gets a 6px corner inside the bubble's 3px padding,
+   and it is never taller than 1.4x its width (WhatsApp crops portraits
+   at roughly 5:7 before it offers "open"). */
 const frameCss = `
   .ma-frame {
     display: block; position: relative; width: 100%;
-    max-width: 320px; aspect-ratio: 4 / 3;
+    max-width: 330px; min-width: 120px; aspect-ratio: 4 / 3;
+    max-height: 420px;
     padding: 0; background: color-mix(in srgb, var(--ink) 6%, transparent);
-    border-radius: 12px; overflow: hidden;
+    border-radius: 6px; overflow: hidden;
   }
   .ma-frame > img, .ma-frame > video {
     display: block; width: 100%; height: 100%; object-fit: cover; background: color-mix(in srgb, var(--ink) 8%, transparent);
   }
   @media (max-width: 480px) { .ma-frame { max-width: 100%; } }
 `
+
 
 export default function Attachment({ attachment, onOpenImage }) {
   const { url, kind, mime_type: mime } = attachment
@@ -110,16 +116,18 @@ export default function Attachment({ attachment, onOpenImage }) {
       </span>
       <Download size={16} aria-hidden="true" />
       <style>{`
+        /* WhatsApp document row: 56px tall, 12px gap, 6px corner,
+           capped at the same 330px as a media bubble. */
         .ma-file {
-          display: flex; align-items: center; gap: 9px;
-          padding: 8px 10px; border-radius: 12px;
+          display: flex; align-items: center; gap: 12px;
+          min-height: 56px; padding: 8px 12px; border-radius: 6px;
           background: color-mix(in srgb, var(--ink) 7%, transparent);
-          color: inherit; min-width: 200px; max-width: 260px;
+          color: inherit; min-width: 220px; max-width: 330px;
         }
-        .ma-file-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--panel); flex: none; }
+        .ma-file-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; background: var(--panel); flex: none; }
         .ma-file-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-        .ma-file-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .ma-file-kind { font-size: 11px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ma-file-name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ma-file-kind { font-size: 12px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       `}</style>
     </a>
   )
