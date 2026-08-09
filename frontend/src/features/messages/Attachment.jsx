@@ -26,8 +26,8 @@ const frameCss = `
   .ma-frame {
     display: block; position: relative; width: 100%;
     max-width: 320px; aspect-ratio: 16 / 9;
-    padding: 0; border: 1px solid var(--border); background: color-mix(in srgb, var(--ink) 6%, transparent);
-    border-radius: 16px; overflow: hidden;
+    padding: 0; background: color-mix(in srgb, var(--ink) 6%, transparent);
+    border-radius: 12px; overflow: hidden;
   }
   .ma-frame > img, .ma-frame > video {
     display: block; width: 100%; height: 100%; object-fit: cover; background: color-mix(in srgb, var(--ink) 8%, transparent);
@@ -84,12 +84,12 @@ export default function Attachment({ attachment, onOpenImage }) {
       <Download size={16} aria-hidden="true" />
       <style>{`
         .ma-file {
-          display: flex; align-items: center; gap: 10px;
-          padding: 10px 12px; border-radius: 16px;
+          display: flex; align-items: center; gap: 9px;
+          padding: 8px 10px; border-radius: 12px;
           background: color-mix(in srgb, var(--ink) 7%, transparent);
           color: inherit; min-width: 200px; max-width: 260px;
         }
-        .ma-file-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--panel); flex: none; }
+        .ma-file-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--panel); flex: none; }
         .ma-file-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
         .ma-file-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .ma-file-kind { font-size: 11px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

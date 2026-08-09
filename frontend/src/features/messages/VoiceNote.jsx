@@ -95,8 +95,8 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
 
       <style>{`
         .vn {
-          display: flex; align-items: center; gap: 10px;
-          padding: 8px 12px 8px 8px; border-radius: 16px;
+          display: flex; align-items: center; gap: 9px;
+          padding: 6px 10px 6px 6px; border-radius: 14px;
           background: color-mix(in srgb, var(--ink) 7%, transparent);
           color: inherit; width: 100%; max-width: 300px; min-width: 200px;
         }

@@ -298,31 +298,31 @@ export default function MessageThread() {
         .mt-who-text { display: flex; flex-direction: column; min-width: 0; }
         .mt-name { font-family: var(--font-head); font-size: 15px; font-weight: 600; color: var(--ink); }
         .mt-status { font-size: 12px; color: var(--ink-faint); }
-        .mt-scroll { flex: 1; overflow-y: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; }
-        .mt-more { align-self: center; font-size: 12.5px; color: var(--accent-ink); padding: 6px 12px; margin-bottom: 10px; }
+        .mt-scroll { flex: 1; overflow-y: auto; padding: 10px 10px 4px; display: flex; flex-direction: column; }
+        .mt-more { align-self: center; font-size: 12.5px; color: var(--accent-ink); padding: 6px 12px; margin-bottom: 8px; }
         .mt-note { text-align: center; font-size: 13px; color: var(--ink-faint); margin: 24px 0; }
         .mt-error { text-align: center; font-size: 13px; color: crimson; }
-        .mt-day-label { display: flex; align-items: center; justify-content: center; margin: 12px 0; }
+        .mt-day-label { display: flex; align-items: center; justify-content: center; margin: 8px 0; }
         .mt-day-label span {
           font-size: 11.5px; font-weight: 600; color: var(--ink-faint);
           background: color-mix(in srgb, var(--ink) 6%, transparent);
           padding: 3px 10px; border-radius: 999px;
         }
-        .mt-msg { display: flex; margin-bottom: 8px; }
+        .mt-msg { display: flex; margin-bottom: 3px; }
         .mt-mine { justify-content: flex-end; }
         .mt-bubble {
-          max-width: 78%; padding: 9px 13px 7px; border-radius: 22px;
+          max-width: 78%; padding: 7px 11px 6px; border-radius: 18px;
           background: var(--panel); border: 1px solid var(--border);
-          display: flex; flex-direction: column; gap: 6px;
+          display: flex; flex-direction: column; gap: 4px;
         }
         .mt-mine .mt-bubble {
           background: var(--lemon); color: var(--on-accent); border-color: transparent;
-          border-bottom-right-radius: 8px;
+          border-bottom-right-radius: 6px;
         }
-        .mt-theirs .mt-bubble { border-bottom-left-radius: 8px; }
+        .mt-theirs .mt-bubble { border-bottom-left-radius: 6px; }
         .mt-failed { border-color: crimson; }
         .mt-text { margin: 0; font-size: 14.5px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
-        .mt-media { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+        .mt-media { display: flex; flex-direction: column; gap: 4px; width: 100%; }
         .mt-meta {
           display: inline-flex; align-items: center; gap: 4px; align-self: flex-end;
           font-size: 10.5px; opacity: 0.7;

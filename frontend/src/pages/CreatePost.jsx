@@ -292,9 +292,8 @@ export default function CreatePost() {
             <Link2 size={18} strokeWidth={2} /> Link
           </button>
         </div>
-      </section>
+        <div className="cp-divider" />
 
-      <section className="cp-card">
         <h2 className="cp-section">Topics</h2>
         <div className="cp-tag-input">
           <Hash size={17} strokeWidth={2} />
@@ -345,7 +344,7 @@ export default function CreatePost() {
       {uploading && <p className="cp-note">Uploading attachments… publish unlocks when they finish.</p>}
 
       <style>{`
-        .cp { display: grid; gap: 14px; padding-bottom: 20px; }
+        .cp { display: grid; gap: 10px; padding-bottom: 20px; }
         .cp-bar { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; }
         .cp-back { width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; color: var(--ink); }
         .cp-back:hover { background: var(--panel); }
@@ -371,21 +370,22 @@ export default function CreatePost() {
 
         .cp-card {
           background: var(--panel); border: 1px solid var(--border);
-          border-radius: 16px; padding: 14px; display: grid; gap: 10px;
+          border-radius: 14px; padding: 12px; display: grid; gap: 8px;
         }
+        .cp-divider { height: 1px; background: var(--border); margin: 6px 0 2px; }
         .cp-who { margin: 0; font-size: 13px; color: var(--ink-dim); }
         .cp-who b { color: var(--ink); }
         .cp-section { margin: 4px 0 0; font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--ink); }
 
         .cp-title, .cp-input, .cp-body {
-          width: 100%; background: var(--panel-raised); border: 1px solid var(--border);
-          border-radius: 12px; padding: 12px 14px; color: var(--ink); font-size: 14.5px;
+          width: 100%; background: var(--panel-raised); border: none;
+          border-radius: 10px; padding: 11px 12px; color: var(--ink); font-size: 14.5px;
           font-family: inherit;
         }
         .cp-title { font-family: var(--font-head); font-size: 17px; font-weight: 700; }
-        .cp-title:focus, .cp-input:focus, .cp-body:focus { outline: none; border-color: var(--accent-ink); }
-        .cp-body { min-height: 130px; resize: vertical; line-height: 1.55; }
-        .cp-body.tall { min-height: 300px; }
+        .cp-title:focus, .cp-input:focus, .cp-body:focus { outline: 1.5px solid var(--accent-ink); outline-offset: -1.5px; }
+        .cp-body { min-height: 110px; resize: vertical; line-height: 1.55; }
+        .cp-body.tall { min-height: 280px; }
         .cp-count { margin: 0; text-align: right; font-size: 12px; color: var(--ink-faint); }
 
         .cp-poll { display: grid; gap: 8px; }
@@ -410,26 +410,26 @@ export default function CreatePost() {
           background: rgba(0,0,0,.65); color: #fff; display: grid; place-items: center;
         }
 
-        .cp-tools { display: flex; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
+        .cp-tools { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
         .cp-tool {
-          display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px;
+          display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px;
           border-radius: 999px; background: var(--panel-raised);
           font-family: var(--font-head); font-weight: 600; font-size: 13px; color: var(--ink-dim);
         }
         .cp-tool:hover { color: var(--accent-ink); }
 
-        .cp-tag-input { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px; background: var(--panel-raised); border: 1px solid var(--border); border-radius: 12px; padding: 4px 12px; color: var(--ink-faint); }
-        .cp-tag-input input { background: none; border: none; padding: 12px 0; color: var(--ink); font-size: 14px; width: 100%; }
+        .cp-tag-input { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px; background: var(--panel-raised); border-radius: 10px; padding: 4px 12px; color: var(--ink-faint); }
+        .cp-tag-input input { background: none; border: none; padding: 11px 0; color: var(--ink); font-size: 14px; width: 100%; }
         .cp-tag-input input:focus { outline: none; }
         .cp-tag-input button { font-family: var(--font-head); font-weight: 700; font-size: 13px; color: var(--accent-ink); }
         .cp-tags { display: flex; flex-wrap: wrap; gap: 7px; }
         .cp-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; background: var(--panel-raised); color: var(--accent-ink); font-size: 12.5px; }
 
-        .cp-visibility { display: grid; gap: 8px; }
+        .cp-visibility { display: grid; gap: 6px; }
         .cp-vis {
           display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 11px;
-          padding: 12px; border-radius: 12px; text-align: left;
-          border: 1px solid var(--border); background: var(--panel-raised); color: var(--ink-dim);
+          padding: 11px; border-radius: 10px; text-align: left;
+          border: 1px solid transparent; background: var(--panel-raised); color: var(--ink-dim);
         }
         .cp-vis.on { border-color: var(--accent-ink); color: var(--ink); }
         .cp-vis span { display: grid; gap: 2px; }

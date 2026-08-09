@@ -449,7 +449,7 @@ export default function PostCard({ post: initial, onDeleted }) {
       <style>{`
         .pc {
           background: var(--panel); border: 1px solid var(--border);
-          border-radius: 16px; padding: 14px; display: grid; gap: 12px;
+          border-radius: 12px; padding: 12px; display: grid; gap: 9px;
         }
         .pc-av {
           display: inline-flex; align-items: center; justify-content: center;
@@ -498,19 +498,22 @@ export default function PostCard({ post: initial, onDeleted }) {
         .pc-body { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); white-space: pre-wrap; word-break: break-word; }
 
         .pc-link {
-          display: flex; align-items: center; gap: 8px; padding: 11px 12px;
-          background: var(--panel-raised); border: 1px solid var(--border);
-          border-radius: 12px; font-size: 13px; color: var(--accent-ink);
+          display: flex; align-items: center; gap: 8px; padding: 9px 10px;
+          background: var(--panel-raised); border-radius: 10px;
+          font-size: 13px; color: var(--accent-ink);
         }
         .pc-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .pc-media { display: grid; gap: 6px; }
+        /* Media bleeds to the card edges instead of sitting in its own
+           bordered frame — one boundary (the card), not two. */
+        .pc-media { display: grid; gap: 2px; margin: 0 -12px; }
+        .pc-media.count-1 { margin: 0 -12px; }
         .pc-media.count-2, .pc-media.count-4 { grid-template-columns: 1fr 1fr; }
         .pc-media.count-3 { grid-template-columns: 1fr 1fr; }
         .pc-media.count-3 > :first-child { grid-column: 1 / -1; }
         .pc-frame {
           position: relative; display: block; width: 100%; aspect-ratio: 16 / 9;
-          padding: 0; border: 1px solid var(--border); border-radius: 14px;
+          padding: 0; border-radius: 0;
           overflow: hidden; background: var(--panel-raised);
         }
         .pc-frame-btn { cursor: zoom-in; }
@@ -524,15 +527,15 @@ export default function PostCard({ post: initial, onDeleted }) {
         @media (prefers-reduced-motion: reduce) { .pc-media-item { transition: none; } }
         .pc-audio { width: 100%; }
         .pc-doc {
-          display: flex; align-items: center; gap: 8px; padding: 12px;
-          border: 1px solid var(--border); border-radius: 12px; color: var(--accent-ink); font-size: 13.5px;
+          display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+          background: var(--panel-raised); border-radius: 10px; color: var(--accent-ink); font-size: 13.5px;
         }
 
-        .pc-poll { display: grid; gap: 8px; }
+        .pc-poll { display: grid; gap: 6px; }
         .pc-poll-option {
           position: relative; overflow: hidden; text-align: left;
           display: flex; align-items: center; justify-content: space-between; gap: 10px;
-          padding: 12px 14px; border-radius: 12px;
+          padding: 11px 13px; border-radius: 10px;
           border: 1px solid var(--border); background: var(--panel-raised); color: var(--ink);
           font-size: 14px; font-family: var(--font-head); font-weight: 600;
         }
@@ -552,12 +555,12 @@ export default function PostCard({ post: initial, onDeleted }) {
         }
 
         .pc-actions {
-          display: flex; align-items: center; gap: 6px;
-          border-top: 1px solid var(--border); padding-top: 10px;
+          display: flex; align-items: center; gap: 2px;
+          border-top: 1px solid var(--border); padding-top: 6px; margin-top: 2px;
         }
         .pc-action {
-          display: inline-flex; align-items: center; gap: 7px;
-          padding: 8px 12px; border-radius: 999px;
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 7px 10px; border-radius: 999px;
           font-family: var(--font-head); font-size: 13.5px; font-weight: 600;
           color: var(--ink-dim);
         }
@@ -571,9 +574,9 @@ export default function PostCard({ post: initial, onDeleted }) {
         .pc-hint { margin: 0; font-size: 13px; color: var(--ink-dim); }
         .pc-inline-link { color: var(--accent-ink); }
 
-        .pc-comments { border-top: 1px solid var(--border); padding-top: 12px; display: grid; gap: 12px; }
-        .pc-comment-list, .pc-replies { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-        .pc-replies { margin-top: 10px; padding-left: 6px; border-left: 1px solid var(--border); }
+        .pc-comments { border-top: 1px solid var(--border); padding-top: 10px; display: grid; gap: 10px; }
+        .pc-comment-list, .pc-replies { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+        .pc-replies { margin-top: 8px; padding-left: 6px; border-left: 1px solid var(--border); }
         .pc-comment { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; }
         .pc-comment-meta { margin: 0; display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: var(--ink-dim); }
         .pc-comment-meta b { color: var(--ink); font-family: var(--font-head); }
