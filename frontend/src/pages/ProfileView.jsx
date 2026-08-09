@@ -12,6 +12,7 @@ import ReportDialog from '../features/settings/components/ReportDialog.jsx'
 import { api } from '../api/client.js'
 import { useFollow } from '../features/social/useFollow.js'
 import { formatCount } from '../features/social/format.js'
+import { completionChecklist, completionPct } from '../features/profile/completion.js'
 
 // Elcoral profile page, built to the approved design reference across all
 // three viewing angles:
@@ -434,7 +435,7 @@ function OwnerProfile({ profile, posts }) {
       </div>
 
       <div className="pv-cardgrid">
-        <CompletionCard profile={profile} postCount={posts.length} />
+        <CompletionCard profile={profile} />
       </div>
 
       <ProfileTabs profile={profile} posts={posts} isOwner />
@@ -442,21 +443,13 @@ function OwnerProfile({ profile, posts }) {
   )
 }
 
-function CompletionCard({ profile, postCount }) {
-  const hasSocials = Boolean(
-    profile.github_url || profile.linkedin_url || profile.website_url
-    || profile.twitter_url || profile.dribbble_url || profile.portfolio_links?.length
-  )
-  const checklist = [
-    { label: 'Add profile photo', worth: 15, done: Boolean(profile.photo_url) },
-    { label: 'Add bio', worth: 10, done: Boolean(profile.bio) },
-    { label: 'Add location', worth: 10, done: Boolean(profile.city) },
-    { label: 'Add skills', worth: 15, done: Boolean(profile.skills?.length) },
-    { label: 'Add socials', worth: 15, done: hasSocials },
-    { label: 'Create first post', worth: 15, done: postCount > 0 },
-  ]
-  const computed = checklist.reduce((sum, c) => (c.done ? sum + c.worth : sum), 0)
-  const pct = Math.min(100, profile.profile_completion_pct ?? computed)
+// The percentage and the checklist both come from
+// features/profile/completion.js, which mirrors the server's weights —
+// this card and the progress ring on Home therefore always show the same
+// number, which they didn't when each screen scored profiles its own way.
+function CompletionCard({ profile }) {
+  const pct = completionPct(profile) ?? 0
+  const remaining = completionChecklist(profile).filter((item) => !item.done)
 
   return (
     <section className="pv-card">
@@ -470,6 +463,18 @@ function CompletionCard({ profile, postCount }) {
       <div className="pv-progress">
         <i style={{ width: `${pct}%` }} />
       </div>
+      {remaining.length > 0 && (
+        <ul className="pv-todo">
+          {remaining.slice(0, 3).map((item) => (
+            <li key={item.key}>
+              <Link to="/home/profile/edit">
+                <span>{item.label}</span>
+                <b>+{item.worth}%</b>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
@@ -1266,6 +1271,12 @@ function ProfileStyles() {
         margin: 0 0 2px;
       }
 
+      .pv-todo { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+      .pv-todo a {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 7px 0; font-size: 13px; color: var(--ink-dim);
+      }
+      .pv-todo b { font-family: var(--font-head); font-size: 12px; color: var(--accent-ink); }
       .pv-progress {
         height: 7px; border-radius: 999px; background: var(--pv-surface-2);
         margin-top: 16px; overflow: hidden;

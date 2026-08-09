@@ -28,8 +28,23 @@ ALLOWED_TYPES = {
     "audio/webm",
     "audio/ogg",
     "audio/wav",
-    # documents attached to a post or article
+    "audio/aac",
+    "audio/flac",
+    "audio/x-m4a",
+    # documents shared in chat or attached to a post/article
     "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/rtf",
+    "application/zip",
+    "application/x-zip-compressed",
+    "text/plain",
+    "text/csv",
+    "text/markdown",
 }
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200MB — well under Telethon's ~2GB ceiling, generous for a first pass
 
@@ -39,10 +54,13 @@ async def upload_media(
     file: UploadFile,
     user: User = Depends(get_current_user),
 ):
-    if file.content_type not in ALLOWED_TYPES:
+    # Browsers tack codec parameters onto recorded audio/video
+    # ("audio/webm;codecs=opus"); match on the bare type.
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    if content_type not in ALLOWED_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"Unsupported file type: {file.content_type}",
+            detail=f"Unsupported file type: {content_type or file.content_type}",
         )
 
     file_bytes = await file.read()
@@ -53,7 +71,7 @@ async def upload_media(
         )
 
     try:
-        result = await telegram_storage.upload(file_bytes, file.filename or "upload", file.content_type)
+        result = await telegram_storage.upload(file_bytes, file.filename or "upload", content_type)
     except TelegramStorageError as e:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
 

@@ -10,6 +10,13 @@ POST   /api/messages/conversations/{id}       send a message
 POST   /api/messages/conversations/{id}/read  mark thread read
 GET    /api/messages/unread-count             badge counter
 
+Realtime lives next door in app/routers/messages_ws.py. Exactly like
+community chat, the socket is receive-only: sending is always this POST,
+which owns validation and persistence and then fans the saved message out
+to both participants through app/core/presence.py. Typing indicators and
+read receipts are the two things that never touch the database on the way
+in, so those do travel up the socket.
+
 Authorization: every thread route re-checks that the caller is actually
 a participant, so a guessed conversation id is a 404, never a leak.
 Blocks are checked at send/create time — an existing thread stays
@@ -25,6 +32,7 @@ from sqlalchemy.orm import aliased
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.presence import presence
 from app.models.message import Conversation, ConversationParticipant, Message, pair_key_for
 from app.models.profile import Profile
 from app.models.user import User
@@ -74,6 +82,25 @@ async def _other_participant(db: AsyncSession, conversation_id, viewer_id) -> tu
     return row[0], row[1]
 
 
+async def _other_last_read_at(db: AsyncSession, conversation_id, viewer_id) -> datetime | None:
+    return await db.scalar(
+        select(ConversationParticipant.last_read_at).where(
+            ConversationParticipant.conversation_id == conversation_id,
+            ConversationParticipant.user_id != viewer_id,
+        )
+    )
+
+
+def _presence_for(user: User) -> tuple[bool, datetime | None]:
+    """
+    Live flag from the in-process registry, falling back to the persisted
+    column so "last seen" survives an API restart.
+    """
+    online = presence.is_online(user.id)
+    last_seen = presence.last_seen(user.id) or getattr(user, "last_seen_at", None)
+    return online, (None if online else last_seen)
+
+
 async def _unread_for(db: AsyncSession, conversation_id, viewer_id, last_read_at) -> int:
     query = select(func.count(Message.id)).where(
         Message.conversation_id == conversation_id, Message.sender_id != viewer_id
@@ -83,22 +110,26 @@ async def _unread_for(db: AsyncSession, conversation_id, viewer_id, last_read_at
     return (await db.scalar(query)) or 0
 
 
-@router.get("/unread-count", response_model=UnreadCountOut)
-async def unread_count(
-    viewer: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
+async def _unread_total(db: AsyncSession, viewer_id) -> int:
     rows = (
         await db.execute(
             select(ConversationParticipant.conversation_id, ConversationParticipant.last_read_at).where(
-                ConversationParticipant.user_id == viewer.id
+                ConversationParticipant.user_id == viewer_id
             )
         )
     ).all()
     total = 0
     for conversation_id, last_read_at in rows:
-        total += await _unread_for(db, conversation_id, viewer.id, last_read_at)
-    return UnreadCountOut(unread_total=total)
+        total += await _unread_for(db, conversation_id, viewer_id, last_read_at)
+    return total
+
+
+@router.get("/unread-count", response_model=UnreadCountOut)
+async def unread_count(
+    viewer: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return UnreadCountOut(unread_total=await _unread_total(db, viewer.id))
 
 
 @router.get("/conversations", response_model=ConversationListOut)
@@ -139,6 +170,7 @@ async def list_conversations(
         unread = await _unread_for(db, conversation.id, viewer.id, last_read_at)
         unread_total += unread
         is_following, follows_you = await follow_flags(db, viewer.id, other.id)
+        online, seen_at = _presence_for(other)
 
         items.append(
             ConversationOut(
@@ -146,9 +178,15 @@ async def list_conversations(
                 participant=PersonOut.from_user(
                     other, other_profile, is_following=is_following, follows_you=follows_you
                 ),
-                last_message=MessageOut.from_model(last_message, viewer.id),
+                last_message=MessageOut.from_model(
+                    last_message,
+                    viewer.id,
+                    await _other_last_read_at(db, conversation.id, viewer.id),
+                ),
                 unread_count=unread,
                 last_message_at=conversation.last_message_at,
+                is_online=online,
+                last_seen_at=seen_at,
             )
         )
 
@@ -200,6 +238,7 @@ async def start_conversation(
         .limit(1)
     )
     is_following, follows_you = await follow_flags(db, viewer.id, target.id)
+    online, seen_at = _presence_for(target)
 
     return ConversationOut(
         id=conversation.id,
@@ -209,6 +248,8 @@ async def start_conversation(
         last_message=MessageOut.from_model(last_message, viewer.id) if last_message else None,
         unread_count=0,
         last_message_at=conversation.last_message_at,
+        is_online=online,
+        last_seen_at=seen_at,
     )
 
 
@@ -237,15 +278,20 @@ async def list_messages(
     next_cursor = rows[-1].created_at if (has_more and rows) else None
 
     is_following, follows_you = await follow_flags(db, viewer.id, other.id)
+    their_read_at = await _other_last_read_at(db, conversation_id, viewer.id)
+    online, seen_at = _presence_for(other)
 
     # Oldest-first for rendering: the transport pages backwards, the UI
     # reads forwards.
     return MessageListOut(
-        items=[MessageOut.from_model(m, viewer.id) for m in reversed(rows)],
+        items=[MessageOut.from_model(m, viewer.id, their_read_at) for m in reversed(rows)],
         participant=PersonOut.from_user(
             other, other_profile, is_following=is_following, follows_you=follows_you
         ),
         next_cursor=next_cursor,
+        is_online=online,
+        last_seen_at=seen_at,
+        other_last_read_at=their_read_at,
     )
 
 
@@ -271,6 +317,7 @@ async def send_message(
         sender_id=viewer.id,
         body=payload.body,
         media_refs=payload.media_refs or None,
+        media_types=payload.media_types or None,
     )
     db.add(message)
     conversation.last_message_at = datetime.now(timezone.utc)
@@ -287,7 +334,32 @@ async def send_message(
 
     await db.commit()
     await db.refresh(message)
-    return MessageOut.from_model(message, viewer.id)
+
+    their_read_at = await _other_last_read_at(db, conversation_id, viewer.id)
+    mine = MessageOut.from_model(message, viewer.id, their_read_at)
+
+    # Fan out live. Each side gets the message serialized from their own
+    # point of view so `is_mine` is correct without the client patching it.
+    await presence.send(
+        other.id,
+        {
+            "type": "message",
+            "conversation_id": str(conversation_id),
+            "message": MessageOut.from_model(message, other.id, None).model_dump(mode="json"),
+            "unread_total": await _unread_total(db, other.id),
+        },
+    )
+    # Echo to the sender's other devices (not the tab that just posted —
+    # it already has the response — but a duplicate id is easy to dedupe).
+    await presence.send(
+        viewer.id,
+        {
+            "type": "message",
+            "conversation_id": str(conversation_id),
+            "message": mine.model_dump(mode="json"),
+        },
+    )
+    return mine
 
 
 @router.post("/conversations/{conversation_id}/read", response_model=UnreadCountOut)
@@ -306,4 +378,18 @@ async def mark_read(
     if row is not None:
         row.last_read_at = datetime.now(timezone.utc)
         await db.commit()
-    return await unread_count(viewer=viewer, db=db)
+        try:
+            other, _ = await _other_participant(db, conversation_id, viewer.id)
+        except HTTPException:
+            other = None
+        if other is not None:
+            await presence.send(
+                other.id,
+                {
+                    "type": "read",
+                    "conversation_id": str(conversation_id),
+                    "user_id": str(viewer.id),
+                    "at": row.last_read_at.isoformat(),
+                },
+            )
+    return UnreadCountOut(unread_total=await _unread_total(db, viewer.id))

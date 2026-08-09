@@ -32,6 +32,10 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    # Last time this person had a live socket open (see app/core/presence.py).
+    # Persisted so "last seen" survives a restart; live online/offline is
+    # answered from the in-memory registry, not from this column.
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

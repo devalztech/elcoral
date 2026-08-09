@@ -8,6 +8,8 @@ import PostCard from '../features/feed/PostCard.jsx'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api } from '../api/client.js'
 import { avatarTone, formatCount, initialsOf } from '../features/social/format.js'
+import { completionPct } from '../features/profile/completion.js'
+import { useMessaging } from '../features/messages/useMessaging.jsx'
 
 /**
  * Home feed. Everything on this screen comes from the API — posts, people
@@ -23,27 +25,11 @@ const TABS = [
   { id: 'saved', label: 'Saved' },
 ]
 
-// Fields that count towards "profile complete" — kept small and honest so the
-// percentage means something the user can act on.
-const COMPLETION_FIELDS = [
-  'username', 'headline', 'bio', 'photo_ref', 'country', 'city', 'skills', 'categories', 'links',
-]
-
 function greeting() {
   const hour = new Date().getHours()
   if (hour < 12) return 'Good morning'
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
-}
-
-function completionOf(profile) {
-  if (!profile) return null
-  let filled = 0
-  for (const field of COMPLETION_FIELDS) {
-    const value = profile[field]
-    if (Array.isArray(value) ? value.length > 0 : value) filled += 1
-  }
-  return Math.round((filled / COMPLETION_FIELDS.length) * 100)
 }
 
 function PersonAvatar({ person, size = 40 }) {
@@ -63,6 +49,7 @@ function PersonAvatar({ person, size = 40 }) {
 
 export default function Dashboard() {
   const { user, accessToken, authLoading } = useAuth()
+  const { unreadTotal } = useMessaging()
 
   const [tab, setTab] = useState('for-you')
   const [posts, setPosts] = useState(null)
@@ -137,7 +124,9 @@ export default function Dashboard() {
   }
 
   const firstName = user?.full_name ? user.full_name.split(' ')[0] : null
-  const progress = completionOf(profile)
+  // Same number the profile page shows: the server's weighted score
+  // (features/profile/completion.js), never a second local formula.
+  const progress = completionPct(profile)
 
   return (
     <div className="hm">
@@ -150,8 +139,13 @@ export default function Dashboard() {
           <Link to="/home/search" className="hm-icon-btn" aria-label="Search">
             <Search size={23} strokeWidth={1.9} />
           </Link>
-          <Link to="/home/messages" className="hm-icon-btn" aria-label="Messages">
+          <Link
+            to="/home/messages"
+            className="hm-icon-btn"
+            aria-label={unreadTotal ? `Messages, ${unreadTotal} unread` : 'Messages'}
+          >
             <MessageCircle size={23} strokeWidth={1.9} />
+            {unreadTotal > 0 && <span className="hm-badge">{unreadTotal > 99 ? '99+' : unreadTotal}</span>}
           </Link>
           <Link to="/home/notifications" className="hm-icon-btn" aria-label="Notifications">
             <Bell size={23} strokeWidth={1.9} />
@@ -343,6 +337,14 @@ export default function Dashboard() {
         .hm-greet-text { flex: 1; min-width: 0; }
         .hm-greet-title { margin: 0; font-family: var(--font-head); font-size: 15.5px; font-weight: 700; color: var(--ink); }
         .hm-greet-sub { margin: 3px 0 0; font-size: 13px; color: var(--ink-dim); }
+        .hm-icon-btn { position: relative; }
+        .hm-badge {
+          position: absolute; top: -2px; right: -3px;
+          min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+          background: var(--lemon); color: var(--on-accent);
+          font-size: 10px; font-weight: 700; line-height: 17px; text-align: center;
+          border: 2px solid var(--bg);
+        }
         .hm-progress {
           flex: none; display: flex; align-items: center; gap: 10px;
           background: var(--panel-raised); border: 1px solid var(--border);

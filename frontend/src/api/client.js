@@ -210,15 +210,31 @@ export const api = {
       `/messages/conversations/${conversationId}${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
       { token },
     ),
-  sendMessage: (conversationId, body, token, mediaRefs) =>
+  // `attachments` is the array returned by uploadMedia calls:
+  // [{ ref, mime_type }]. Types travel alongside the refs so the thread
+  // can render a player/preview without sniffing the file.
+  sendMessage: (conversationId, { body, attachments = [] } = {}, token) =>
     request(`/messages/conversations/${conversationId}`, {
       method: 'POST',
-      body: { body, media_refs: mediaRefs ?? null },
+      body: {
+        body: body || null,
+        media_refs: attachments.map((a) => a.ref),
+        media_types: attachments.map((a) => a.mime_type || ''),
+      },
       token,
     }),
   markConversationRead: (conversationId, token) =>
     request(`/messages/conversations/${conversationId}/read`, { method: 'POST', token }),
   unreadMessageCount: (token) => request('/messages/unread-count', { token }),
+  // WebSocket URL for the direct-message socket. The token rides in the
+  // query string because browsers can't set headers on a WS handshake;
+  // it's the same short-lived access JWT used by every other call.
+  messageSocketUrl: (token) => {
+    const base = import.meta.env.VITE_API_URL ?? ''
+    const httpOrigin = base || window.location.origin
+    const wsOrigin = httpOrigin.replace(/^http/, 'ws')
+    return `${wsOrigin}/api/messages/ws?token=${encodeURIComponent(token)}`
+  },
 
   // ----------------------------------------------------------- communities
   listCommunities: ({ scope = 'all', topic, q, limit, offset } = {}, token) => {

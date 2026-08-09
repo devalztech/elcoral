@@ -15,6 +15,9 @@ import Community from '../pages/Community.jsx'
 import CommunityDetail from '../pages/CommunityDetail.jsx'
 import CommunityCreate from '../pages/CommunityCreate.jsx'
 import ProfileView from '../pages/ProfileView.jsx'
+import Messages from '../pages/Messages.jsx'
+import MessageThread from '../pages/MessageThread.jsx'
+import PeopleList from '../pages/PeopleList.jsx'
 import ProfileEditor from '../pages/ProfileEditor.jsx'
 import Settings from '../pages/settings/Settings.jsx'
 import AccountSettings from '../pages/settings/AccountSettings.jsx'
@@ -34,6 +37,7 @@ import DataSettings from '../pages/settings/DataSettings.jsx'
 import HelpSettings from '../pages/settings/HelpSettings.jsx'
 import AboutSettings from '../pages/settings/AboutSettings.jsx'
 import { SettingsProvider } from '../features/settings/hooks/useSettings.jsx'
+import { MessagingProvider } from '../features/messages/useMessaging.jsx'
 import AppShell from '../layouts/AppShell.jsx'
 import PublicShell from '../layouts/PublicShell.jsx'
 
@@ -41,6 +45,10 @@ export default function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
+        {/* One direct-message socket for the whole session — every
+            surface that shows unread counts, presence or typing reads
+            from it, so they can't disagree with each other. */}
+        <MessagingProvider>
         <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -57,6 +65,9 @@ export default function App() {
               profile; this shell only controls the surrounding nav. */}
           <Route element={<PublicShell />}>
             <Route path="/u/:username" element={<ProfileView />} />
+            {/* Follower lists are public, like the profile they belong to. */}
+            <Route path="/u/:username/followers" element={<PeopleList />} />
+            <Route path="/u/:username/following" element={<PeopleList />} />
           </Route>
 
           <Route element={<AppShell />}>
@@ -77,7 +88,8 @@ export default function App() {
             <Route path="/home/create/:slug" element={<ComingSoon label="Create" />} />
             <Route path="/home/community" element={<Community />} />
             <Route path="/home/community/:slug" element={<CommunityDetail />} />
-            <Route path="/home/messages" element={<ComingSoon label="Messages" />} />
+            <Route path="/home/messages" element={<Messages />} />
+            <Route path="/home/messages/:conversationId" element={<MessageThread />} />
             <Route path="/home/notifications" element={<ComingSoon label="Notifications" />} />
             <Route path="/home/more" element={<ComingSoon label="More" />} />
             <Route path="/home/profile" element={<ProfileView />} />
@@ -102,6 +114,7 @@ export default function App() {
           </Route>
         </Routes>
         </BrowserRouter>
+        </MessagingProvider>
       </SettingsProvider>
     </AuthProvider>
   )

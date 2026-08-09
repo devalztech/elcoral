@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import BottomNav from './BottomNav.jsx'
+import InstallPrompt from '../features/pwa/InstallPrompt.jsx'
 
 export default function AppShell() {
   return (
@@ -8,6 +9,7 @@ export default function AppShell() {
         <Outlet />
       </main>
       <BottomNav />
+      <InstallPrompt />
       <style>{`
         .shell { min-height: 100vh; }
         .shell-content {

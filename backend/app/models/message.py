@@ -80,9 +80,15 @@ class Message(Base):
     )
     sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    body: Mapped[str] = mapped_column(Text, nullable=False)
+    # Nullable since 0009: a voice note, photo or document is a complete
+    # message on its own, with no caption.
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Same Telegram-backed storage pointers as Post.media_refs.
     media_refs: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    # Parallel to media_refs: the MIME type each ref was uploaded with, so
+    # the client knows whether to render an <img>, <video>, an audio
+    # player or a document row without sniffing the file.
+    media_types: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True

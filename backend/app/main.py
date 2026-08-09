@@ -24,6 +24,7 @@ from app.routers import (
     lookup,
     media,
     messages,
+    messages_ws,
     onboarding,
     posts,
     profile,
@@ -69,6 +70,7 @@ app.include_router(lookup.router)
 app.include_router(settings_router.router)
 app.include_router(social.router)
 app.include_router(messages.router)
+app.include_router(messages_ws.router)
 app.include_router(communities.router)
 app.include_router(community_ws.router)
 
