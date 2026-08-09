@@ -517,12 +517,12 @@ export default function Community() {
         .cm-mine-rail { padding-bottom: 4px; }
         .cm-mine {
           position: relative; flex: none; width: 138px; scroll-snap-align: start;
-          padding: 14px 14px 12px; border-radius: 16px;
-          background: var(--panel); border: 1px solid var(--border);
+          padding: 12px 12px 12px 0; border-radius: 0;
+          background: none; border: 0;
           display: flex; flex-direction: column; gap: 10px;
-          transition: border-color .15s ease, transform .15s ease;
+          transition: transform .15s ease;
         }
-        .cm-mine:hover { border-color: var(--lemon-deep); }
+        .cm-mine:hover .cm-mine-name { color: var(--accent-ink); }
         .cm-mine:active { transform: scale(.98); }
         .cm-tile {
           width: 64px; height: 64px; border-radius: 14px; flex: none;
@@ -560,11 +560,11 @@ export default function Community() {
 
         /* --------------------------------------------------------- promo */
         .cm-promo {
-          position: relative; margin: 18px var(--gut) 0;
+          position: relative; margin: 0 var(--gut);
           display: flex; align-items: center; gap: 6px;
-          padding: 16px 16px 18px; border-radius: 18px;
-          background: linear-gradient(120deg, var(--surface-2) 0%, var(--surface) 60%, var(--surface-2) 100%);
-          border: 1px solid var(--border); overflow: hidden;
+          padding: 14px 0 16px; border-radius: 0;
+          background: none;
+          border-bottom: 1px solid var(--border); overflow: hidden;
         }
         .cm-promo-art { flex: none; display: none; opacity: .95; margin-left: -10px; margin-right: -4px; }
         @media (min-width: 400px) { .cm-promo-art { display: block; } }
@@ -595,14 +595,15 @@ export default function Community() {
         .cm-promo-close:hover { color: var(--ink); background: var(--panel-raised); }
 
         /* ---------------------------------------------------- card lists */
+        /* Flat list: the same hairline-separated rows the feed uses —
+           no panel behind the list, no card inside a card. */
         .cm-card {
-          margin: 0 var(--gut); padding: 0; list-style: none;
-          background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
-          overflow: hidden;
+          margin: 0; padding: 0; list-style: none;
+          background: none; border: 0; border-radius: 0;
         }
-        .cm-list > li + li { border-top: 1px solid var(--border); }
+        .cm-card > li { border-bottom: 1px solid var(--border); }
 
-        .cm-row { display: flex; align-items: center; gap: 12px; padding: 14px 14px; }
+        .cm-row { display: flex; align-items: center; gap: 12px; padding: 12px var(--gut); }
         .cm-logo {
           width: 56px; height: 56px; border-radius: 14px; flex: none;
           display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
@@ -637,7 +638,7 @@ export default function Community() {
         .cm-join.on { background: var(--lemon); color: var(--on-accent); }
 
         /* ---------------------------------------------------- discussions */
-        .cm-disc { display: flex; gap: 12px; padding: 14px 14px 12px; }
+        .cm-disc { display: flex; gap: 12px; padding: 12px var(--gut); }
         .cm-avatar {
           width: 46px; height: 46px; border-radius: 999px; flex: none;
           display: inline-flex; align-items: center; justify-content: center;
@@ -671,10 +672,10 @@ export default function Community() {
 
         /* -------------------------------------------------------- create */
         .cm-create {
-          margin: 18px var(--gut) 4px;
+          margin: 0 var(--gut);
           display: flex; align-items: center; gap: 14px;
-          padding: 16px; border-radius: 18px;
-          background: var(--panel); border: 1px solid var(--border);
+          padding: 14px 0; border-radius: 0;
+          background: none; border-top: 1px solid var(--border);
         }
         .cm-create-art {
           width: 60px; height: 60px; border-radius: 16px; flex: none;

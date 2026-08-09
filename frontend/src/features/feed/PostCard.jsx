@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Bookmark, Globe, Heart, Link2, MessageSquare, MoreHorizontal,
   Repeat2, Send, Trash2, Users2,
@@ -7,8 +7,7 @@ import {
 import { api } from '../../api/client.js'
 import { useAuth } from '../auth/hooks/useAuth.jsx'
 import { avatarTone, formatCount, initialsOf, timeAgo } from '../social/format.js'
-import VoiceNote from '../messages/VoiceNote.jsx'
-import Lightbox from '../../components/Lightbox.jsx'
+import PostMedia from './PostMedia.jsx'
 import VerifiedBadge from '../../components/VerifiedBadge.jsx'
 
 // X's own post metrics, used verbatim below:
@@ -42,108 +41,6 @@ function Avatar({ person, size = AVATAR }) {
   )
 }
 
-
-// Clamp how tall a single image/video can render at — wide enough that
-// a phone-shot portrait doesn't take over the whole feed, but without
-// forcing every ratio into the same 16:9 box like a fixed frame would.
-const MIN_RATIO = 4 / 5   // tall cap (portrait)
-const MAX_RATIO = 16 / 9  // wide cap (landscape)
-
-function clampRatio(ratio) {
-  if (!Number.isFinite(ratio) || ratio <= 0) return MAX_RATIO
-  return Math.min(MAX_RATIO, Math.max(MIN_RATIO, ratio))
-}
-
-// Measures the media's own width/height once it loads and sizes the
-// frame to that ratio (clamped), instead of cropping everything into a
-// fixed box. Multi-item grids keep a fixed cell ratio since a mixed-ratio
-// grid of 2-4 tiles would look broken either way.
-function MediaFrame({ url, type, onOpenImage }) {
-  const [ratio, setRatio] = useState(null)
-  const style = ratio ? { aspectRatio: ratio } : undefined
-
-  if (type.startsWith('video/')) {
-    return (
-      <div className="pc-frame pc-frame-auto" style={style}>
-        <video
-          src={url}
-          controls
-          preload="metadata"
-          playsInline
-          className="pc-media-item"
-          onLoadedMetadata={(e) => {
-            const { videoWidth: w, videoHeight: h } = e.currentTarget
-            if (w && h) setRatio(clampRatio(w / h))
-          }}
-        />
-      </div>
-    )
-  }
-  return (
-    <button
-      type="button"
-      className="pc-frame pc-frame-auto pc-frame-btn"
-      style={style}
-      onClick={() => onOpenImage(url)}
-      aria-label="Open image preview"
-    >
-      <img
-        src={url}
-        alt=""
-        loading="lazy"
-        className="pc-media-item"
-        onLoad={(e) => {
-          const { naturalWidth: w, naturalHeight: h } = e.currentTarget
-          if (w && h) setRatio(clampRatio(w / h))
-        }}
-      />
-    </button>
-  )
-}
-
-function MediaGrid({ media }) {
-  const [preview, setPreview] = useState(null)
-  if (!media?.length) return null
-  const single = media.length === 1
-  return (
-    <div className={`pc-media count-${Math.min(media.length, 4)}`}>
-      {media.map((m, i) => {
-        const type = m.mime_type || ''
-        if (type.startsWith('video/')) {
-          if (single) return <MediaFrame key={i} url={m.url} type={type} onOpenImage={setPreview} />
-          return (
-            <div key={i} className="pc-frame">
-              <video src={m.url} controls preload="metadata" playsInline className="pc-media-item" />
-            </div>
-          )
-        }
-        if (type.startsWith('audio/')) {
-          return <VoiceNote key={i} src={m.url} title="Audio clip" />
-        }
-        if (type === 'application/pdf') {
-          return (
-            <a key={i} href={m.url} target="_blank" rel="noreferrer" className="pc-doc">
-              <Link2 size={16} /> Open attachment
-            </a>
-          )
-        }
-        if (single) return <MediaFrame key={i} url={m.url} type="image/" onOpenImage={setPreview} />
-        return (
-          <button
-            key={i}
-            type="button"
-            className="pc-frame pc-frame-btn"
-            onClick={() => setPreview(m.url)}
-            aria-label="Open image preview"
-          >
-            <img src={m.url} alt="" loading="lazy" className="pc-media-item" />
-          </button>
-        )
-      })}
-      <Lightbox src={preview} onClose={() => setPreview(null)} />
-    </div>
-  )
-}
 
 // Poll options are a real radio group: every row carries a 20px ring
 // (2px stroke) that fills with a 10px dot on the chosen option, so the
@@ -297,10 +194,11 @@ function Comments({ post, onCountChange }) {
   )
 }
 
-export default function PostCard({ post: initial, onDeleted }) {
+export default function PostCard({ post: initial, onDeleted, detail = false }) {
   const { accessToken, user } = useAuth()
+  const navigate = useNavigate()
   const [post, setPost] = useState(initial)
-  const [openComments, setOpenComments] = useState(false)
+  const [openComments, setOpenComments] = useState(detail)
   const [menuOpen, setMenuOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -393,8 +291,22 @@ export default function PostCard({ post: initial, onDeleted }) {
   const authorTo = post.author?.username ? `/u/${post.author.username}` : '/home'
   const media = post.media?.length ? post.media : (post.media_urls ?? []).map((url) => ({ url }))
 
+  // Tapping the post — its text, its indent, its photo or its clip —
+  // opens the full-screen view, the way X and TikTok do. Anything
+  // genuinely interactive (links, buttons, the poll, the player chrome)
+  // opts out with data-stop so it keeps its own behaviour.
+  const openPost = (e) => {
+    if (detail) return
+    if (window.getSelection?.()?.toString()) return
+    if (e.target.closest('a, button, input, textarea, video, [data-stop]')) return
+    navigate(`/home/posts/${post.id}`)
+  }
+
   return (
-    <article className="pc">
+    <article
+      className={`pc ${detail ? 'pc-detail' : 'pc-tappable'}`}
+      onClick={openPost}
+    >
       {post.reposted_by && (
         <p className="pc-repost-note">
           <Repeat2 size={16} strokeWidth={2} /> {post.reposted_by.full_name} reposted
@@ -464,9 +376,13 @@ export default function PostCard({ post: initial, onDeleted }) {
             </a>
           )}
 
-          <MediaGrid media={media} />
+          <PostMedia media={media} lightbox={detail} />
 
-          {post.poll?.length > 0 && <Poll post={post} onVote={vote} busy={busy} />}
+          {post.poll?.length > 0 && (
+            <div data-stop="true">
+              <Poll post={post} onVote={vote} busy={busy} />
+            </div>
+          )}
 
           {post.tags?.length > 0 && (
             <div className="pc-tags">
@@ -480,7 +396,7 @@ export default function PostCard({ post: initial, onDeleted }) {
             <button
               type="button"
               className={`pc-action ${openComments ? 'on' : ''}`}
-              onClick={() => setOpenComments((v) => !v)}
+              onClick={() => (detail ? setOpenComments((v) => !v) : navigate(`/home/posts/${post.id}`))}
               aria-expanded={openComments}
               aria-label="Comments"
             >
@@ -551,6 +467,9 @@ export default function PostCard({ post: initial, onDeleted }) {
           border-bottom: 1px solid var(--border);
           padding: 12px 16px;
         }
+        .pc-tappable { cursor: pointer; }
+        .pc-tappable:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+        .pc-detail { border-bottom: 0; }
 
         /* THE INDENT: fixed avatar rail + one content column. */
         .pc-grid {
@@ -627,43 +546,11 @@ export default function PostCard({ post: initial, onDeleted }) {
 
         .pc-link {
           display: flex; align-items: center; gap: 8px; padding: 10px 12px;
-          background: var(--panel-raised); border: 1px solid var(--border); border-radius: 16px;
+          background: color-mix(in srgb, var(--ink) 5%, transparent); border-radius: 16px;
           font-size: 14px; color: var(--accent-ink);
         }
         .pc-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* Media is inside the content column now, so it starts on the
-           same 52px indent as the text, and carries X's 16px corner
-           with a 1px hairline. */
-        .pc-media {
-          display: grid; gap: 2px; margin-top: 4px;
-          border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
-        }
-        .pc-media.count-2, .pc-media.count-4 { grid-template-columns: 1fr 1fr; }
-        .pc-media.count-3 { grid-template-columns: 1fr 1fr; }
-        .pc-media.count-3 > :first-child { grid-column: 1 / -1; }
-        .pc-frame {
-          position: relative; display: block; width: 100%; aspect-ratio: 16 / 9;
-          padding: 0; border-radius: 0;
-          overflow: hidden; background: var(--panel-raised);
-        }
-        /* Single media keeps its true ratio (clamped 4:5 … 16:9), which is
-           what X does before it falls back to a 16:9 crop. */
-        .pc-frame-auto { aspect-ratio: 4 / 3; max-height: 68vh; }
-        .pc-frame-btn { cursor: zoom-in; }
-        .pc-frame-btn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: -2px; }
-        .pc-media-item {
-          width: 100%; height: 100%; object-fit: cover;
-          background: var(--panel-raised); display: block;
-          transition: transform 200ms ease;
-        }
-        .pc-frame-btn:hover .pc-media-item { transform: scale(1.02); }
-        @media (prefers-reduced-motion: reduce) { .pc-media-item { transition: none; } }
-        .pc-audio { width: 100%; }
-        .pc-doc {
-          display: flex; align-items: center; gap: 8px; padding: 10px 12px;
-          background: var(--panel-raised); border-radius: 12px; color: var(--accent-ink); font-size: 14px;
-        }
 
         /* ------------------------------ poll ------------------------------
            X poll rows are 32px tall bars; ours are 44px so the radio ring

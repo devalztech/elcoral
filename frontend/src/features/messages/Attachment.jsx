@@ -15,6 +15,7 @@
 import { useState } from 'react'
 import { Download, FileText } from 'lucide-react'
 import VoiceNote from './VoiceNote.jsx'
+import MediaPlayer from '../../components/MediaPlayer.jsx'
 
 function fileName(url) {
   try {
@@ -84,19 +85,15 @@ export default function Attachment({ attachment, onOpenImage }) {
   }
 
   if (kind === 'video') {
+    // Elcoral's own player rather than the browser's default chrome, so
+    // a clip in a DM looks the same as a clip in the feed.
     return (
-      <div className="ma-frame" style={frameStyle}>
-        <video
-          src={url}
-          controls
-          preload="metadata"
-          playsInline
-          onLoadedMetadata={(e) => {
-            const { videoWidth: w, videoHeight: h } = e.currentTarget
-            if (w && h) setRatio(clampRatio(w / h))
-          }}
-        />
-        <style>{frameCss}</style>
+      <div className="ma-video">
+        <MediaPlayer src={url} ratio={ratio} onRatio={(r) => setRatio(clampRatio(r))} />
+        <style>{`
+          .ma-video { width: 100%; max-width: 330px; }
+          @media (max-width: 480px) { .ma-video { max-width: 100%; } }
+        `}</style>
       </div>
     )
   }

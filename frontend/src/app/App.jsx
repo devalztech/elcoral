@@ -11,6 +11,8 @@ import Dashboard from '../pages/Dashboard.jsx'
 import CreatePost from '../pages/CreatePost.jsx'
 import Create from '../pages/Create.jsx'
 import Jobs from '../pages/Jobs.jsx'
+import Discover from '../pages/Discover.jsx'
+import PostDetail from '../pages/PostDetail.jsx'
 import Community from '../pages/Community.jsx'
 import CommunityDetail from '../pages/CommunityDetail.jsx'
 import CommunityCreate from '../pages/CommunityCreate.jsx'
@@ -73,9 +75,10 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route path="/home" element={<Dashboard />} />
             <Route path="/home/jobs" element={<Jobs />} />
+            <Route path="/home/posts/:postId" element={<PostDetail />} />
             <Route path="/home/jobs/:slug" element={<ComingSoon label="Jobs" />} />
             <Route path="/home/search" element={<ComingSoon label="Search" />} />
-            <Route path="/home/discover" element={<ComingSoon label="Discover" />} />
+            <Route path="/home/discover" element={<Discover />} />
             <Route path="/home/stories/:id" element={<ComingSoon label="Story" />} />
             <Route path="/home/projects/:slug" element={<ComingSoon label="Project" />} />
             <Route path="/home/create" element={<Create />} />

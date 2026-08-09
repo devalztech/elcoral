@@ -10,70 +10,7 @@ import ElcoralMark from '../components/ElcoralMark.jsx'
 
 const FILTERS = ['For you', 'All jobs', 'Remote', 'Full-time', 'Part-time', 'Internship']
 
-const FEATURED = [
-  {
-    id: 'f1',
-    title: 'Backend Developer (Node.js)',
-    company: 'Elcoral Official',
-    verified: true,
-    brand: true,
-    tone: 'a',
-    remote: 'Remote',
-    type: 'Full-time',
-    time: '1h ago',
-    desc: 'Build and maintain scalable APIs and services that power the Elcoral platform.',
-    tags: ['Node.js', 'Express.js', 'MongoDB', 'REST API'],
-    extra: 2,
-  },
-  {
-    id: 'f2',
-    title: 'Senior Product Designer',
-    company: 'DesignHub',
-    verified: true,
-    tone: 'b',
-    remote: 'Remote',
-    type: 'Full-time',
-    time: '3h ago',
-    desc: 'Craft end-to-end product experiences for a fast-growing design collaboration suite.',
-    tags: ['Figma', 'Design systems', 'Prototyping'],
-    extra: 3,
-  },
-  {
-    id: 'f3',
-    title: 'Growth Marketing Lead',
-    company: 'PayBridge',
-    tone: 'c',
-    remote: 'Hybrid',
-    type: 'Full-time',
-    time: '5h ago',
-    desc: 'Own acquisition, lifecycle and retention experiments across all growth channels.',
-    tags: ['SEO', 'Paid ads', 'Lifecycle'],
-    extra: 2,
-  },
-]
-
-const RECOMMENDED = [
-  {
-    id: 'r1', title: 'UI/UX Designer', company: 'DesignHub', verified: true,
-    tone: 'b', badge: 'New', time: '2h ago', place: 'Remote', placeIcon: 'wifi', type: 'Full-time',
-  },
-  {
-    id: 'r2', title: 'Frontend Developer (React)', company: 'GreenLeaf Labs', verified: true,
-    tone: 'c', badge: 'New', time: '4h ago', place: 'Lagos, Nigeria', placeIcon: 'pin', type: 'Full-time',
-  },
-  {
-    id: 'r3', title: 'Product Manager', company: 'PayBridge',
-    tone: 'd', time: '6h ago', place: 'Remote', placeIcon: 'wifi', type: 'Full-time',
-  },
-  {
-    id: 'r4', title: 'AI/ML Engineer', company: 'Innova AI', verified: true,
-    tone: 'e', time: '8h ago', place: 'Remote', placeIcon: 'wifi', type: 'Full-time',
-  },
-  {
-    id: 'r5', title: 'Content Writer', company: 'Blockwrite',
-    tone: 'f', time: '1d ago', place: 'Remote', placeIcon: 'wifi', type: 'Part-time',
-  },
-]
+import { FEATURED, RECOMMENDED } from '../features/jobs/jobs.js'
 
 function initialsOf(name) {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
@@ -389,12 +326,10 @@ export default function Jobs() {
         /* ------------------------------------------------------ promo */
         .jb-promo {
           position: relative;
-          margin: 14px var(--gut) 0; padding: 16px 16px 16px 14px;
+          margin: 0 var(--gut); padding: 14px 0;
           display: flex; align-items: center; gap: 14px;
-          border-radius: 16px; border: 1px solid var(--border);
-          background:
-            radial-gradient(120% 140% at 8% 50%, rgba(196,241,53,.13), transparent 58%),
-            var(--panel);
+          border-radius: 0; border-bottom: 1px solid var(--border);
+          background: none;
         }
         .jb-promo-art {
           position: relative; flex: none;
@@ -449,8 +384,8 @@ export default function Jobs() {
         .jb-feat-rail { padding-bottom: 2px; }
         .jb-feat {
           flex: none; width: min(88%, 520px); scroll-snap-align: center;
-          border-radius: 16px; border: 1px solid var(--border);
-          background: var(--panel); padding: 14px;
+          border-radius: 0; border: 0;
+          background: none; padding: 4px 14px 4px 0;
           display: flex; flex-direction: column; gap: 12px;
         }
         .jb-feat-top { display: flex; gap: 12px; align-items: flex-start; }
@@ -516,14 +451,15 @@ export default function Jobs() {
         .jb-dot.on { width: 20px; background: var(--lemon); }
 
         /* ------------------------------------------------ recommended */
-        .jb-list { list-style: none; margin: 0; padding: 0 var(--gut); display: grid; gap: 10px; }
+        /* Hairline-separated rows, same rhythm as a post cell. */
+        .jb-list { list-style: none; margin: 0; padding: 0; display: grid; }
         .jb-card {
           display: flex; gap: 12px; align-items: flex-start;
-          padding: 14px; border-radius: 16px;
-          border: 1px solid var(--border); background: var(--panel);
-          transition: border-color .16s ease;
+          padding: 12px var(--gut); border-radius: 0;
+          border: 0; border-bottom: 1px solid var(--border); background: none;
+          transition: background .16s ease;
         }
-        .jb-card:hover { border-color: color-mix(in srgb, var(--lemon) 35%, var(--border)); }
+        .jb-card:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
         .jb-card-id { flex: 1 1 auto; min-width: 0; }
         .jb-card-id h3 {
           margin: 0; font-family: var(--font-head); font-weight: 700;
@@ -543,12 +479,10 @@ export default function Jobs() {
 
         /* --------------------------------------------------- get noticed */
         .jb-notice {
-          margin: 16px var(--gut) 0; padding: 16px;
+          margin: 0 var(--gut); padding: 14px 0;
           display: flex; align-items: center; gap: 14px;
-          border-radius: 16px; border: 1px solid var(--border);
-          background:
-            radial-gradient(110% 140% at 10% 50%, rgba(196,241,53,.10), transparent 60%),
-            var(--panel);
+          border-radius: 0; border-top: 1px solid var(--border);
+          background: none;
         }
         .jb-notice-art { flex: none; display: inline-flex; }
         .jb-notice-text { flex: 1 1 auto; min-width: 0; }
