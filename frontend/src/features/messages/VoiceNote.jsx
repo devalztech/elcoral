@@ -95,13 +95,14 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
 
       <style>{`
         .vn {
-          display: flex; align-items: center; gap: 9px;
-          padding: 6px 10px 6px 6px; border-radius: 14px;
-          background: color-mix(in srgb, var(--ink) 7%, transparent);
-          color: inherit; width: 100%; max-width: 300px; min-width: 200px;
+          display: flex; align-items: center; gap: 10px;
+          padding: 8px 12px 8px 8px; border-radius: 999px;
+          background: color-mix(in srgb, var(--ink) 6%, transparent);
+          border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+          color: inherit; width: 100%; max-width: 300px; min-width: 220px;
         }
         .vn-play {
-          flex: none; width: 34px; height: 34px; border: 0; border-radius: 999px;
+          flex: none; width: 36px; height: 36px; border: 0; border-radius: 999px;
           display: grid; place-items: center; cursor: pointer;
           background: var(--lemon, var(--accent-ink)); color: var(--on-accent, #111);
           transition: transform 120ms ease, filter 120ms ease;
@@ -109,23 +110,25 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
         .vn-play:hover { filter: brightness(1.05); }
         .vn-play:active { transform: scale(0.94); }
         .vn-play:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
-        .vn-track { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .vn-track { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
         .vn-range {
           -webkit-appearance: none; appearance: none;
           width: 100%; height: 4px; border-radius: 999px; cursor: pointer;
           background: linear-gradient(
             to right,
             currentColor 0 var(--vn-pct),
-            color-mix(in srgb, currentColor 25%, transparent) var(--vn-pct) 100%
+            color-mix(in srgb, currentColor 22%, transparent) var(--vn-pct) 100%
           );
         }
         .vn-range::-webkit-slider-thumb {
           -webkit-appearance: none; appearance: none;
-          width: 11px; height: 11px; border-radius: 999px;
-          background: currentColor; border: 0;
+          width: 13px; height: 13px; border-radius: 999px;
+          background: currentColor; border: 2px solid var(--panel);
+          box-shadow: 0 1px 3px rgba(0,0,0,.35);
         }
         .vn-range::-moz-range-thumb {
-          width: 11px; height: 11px; border: 0; border-radius: 999px; background: currentColor;
+          width: 13px; height: 13px; border: 2px solid var(--panel); border-radius: 999px;
+          background: currentColor; box-shadow: 0 1px 3px rgba(0,0,0,.35);
         }
         .vn-range:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
         .vn-time {

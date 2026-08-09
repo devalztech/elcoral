@@ -279,7 +279,7 @@ export default function MessageThread() {
       />
 
       <style>{`
-        .mt { display: flex; flex-direction: column; height: calc(100vh - 88px); margin: -24px -20px -88px; }
+        .mt { display: flex; flex-direction: column; height: 100vh; }
         .mt-head {
           display: flex; align-items: center; gap: 4px;
           padding: 10px 12px; border-bottom: 1px solid var(--border);
@@ -311,15 +311,15 @@ export default function MessageThread() {
         .mt-msg { display: flex; margin-bottom: 3px; }
         .mt-mine { justify-content: flex-end; }
         .mt-bubble {
-          max-width: 78%; padding: 7px 11px 6px; border-radius: 18px;
+          max-width: 78%; padding: 8px 13px 6px; border-radius: 20px;
           background: var(--panel); border: 1px solid var(--border);
           display: flex; flex-direction: column; gap: 4px;
         }
         .mt-mine .mt-bubble {
           background: var(--lemon); color: var(--on-accent); border-color: transparent;
-          border-bottom-right-radius: 6px;
+          border-bottom-right-radius: 8px;
         }
-        .mt-theirs .mt-bubble { border-bottom-left-radius: 6px; }
+        .mt-theirs .mt-bubble { border-bottom-left-radius: 8px; }
         .mt-failed { border-color: crimson; }
         .mt-text { margin: 0; font-size: 14.5px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
         .mt-media { display: flex; flex-direction: column; gap: 4px; width: 100%; }
@@ -329,7 +329,7 @@ export default function MessageThread() {
         }
         .mt-retry { font-size: 11px; color: crimson; align-self: flex-end; }
         @media (min-width: 860px) {
-          .mt { height: calc(100vh - 64px); margin: -32px -40px; }
+          .mt { height: 100vh; }
         }
       `}</style>
     </div>

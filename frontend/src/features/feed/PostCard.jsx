@@ -52,14 +52,74 @@ function AuthorLine({ author, meta, size = 44 }) {
   )
 }
 
+// Clamp how tall a single image/video can render at — wide enough that
+// a phone-shot portrait doesn't take over the whole feed, but without
+// forcing every ratio into the same 16:9 box like a fixed frame would.
+const MIN_RATIO = 4 / 5   // tall cap (portrait)
+const MAX_RATIO = 16 / 9  // wide cap (landscape)
+
+function clampRatio(ratio) {
+  if (!Number.isFinite(ratio) || ratio <= 0) return MAX_RATIO
+  return Math.min(MAX_RATIO, Math.max(MIN_RATIO, ratio))
+}
+
+// Measures the media's own width/height once it loads and sizes the
+// frame to that ratio (clamped), instead of cropping everything into a
+// fixed box. Multi-item grids keep a fixed cell ratio since a mixed-ratio
+// grid of 2-4 tiles would look broken either way.
+function MediaFrame({ url, type, onOpenImage }) {
+  const [ratio, setRatio] = useState(null)
+  const style = ratio ? { aspectRatio: ratio } : undefined
+
+  if (type.startsWith('video/')) {
+    return (
+      <div className="pc-frame pc-frame-auto" style={style}>
+        <video
+          src={url}
+          controls
+          preload="metadata"
+          playsInline
+          className="pc-media-item"
+          onLoadedMetadata={(e) => {
+            const { videoWidth: w, videoHeight: h } = e.currentTarget
+            if (w && h) setRatio(clampRatio(w / h))
+          }}
+        />
+      </div>
+    )
+  }
+  return (
+    <button
+      type="button"
+      className="pc-frame pc-frame-auto pc-frame-btn"
+      style={style}
+      onClick={() => onOpenImage(url)}
+      aria-label="Open image preview"
+    >
+      <img
+        src={url}
+        alt=""
+        loading="lazy"
+        className="pc-media-item"
+        onLoad={(e) => {
+          const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+          if (w && h) setRatio(clampRatio(w / h))
+        }}
+      />
+    </button>
+  )
+}
+
 function MediaGrid({ media }) {
   const [preview, setPreview] = useState(null)
   if (!media?.length) return null
+  const single = media.length === 1
   return (
     <div className={`pc-media count-${Math.min(media.length, 4)}`}>
       {media.map((m, i) => {
         const type = m.mime_type || ''
         if (type.startsWith('video/')) {
+          if (single) return <MediaFrame key={i} url={m.url} type={type} onOpenImage={setPreview} />
           return (
             <div key={i} className="pc-frame">
               <video src={m.url} controls preload="metadata" playsInline className="pc-media-item" />
@@ -76,6 +136,7 @@ function MediaGrid({ media }) {
             </a>
           )
         }
+        if (single) return <MediaFrame key={i} url={m.url} type="image/" onOpenImage={setPreview} />
         return (
           <button
             key={i}
@@ -105,13 +166,21 @@ function Poll({ post, onVote, busy }) {
           <button
             key={option.index}
             type="button"
-            className={`pc-poll-option ${mine ? 'on' : ''}`}
+            className={`pc-poll-option ${mine ? 'on' : ''} ${voted ? 'voted' : ''}`}
             disabled={busy}
             onClick={() => onVote(option.index)}
+            role={voted ? undefined : 'radio'}
+            aria-checked={voted ? undefined : mine}
           >
-            <span className="pc-poll-fill" style={{ width: `${voted ? pct : 0}%` }} aria-hidden="true" />
-            <span className="pc-poll-label">{option.label}</span>
-            {voted && <span className="pc-poll-pct">{pct}%</span>}
+            <span className="pc-poll-row">
+              <span className="pc-poll-label">{option.label}</span>
+              {voted && <span className="pc-poll-pct">{pct}%</span>}
+            </span>
+            {voted && (
+              <span className="pc-poll-track" aria-hidden="true">
+                <span className="pc-poll-fill" style={{ width: `${pct}%` }} />
+              </span>
+            )}
           </button>
         )
       })}
@@ -520,6 +589,11 @@ export default function PostCard({ post: initial, onDeleted }) {
           padding: 0; border-radius: 0;
           overflow: hidden; background: var(--panel-raised);
         }
+        /* Single media: aspect-ratio is set inline once the real
+           dimensions are known (clamped to a sane range), so cover never
+           meaningfully crops; this default only holds the space before
+           that measurement lands. */
+        .pc-frame-auto { aspect-ratio: 4 / 3; max-height: 70vh; }
         .pc-frame-btn { cursor: zoom-in; }
         .pc-frame-btn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
         .pc-media-item {
@@ -535,21 +609,30 @@ export default function PostCard({ post: initial, onDeleted }) {
           background: var(--panel-raised); border-radius: 10px; color: var(--accent-ink); font-size: 13.5px;
         }
 
-        .pc-poll { display: grid; gap: 6px; }
+        .pc-poll { display: grid; gap: 10px; }
         .pc-poll-option {
-          position: relative; overflow: hidden; text-align: left;
-          display: flex; align-items: center; justify-content: space-between; gap: 10px;
-          padding: 11px 13px; border-radius: 10px;
-          border: 1px solid var(--border); background: var(--panel-raised); color: var(--ink);
+          width: 100%; text-align: left; display: grid; gap: 5px;
+          padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px;
+          background: none; color: var(--ink);
           font-size: 14px; font-family: var(--font-head); font-weight: 600;
         }
-        .pc-poll-option.on { border-color: var(--accent-ink); }
-        .pc-poll-fill {
-          position: absolute; inset: 0 auto 0 0; background: rgba(196, 241, 53, 0.14);
-          transition: width .3s ease;
+        .pc-poll-option:not(.voted):hover { border-color: var(--accent-ink); }
+        .pc-poll-option.voted { border-color: transparent; padding: 8px 0; }
+        .pc-poll-option:disabled { opacity: .7; }
+        .pc-poll-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .pc-poll-option.on .pc-poll-label { color: var(--accent-ink); }
+        .pc-poll-track {
+          display: block; width: 100%; height: 6px; border-radius: 999px;
+          background: var(--panel-raised); overflow: hidden;
         }
+        .pc-poll-fill {
+          display: block; height: 100%; border-radius: 999px;
+          background: var(--lemon); transition: width .35s ease;
+        }
+        .pc-poll-option.on .pc-poll-fill { background: var(--accent-ink); }
         .pc-poll-label, .pc-poll-pct { position: relative; }
-        .pc-poll-pct { color: var(--accent-ink); }
+        .pc-poll-pct { color: var(--ink-dim); font-weight: 700; font-variant-numeric: tabular-nums; }
+        .pc-poll-option.on .pc-poll-pct { color: var(--accent-ink); }
         .pc-poll-total { margin: 0; font-size: 12.5px; color: var(--ink-dim); }
 
         .pc-tags { display: flex; flex-wrap: wrap; gap: 7px; }

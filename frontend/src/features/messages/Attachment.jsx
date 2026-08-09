@@ -6,10 +6,13 @@
  * has to sniff a URL to decide between an <img>, a <video>, a voice-note
  * player and a document row.
  *
- * Images and videos sit in a fixed 16:9 frame so a bubble never jumps
- * height while media loads, and every colour comes from a theme token so
- * the attachment follows light/dark like the rest of the app.
+ * Images and videos size themselves to their real aspect ratio (clamped
+ * to a sane portrait/landscape range) once loaded, rather than forcing
+ * every clip and photo into the same fixed box. Every colour comes from
+ * a theme token so the attachment follows light/dark like the rest of
+ * the app.
  */
+import { useState } from 'react'
 import { Download, FileText } from 'lucide-react'
 import VoiceNote from './VoiceNote.jsx'
 
@@ -22,10 +25,14 @@ function fileName(url) {
   }
 }
 
+const MIN_RATIO = 4 / 5
+const MAX_RATIO = 16 / 9
+const clampRatio = (r) => (Number.isFinite(r) && r > 0 ? Math.min(MAX_RATIO, Math.max(MIN_RATIO, r)) : MAX_RATIO)
+
 const frameCss = `
   .ma-frame {
     display: block; position: relative; width: 100%;
-    max-width: 320px; aspect-ratio: 16 / 9;
+    max-width: 320px; aspect-ratio: 4 / 3;
     padding: 0; background: color-mix(in srgb, var(--ink) 6%, transparent);
     border-radius: 12px; overflow: hidden;
   }
@@ -37,16 +44,27 @@ const frameCss = `
 
 export default function Attachment({ attachment, onOpenImage }) {
   const { url, kind, mime_type: mime } = attachment
+  const [ratio, setRatio] = useState(null)
+  const frameStyle = ratio ? { aspectRatio: ratio } : undefined
 
   if (kind === 'image') {
     return (
       <button
         type="button"
         className="ma-frame ma-image"
+        style={frameStyle}
         onClick={() => onOpenImage?.(url)}
         aria-label="Open image preview"
       >
-        <img src={url} alt="" loading="lazy" />
+        <img
+          src={url}
+          alt=""
+          loading="lazy"
+          onLoad={(e) => {
+            const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+            if (w && h) setRatio(clampRatio(w / h))
+          }}
+        />
         <style>{`
           ${frameCss}
           .ma-image { cursor: zoom-in; }
@@ -61,8 +79,17 @@ export default function Attachment({ attachment, onOpenImage }) {
 
   if (kind === 'video') {
     return (
-      <div className="ma-frame">
-        <video src={url} controls preload="metadata" playsInline />
+      <div className="ma-frame" style={frameStyle}>
+        <video
+          src={url}
+          controls
+          preload="metadata"
+          playsInline
+          onLoadedMetadata={(e) => {
+            const { videoWidth: w, videoHeight: h } = e.currentTarget
+            if (w && h) setRatio(clampRatio(w / h))
+          }}
+        />
         <style>{frameCss}</style>
       </div>
     )
