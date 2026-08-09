@@ -5,7 +5,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_verified
+from app.core.deps import get_current_user, get_optional_user, require_verified
+from app.core.usernames import RESERVED_USERNAMES
 from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.profile import OnboardingRequest, OwnerProfileOut
@@ -27,13 +28,27 @@ async def _get_or_create_profile(db: AsyncSession, user_id) -> Profile:
 @router.get("/username-available")
 async def check_username_available(
     username: str = Query(min_length=3, max_length=30),
+    user: User | None = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
+    username = username.strip()
     if not _USERNAME_RE.match(username):
         return {"available": False, "reason": "Only letters, numbers, and underscores allowed"}
 
-    existing = await db.scalar(select(Profile).where(Profile.username == username))
-    return {"available": existing is None}
+    if username.lower() in RESERVED_USERNAMES:
+        return {"available": False, "reason": "That username is reserved"}
+
+    # Case-insensitive, exactly like the claim in POST /api/onboarding —
+    # otherwise "Ada" reads as available and then fails on submit.
+    existing = await db.scalar(
+        select(Profile).where(func.lower(Profile.username) == username.lower())
+    )
+    # Viewer-aware: signup already claims the handle the user picked, so
+    # without this the onboarding username step tells people their own
+    # handle is taken and blocks them from finishing.
+    if existing is not None and (user is None or existing.user_id != user.id):
+        return {"available": False, "reason": "That username is already taken"}
+    return {"available": True}
 
 
 @router.post("", response_model=OwnerProfileOut)

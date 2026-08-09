@@ -13,6 +13,37 @@ class ApiError extends Error {
   }
 }
 
+
+// FastAPI returns `detail` as a plain string for HTTPException, but as an
+// ARRAY of {loc, msg} objects for 422 validation errors. Rendering that array
+// straight into JSX is what produced the generic "Something went wrong" on
+// signup, so flatten it into a readable sentence here instead.
+function errorMessage(data) {
+  const detail = data?.detail
+  if (typeof detail === 'string' && detail.trim()) return detail
+  if (Array.isArray(detail) && detail.length) {
+    const parts = detail
+      .map((item) => {
+        const raw = typeof item === 'string' ? item : item?.msg
+        if (!raw) return null
+        const msg = String(raw).replace(/^Value error,\s*/i, '')
+        const field = Array.isArray(item?.loc)
+          ? item.loc.filter((p) => p !== 'body' && typeof p === 'string').pop()
+          : null
+        if (!field) return msg
+        const label = field.replace(/_/g, ' ')
+        // Don't stutter when the validator message already names the field.
+        return msg.toLowerCase().includes(label.toLowerCase())
+          ? msg
+          : `${label.charAt(0).toUpperCase()}${label.slice(1)}: ${msg}`
+      })
+      .filter(Boolean)
+    if (parts.length) return parts.join('. ')
+  }
+  if (typeof detail?.message === 'string') return detail.message
+  return 'Something went wrong. Please try again.'
+}
+
 async function request(path, { method = 'GET', body, token, isFormData = false } = {}) {
   const headers = {}
   if (!isFormData) headers['Content-Type'] = 'application/json'
@@ -33,8 +64,7 @@ async function request(path, { method = 'GET', body, token, isFormData = false }
   }
 
   if (!res.ok) {
-    const message = data?.detail || 'Something went wrong. Please try again.'
-    throw new ApiError(message, res.status, data?.detail)
+    throw new ApiError(errorMessage(data), res.status, data?.detail)
   }
 
   return data
@@ -70,8 +100,10 @@ export const api = {
     request('/auth/me', { method: 'DELETE', body: { password }, token }),
 
   // Onboarding
-  usernameAvailable: (username) =>
-    request(`/onboarding/username-available?username=${encodeURIComponent(username)}`),
+  // Token is passed so the check is viewer-aware: the handle claimed at
+  // signup must not read as "taken" on the onboarding username step.
+  usernameAvailable: (username, token) =>
+    request(`/onboarding/username-available?username=${encodeURIComponent(username)}`, { token }),
   submitOnboarding: (payload, token) =>
     request('/onboarding', { method: 'POST', body: payload, token }),
   myProfile: (token) => request('/onboarding/me', { token }),
@@ -345,6 +377,9 @@ export const api = {
     }),
 
   // ------------------------------------------------------------- projects
+  // Cross-community project feed for the home "Projects" tab.
+  discoverProjects: (token, { limit } = {}) =>
+    request(`/communities/discover/projects${limit ? `?limit=${limit}` : ''}`, { token }),
   listCommunityProjects: (slug, { status, limit, offset } = {}, token) => {
     const params = new URLSearchParams()
     if (status) params.set('status', status)

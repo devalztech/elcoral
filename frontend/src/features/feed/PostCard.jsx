@@ -9,6 +9,7 @@ import { useAuth } from '../auth/hooks/useAuth.jsx'
 import { avatarTone, formatCount, initialsOf, timeAgo } from '../social/format.js'
 import PostMedia from './PostMedia.jsx'
 import VerifiedBadge from '../../components/VerifiedBadge.jsx'
+import ExpandableText from '../../components/ExpandableText.jsx'
 import Spinner from '../../components/Spinner.jsx'
 
 // X's own post metrics, used verbatim below:
@@ -188,13 +189,14 @@ function Comments({ post, onCountChange, docked = false }) {
     const expanded = !!open[comment.id]
     return (
       <li key={comment.id} className={`pc-comment ${isReply ? 'reply' : ''}`}>
-        <Avatar person={comment.author} size={32} />
+        <Avatar person={comment.author} size={isReply ? 32 : 40} />
         <div className="pc-comment-body">
           <p className="pc-comment-meta">
             <b>{comment.author.full_name}</b>
+            {comment.author.is_verified && <VerifiedBadge size={15} />}
             <span>{timeAgo(comment.created_at)}</span>
           </p>
-          {comment.body && <p className="pc-comment-text">{comment.body}</p>}
+          {comment.body && <ExpandableText className="pc-comment-text" text={comment.body} limit={180} />}
           {comment.media_url && (
             <a
               className="pc-comment-photo"
@@ -475,7 +477,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           </header>
 
           {post.title && <h2 className="pc-title">{post.title}</h2>}
-          {post.body && <p className="pc-body">{post.body}</p>}
+          {post.body && <ExpandableText className="pc-body" text={post.body} limit={280} />}
 
           {post.link_url && (
             <a className="pc-link" href={post.link_url} target="_blank" rel="noreferrer">
@@ -544,17 +546,22 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
 
           {error && <p className="pc-error">{error}</p>}
 
-          {openComments && (
-            <Comments
-              post={post}
-              docked={detail}
-              onCountChange={(delta) =>
-                setPost((p) => ({ ...p, comment_count: Math.max(0, p.comment_count + delta) }))
-              }
-            />
-          )}
         </div>
       </div>
+
+      {/* Comments sit OUTSIDE the post's avatar column: only the main post
+          is indented, so a commenter's avatar lines up with the poster's
+          instead of hanging 52px to the right. Replies keep their own
+          indent under the comment they answer. */}
+      {openComments && (
+        <Comments
+          post={post}
+          docked={detail}
+          onCountChange={(delta) =>
+            setPost((p) => ({ ...p, comment_count: Math.max(0, p.comment_count + delta) }))
+          }
+        />
+      )}
 
 
       <style>{`
@@ -735,11 +742,12 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
         .pc-hint { margin: 0; font-size: 13px; color: var(--ink-dim); }
         .pc-inline-link { color: var(--accent-ink); }
 
-        .pc-comments { border-top: 1px solid var(--border); padding-top: 10px; display: grid; gap: 10px; }
+        .pc-comments { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; display: grid; gap: 12px; }
         .pc-comment-list, .pc-replies { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
         /* Replies indent under their parent comment's 32px avatar + 10px. */
         .pc-replies { margin-top: 10px; padding-left: 12px; border-left: 2px solid var(--border); }
-        .pc-comment { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 10px; }
+        .pc-comment { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 12px; }
+        .pc-comment.reply { grid-template-columns: 32px minmax(0,1fr); gap: 10px; }
         .pc-comment-meta { margin: 0; display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: var(--ink-faint); }
         .pc-comment-meta b { color: var(--ink); font-family: var(--font-head); font-size: 14px; }
         .pc-comment-text { margin: 2px 0 0; font-size: 15px; line-height: 20px; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
