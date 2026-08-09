@@ -1249,67 +1249,6 @@ def _project_query():
     )
 
 
-@router.get("/discover/projects", response_model=CommunityProjectListOut)
-async def discover_projects(
-    project_status: str | None = Query(default=None, alias="status"),
-    limit: int = Query(default=PAGE_SIZE, ge=1, le=50),
-    offset: int = Query(default=0, ge=0),
-    viewer: User | None = Depends(get_optional_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Cross-community project feed — what the home "Projects" tab renders.
-
-    Per-community listing needs a slug; this one spans every community the
-    viewer is allowed to see (public ones, plus private ones they belong
-    to) so the home tab has real projects instead of an empty screen.
-    """
-    visible = select(Community.id).where(Community.is_private.is_(False))
-    if viewer is not None:
-        member_of = select(CommunityMember.community_id).where(
-            CommunityMember.user_id == viewer.id
-        )
-        visible = select(Community.id).where(
-            or_(Community.is_private.is_(False), Community.id.in_(member_of))
-        )
-
-    query = _project_query().where(CommunityProject.community_id.in_(visible))
-    count_query = select(func.count(CommunityProject.id)).where(
-        CommunityProject.community_id.in_(visible)
-    )
-    if project_status and project_status in PROJECT_STATUSES:
-        query = query.where(CommunityProject.status == project_status)
-        count_query = count_query.where(CommunityProject.status == project_status)
-
-    rows = (
-        await db.execute(
-            query.order_by(CommunityProject.created_at.desc()).limit(limit + 1).offset(offset)
-        )
-    ).all()
-    has_more = len(rows) > limit
-    rows = [tuple(r) for r in rows[:limit]]
-    total = (await db.scalar(count_query)) or 0
-
-    # Capabilities are per community, so serialize one community at a time
-    # and stitch the results back into created_at order.
-    items = []
-    by_community: dict = {}
-    for row in rows:
-        by_community.setdefault(row[1].id, []).append(row)
-    serialized: dict = {}
-    for community_rows in by_community.values():
-        community = community_rows[0][1]
-        _, caps = await perms.load(db, community, viewer.id if viewer else None)
-        for item in await _serialize_projects(db, community_rows, viewer, caps):
-            serialized[item.id] = item
-    for row in rows:
-        item = serialized.get(row[0].id)
-        if item is not None:
-            items.append(item)
-
-    return CommunityProjectListOut(items=items, total=total, has_more=has_more)
-
-
 @router.get("/{slug}/projects", response_model=CommunityProjectListOut)
 async def list_projects(
     slug: str,

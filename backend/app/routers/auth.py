@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import email as email_service
@@ -9,7 +9,6 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.limiter import limiter
-from app.core.usernames import RESERVED_USERNAMES
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -75,12 +74,8 @@ async def signup(request: Request, response: Response, body: SignupRequest, db: 
         full_name=body.full_name,
     )
     db.add(user)
-    # flush, not commit: everything below (profile, refresh token,
-    # verification token) must land in the SAME transaction. Committing
-    # here meant a later failure left an orphan user row that could never
-    # sign up again and had no profile — exactly what happened while the
-    # username lookup was crashing.
-    await db.flush()
+    await db.commit()
+    await db.refresh(user)
 
     # The signup form also collects a handle and "Join as" choice, so the
     # profile row is created here instead of waiting for onboarding. The

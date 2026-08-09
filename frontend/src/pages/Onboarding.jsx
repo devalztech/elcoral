@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api, ApiError } from '../api/client.js'
@@ -20,40 +20,8 @@ import InterestsStep from '../features/onboarding/steps/InterestsStep.jsx'
 import FinishedStep from '../features/onboarding/steps/FinishedStep.jsx'
 
 export default function Onboarding() {
-  const { accessToken } = useAuth()
-  // Signup already collects a handle and "join as" choice, so the wizard
-  // starts from whatever the server already has instead of blank fields —
-  // otherwise the username step looks empty and people retype (or lose)
-  // the handle they just picked.
-  const [initialData, setInitialData] = useState(null)
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    if (!accessToken) {
-      setLoaded(true)
-      return
-    }
-    api
-      .myProfile(accessToken)
-      .then((profile) => {
-        if (!cancelled) setInitialData(profile)
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoaded(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken])
-
-  // Mount the wizard only once the prefill resolved: OnboardingProvider
-  // seeds its state once, so rendering early would lock in empty data.
-  if (!loaded) return null
-
   return (
-    <OnboardingProvider initialData={initialData}>
+    <OnboardingProvider>
       <OnboardingWizard />
     </OnboardingProvider>
   )

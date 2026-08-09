@@ -19,7 +19,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_optional_user
-from app.core.usernames import RESERVED_USERNAMES
 from app.models.post import Post
 from app.models.profile import Profile
 from app.models.user import User
@@ -35,6 +34,13 @@ router = APIRouter(prefix="/api/profile", tags=["profile"])
 
 _USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{3,30}$")
 
+# Reserved so nobody can claim a handle that collides with an existing or
+# planned app route (/u/settings, /u/login, ...).
+RESERVED_USERNAMES = {
+    "admin", "api", "elcoral", "settings", "login", "signup", "logout",
+    "home", "onboarding", "profile", "u", "me", "support", "help", "about",
+    "terms", "privacy", "jobs", "community", "create", "messages", "search",
+}
 
 
 async def _get_or_create_profile(db: AsyncSession, user_id) -> Profile:

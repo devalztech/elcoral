@@ -41,6 +41,11 @@ import { completionChecklist, completionPct } from '../features/profile/completi
 // presented as real data): follower/following/like counts and the badge
 // chips. Everything else reads from the API when the field exists.
 
+const BADGES = [
+  { label: 'Official', Icon: Crown, tone: 'gold' },
+  { label: 'Beta Tester', Icon: FlaskConical, tone: 'ink' },
+  { label: 'Early Supporter', Icon: Sprout, tone: 'lemon' },
+]
 
 // "Currently building" — still frontend-placeholder copy (no backend
 // field for a pinned project yet), now shown on the Projects tab instead
@@ -267,6 +272,18 @@ function Avatar({ profile, size = 108, ring = true, verified = false, children }
   )
 }
 
+function BadgeRow({ align = 'center' }) {
+  return (
+    <div className={`pv-badges pv-badges-${align}`}>
+      {BADGES.map(({ label, Icon, tone }) => (
+        <span className="pv-badge" key={label}>
+          <Icon size={14} className={`pv-badge-icon pv-badge-icon-${tone}`} aria-hidden="true" />
+          {label}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 function MetaRow({ profile, align = 'center' }) {
   const items = []
@@ -401,6 +418,7 @@ function OwnerProfile({ profile, posts }) {
       <div className="pv-head pv-head-center">
         <NameBlock profile={profile} align="center" />
         {profile.bio && <p className="pv-bio pv-bio-center">{profile.bio}</p>}
+        <BadgeRow align="center" />
         <MetaRow profile={profile} align="center" />
         <StatsRow profile={profile} postCount={posts.length} follow={follow} />
 
@@ -644,6 +662,7 @@ function VisitorProfile({ profile, posts }) {
 
       <div className="pv-head pv-head-left">
         <NameBlock profile={profile} align="left" />
+        <BadgeRow align="left" />
         {profile.bio && <p className="pv-bio pv-bio-left">{profile.bio}</p>}
         <MetaRow profile={profile} align="left" />
         <StatsRow profile={profile} postCount={posts.length} follow={follow} />
@@ -673,6 +692,7 @@ function GuestProfile({ profile, posts }) {
       <div className="pv-head pv-head-left pv-head-guest">
         <NameBlock profile={profile} align="left" />
         {profile.bio && <p className="pv-bio pv-bio-left">{profile.bio}</p>}
+        <BadgeRow align="left" />
         <MetaRow profile={profile} align="left" />
         <StatsRow profile={profile} postCount={posts.length} follow={follow} />
       </div>

@@ -2,16 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, X, Loader2, AtSign } from 'lucide-react'
 import { useOnboarding } from '../OnboardingContext.jsx'
 import { api } from '../../../api/client.js'
-import { useAuth } from '../../auth/hooks/useAuth.jsx'
 import StepShell from '../components/StepShell.jsx'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/
 
 export default function UsernameStep({ progress, onNext, onBack }) {
   const { data, update } = useOnboarding()
-  const { accessToken } = useAuth()
   const [status, setStatus] = useState('idle') // idle | checking | available | taken | invalid
-  const [takenReason, setTakenReason] = useState('That username is already taken.')
   const debounceRef = useRef(null)
 
   useEffect(() => {
@@ -29,10 +26,7 @@ export default function UsernameStep({ progress, onNext, onBack }) {
     setStatus('checking')
     debounceRef.current = setTimeout(async () => {
       try {
-        // Send the token so the check is viewer-aware — the handle picked
-        // at signup belongs to this user and must not read as taken.
-        const res = await api.usernameAvailable(data.username, accessToken)
-        if (!res.available && res.reason) setTakenReason(res.reason)
+        const res = await api.usernameAvailable(data.username)
         setStatus(res.available ? 'available' : 'taken')
       } catch {
         setStatus('idle')
@@ -40,7 +34,7 @@ export default function UsernameStep({ progress, onNext, onBack }) {
     }, 400)
 
     return () => clearTimeout(debounceRef.current)
-  }, [data.username, accessToken])
+  }, [data.username])
 
   return (
     <StepShell
@@ -66,7 +60,7 @@ export default function UsernameStep({ progress, onNext, onBack }) {
       {status === 'invalid' && (
         <p className="username-hint hint-error">Only letters, numbers, and underscores — at least 3 characters.</p>
       )}
-      {status === 'taken' && <p className="username-hint hint-error">{takenReason}</p>}
+      {status === 'taken' && <p className="username-hint hint-error">That username is already taken.</p>}
       {status === 'available' && <p className="username-hint hint-success">Available</p>}
 
       <style>{`
