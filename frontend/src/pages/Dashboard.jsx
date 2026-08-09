@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Bell, Briefcase, MessageCircle, Plus, RefreshCw, Search, Users,
+  Bell, MessageCircle, Plus, RefreshCw, Search, Users,
 } from 'lucide-react'
 import ElcoralMark from '../components/ElcoralMark.jsx'
 import PostCard from '../features/feed/PostCard.jsx'
@@ -14,11 +14,15 @@ import { useMessaging } from '../features/messages/useMessaging.jsx'
 /**
  * Home feed.
  *
- * Everything above the posts is a *suggestion* surface — people to
- * follow, communities to join and open roles — each one a plain list on
- * the page with a "See all" that opens the full screen, exactly like the
- * community page does. No greeting, no progress ring, no cards stacked
- * inside cards: rows are separated by the same hairline the posts use.
+ * "Recommended for you" is a horizontal-scroll rail mixing real people
+ * and real communities into one set of cards, each with its own CTA
+ * (Connect / Join) — no jobs card here, since jobs has no live API yet
+ * and this rail never shows placeholder data.
+ *
+ * Below it, "Public profiles" and "Communities" are the same suggestions
+ * as plain row lists, each with a "See all" that opens the full screen —
+ * same pattern the community page uses. No greeting, no progress ring,
+ * no cards stacked inside cards: rows share the hairline the posts use.
  */
 
 const TABS = [
@@ -51,6 +55,41 @@ function SectionHead({ title, to }) {
     <div className="hm-section-head">
       <h2>{title}</h2>
       <Link to={to} className="hm-see-all">See all</Link>
+    </div>
+  )
+}
+
+/** One card in the "Recommended for you" rail — a person or a community. */
+function RecommendCard({ item, busy, onAct }) {
+  const isPerson = item.kind === 'person'
+  const href = isPerson
+    ? (item.username ? `/u/${item.username}` : '/home')
+    : `/home/community/${item.slug}`
+  const sub = isPerson
+    ? (item.headline || (item.username ? `@${item.username}` : 'On Elcoral'))
+    : (item.topic || pluralize(item.members_count, 'member'))
+
+  return (
+    <div className="hm-rec-card">
+      <Link to={href} className="hm-rec-main">
+        {isPerson
+          ? <PersonAvatar person={item} size={44} />
+          : (
+            <span className="hm-tile hm-rec-tile" aria-hidden="true">
+              {item.icon_url ? <img src={item.icon_url} alt="" /> : <Users size={20} strokeWidth={1.9} />}
+            </span>
+          )}
+        <span className="hm-rec-name">{isPerson ? item.full_name : item.name}</span>
+        <span className="hm-rec-sub">{sub}</span>
+      </Link>
+      <button
+        type="button"
+        className="hm-rec-cta"
+        disabled={busy}
+        onClick={() => onAct(item)}
+      >
+        {isPerson ? 'Connect' : 'Join'}
+      </button>
     </div>
   )
 }
@@ -175,6 +214,19 @@ export default function Dashboard() {
 
   const showSuggestions = tab === 'for-you'
 
+  // "Recommended for you" interleaves real people and real communities —
+  // never jobs, since that list has no live API and this rail never
+  // shows placeholder data. Longest source decides the interleave length.
+  const recommended = []
+  const maxLen = Math.max(people.length, communities.length)
+  for (let i = 0; i < maxLen; i += 1) {
+    if (people[i]) recommended.push({ ...people[i], kind: 'person' })
+    if (communities[i]) recommended.push({ ...communities[i], kind: 'community' })
+  }
+
+  const actOnRecommended = (item) => (item.kind === 'person' ? follow(item) : join(item))
+  const recommendedBusy = (item) => (item.kind === 'person' ? !!followBusy[item.id] : !!joinBusy[item.id])
+
   return (
     <div className="hm">
       <header className="hm-bar">
@@ -226,9 +278,25 @@ export default function Dashboard() {
         </Link>
       )}
 
+      {showSuggestions && recommended.length > 0 && (
+        <section className="hm-block">
+          <SectionHead title="Recommended for you" to="/home/discover" />
+          <div className="hm-rec-rail">
+            {recommended.map((item) => (
+              <RecommendCard
+                key={`${item.kind}-${item.id}`}
+                item={item}
+                busy={recommendedBusy(item)}
+                onAct={actOnRecommended}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {showSuggestions && people.length > 0 && (
         <section className="hm-block">
-          <SectionHead title="Suggested accounts" to="/home/discover" />
+          <SectionHead title="Public profiles" to="/home/discover" />
           {people.slice(0, 4).map((person) => (
             <div key={person.id} className="hm-row">
               <Link to={person.username ? `/u/${person.username}` : '/home'} className="hm-row-main">
@@ -247,7 +315,7 @@ export default function Dashboard() {
                 disabled={!!followBusy[person.id]}
                 onClick={() => follow(person)}
               >
-                Follow
+                Connect
               </button>
             </div>
           ))}
@@ -256,7 +324,7 @@ export default function Dashboard() {
 
       {showSuggestions && communities.length > 0 && (
         <section className="hm-block">
-          <SectionHead title="Communities to join" to="/home/community" />
+          <SectionHead title="Communities" to="/home/community" />
           {communities.slice(0, 4).map((community) => (
             <div key={community.id} className="hm-row">
               <Link to={`/home/community/${community.slug}`} className="hm-row-main">
@@ -282,24 +350,6 @@ export default function Dashboard() {
                 Join
               </button>
             </div>
-          ))}
-        </section>
-      )}
-
-      {showSuggestions && JOBS.length > 0 && (
-        <section className="hm-block">
-          <SectionHead title="Jobs for you" to="/home/jobs" />
-          {JOBS.slice(0, 3).map((job) => (
-            <Link key={job.id} to="/home/jobs" className="hm-row">
-              <span className="hm-row-main">
-                <span className="hm-tile" aria-hidden="true"><Briefcase size={18} strokeWidth={1.9} /></span>
-                <span className="hm-row-text">
-                  <span className="hm-row-title">{job.title}</span>
-                  <span className="hm-row-sub">{job.company} · {job.place} · {job.type}</span>
-                </span>
-              </span>
-              <span className="hm-row-time">{job.time}</span>
-            </Link>
           ))}
         </section>
       )}
@@ -515,6 +565,43 @@ export default function Dashboard() {
           color: var(--accent-ink);
         }
         .hm-tile img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Recommended rail: horizontal scroll of mixed person/community
+           cards, each a self-contained tile with its own CTA. Snaps to
+           card edges; scrollbar hidden so it reads as a carousel, not a
+           table with overflow. */
+        .hm-rec-rail {
+          display: flex; gap: 10px; padding: 4px var(--gut) 14px;
+          overflow-x: auto; scroll-snap-type: x proximity;
+          scrollbar-width: none;
+        }
+        .hm-rec-rail::-webkit-scrollbar { display: none; }
+
+        .hm-rec-card {
+          flex: none; width: 152px; scroll-snap-align: start;
+          display: flex; flex-direction: column; gap: 8px;
+          padding: 14px 12px; border-radius: 16px;
+          background: var(--panel-raised); border: 1px solid var(--border);
+        }
+        .hm-rec-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .hm-rec-tile { width: 44px; height: 44px; border-radius: 12px; }
+        .hm-rec-name {
+          font-family: var(--font-head); font-size: 14px; font-weight: 700; line-height: 18px;
+          color: var(--ink);
+          overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+          -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+        }
+        .hm-rec-sub {
+          font-size: 12.5px; line-height: 16px; color: var(--ink-faint);
+          overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+          -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+        }
+        .hm-rec-cta {
+          margin-top: 2px; padding: 8px 0; border-radius: 999px; border: 0;
+          background: var(--lemon); color: var(--on-accent);
+          font-family: var(--font-head); font-size: 13px; font-weight: 700;
+        }
+        .hm-rec-cta:disabled { opacity: .5; }
 
         .hm-feed { display: grid; }
 
