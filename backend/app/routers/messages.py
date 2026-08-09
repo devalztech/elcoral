@@ -111,6 +111,11 @@ async def _unread_for(db: AsyncSession, conversation_id, viewer_id, last_read_at
 
 
 async def _unread_total(db: AsyncSession, viewer_id) -> int:
+    """
+    Number of CONVERSATIONS with at least one unread message — not the
+    number of unread messages. The badge is per conversation, so twenty
+    messages from one person still count as one.
+    """
     rows = (
         await db.execute(
             select(ConversationParticipant.conversation_id, ConversationParticipant.last_read_at).where(
@@ -120,7 +125,8 @@ async def _unread_total(db: AsyncSession, viewer_id) -> int:
     ).all()
     total = 0
     for conversation_id, last_read_at in rows:
-        total += await _unread_for(db, conversation_id, viewer_id, last_read_at)
+        if await _unread_for(db, conversation_id, viewer_id, last_read_at) > 0:
+            total += 1
     return total
 
 
@@ -168,7 +174,9 @@ async def list_conversations(
             continue
 
         unread = await _unread_for(db, conversation.id, viewer.id, last_read_at)
-        unread_total += unread
+        # One badge per conversation, regardless of how many messages wait.
+        if unread > 0:
+            unread_total += 1
         is_following, follows_you = await follow_flags(db, viewer.id, other.id)
         online, seen_at = _presence_for(other)
 

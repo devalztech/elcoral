@@ -142,7 +142,7 @@ export default function Dashboard() {
           <Link
             to="/home/messages"
             className="hm-icon-btn"
-            aria-label={unreadTotal ? `Messages, ${unreadTotal} unread` : 'Messages'}
+            aria-label={unreadTotal ? `Messages, ${unreadTotal} unread conversation${unreadTotal === 1 ? '' : 's'}` : 'Messages'}
           >
             <MessageCircle size={23} strokeWidth={1.9} />
             {unreadTotal > 0 && <span className="hm-badge">{unreadTotal > 99 ? '99+' : unreadTotal}</span>}

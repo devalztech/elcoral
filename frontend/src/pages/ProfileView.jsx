@@ -5,11 +5,13 @@ import {
   Github, Linkedin, Globe, Briefcase, MoreHorizontal, Plus, ImagePlus,
   BadgeCheck, Wifi, ChevronRight, ChevronDown, Check, Clock, SquarePen,
   ArrowLeft, UserPlus, Crown, FlaskConical, Sprout, Rocket, Lock, Users,
-  Heart, Repeat2, Share, Pin, CircleCheck, Twitter, Dribbble,
+  CircleCheck, Twitter, Dribbble,
 } from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import ReportDialog from '../features/settings/components/ReportDialog.jsx'
 import { api } from '../api/client.js'
+import FeedPostCard from '../features/feed/PostCard.jsx'
+import { useMessaging } from '../features/messages/useMessaging.jsx'
 import { useFollow } from '../features/social/useFollow.js'
 import { formatCount } from '../features/social/format.js'
 import { completionChecklist, completionPct } from '../features/profile/completion.js'
@@ -112,7 +114,7 @@ export default function ProfileView() {
     setError('')
     Promise.all([
       api.publicProfile(resolvedUsername, accessToken),
-      api.postsByUsername(resolvedUsername).catch(() => []),
+      api.postsByUsername(resolvedUsername, accessToken).catch(() => []),
     ])
       .then(([p, postList]) => {
         setProfile(p)
@@ -185,21 +187,37 @@ function copyProfileLink(username) {
   navigator.clipboard?.writeText(url).catch(() => {})
 }
 
-function timeAgo(value) {
-  const then = new Date(value).getTime()
-  if (Number.isNaN(then)) return ''
-  const seconds = Math.max(1, Math.floor((Date.now() - then) / 1000))
-  const units = [
-    ['y', 31536000],
-    ['mo', 2592000],
-    ['d', 86400],
-    ['h', 3600],
-    ['m', 60],
-  ]
-  for (const [suffix, size] of units) {
-    if (seconds >= size) return `${Math.floor(seconds / size)}${suffix} ago`
-  }
-  return 'Just now'
+
+/**
+ * Messages shortcut with the unread indicator. `unreadTotal` counts
+ * CONVERSATIONS with unread messages, so a chatty thread still shows a
+ * single badge here and on the homepage.
+ */
+function MessagesButton() {
+  const { unreadTotal } = useMessaging()
+  return (
+    <Link
+      to="/home/messages"
+      className="pv-round-btn pv-round-btn-badged"
+      aria-label={unreadTotal ? `Messages, ${unreadTotal} unread conversation${unreadTotal === 1 ? '' : 's'}` : 'Messages'}
+    >
+      <MessageCircle size={19} />
+      {unreadTotal > 0 && (
+        <span className="pv-badge">{unreadTotal > 99 ? '99+' : unreadTotal}</span>
+      )}
+      <style>{`
+        .pv-round-btn-badged { position: relative; }
+        .pv-badge {
+          position: absolute; top: -2px; right: -2px;
+          min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+          display: grid; place-items: center;
+          background: var(--lemon, var(--accent-ink)); color: var(--on-accent, #111);
+          font-size: 10.5px; font-weight: 700; line-height: 1;
+          border: 2px solid var(--surface);
+        }
+      `}</style>
+    </Link>
+  )
 }
 
 function EmptyState({ title, body, actionTo, actionLabel }) {
@@ -374,9 +392,7 @@ function OwnerProfile({ profile, posts }) {
         </div>
 
         <div className="pv-cover-toolbar pv-cover-toolbar-right">
-          <Link to="/home/messages" className="pv-round-btn" aria-label="Messages">
-            <MessageCircle size={19} />
-          </Link>
+          <MessagesButton />
           <Link to="/home/notifications" className="pv-round-btn" aria-label="Notifications">
             <Bell size={19} />
           </Link>
@@ -791,6 +807,9 @@ function ProjectsTab({ profile, isOwner }) {
 }
 
 function PostsTab({ profile, posts, isOwner }) {
+  // Posts render through the same card the homepage feed uses, so the
+  // layout, engagement actions and media behaviour stay identical on
+  // both surfaces (and on both mobile and desktop widths).
   if (posts.length === 0) {
     return (
       <EmptyTab
@@ -806,61 +825,9 @@ function PostsTab({ profile, posts, isOwner }) {
   return (
     <div className="pv-feed">
       {posts.map((p) => (
-        <PostCard key={p.id} post={p} profile={profile} />
+        <FeedPostCard key={p.id} post={p} />
       ))}
     </div>
-  )
-}
-
-function PostCard({ post, profile }) {
-  return (
-    <article className="pv-post">
-      <header className="pv-post-head">
-        <div className="pv-post-avatar">
-          {profile.photo_url ? (
-            <img src={profile.photo_url} alt="" />
-          ) : (
-            <span>{initialsOf(profile.full_name)}</span>
-          )}
-        </div>
-        <div className="pv-post-ids">
-          <p className="pv-post-name">
-            {profile.full_name}
-            <BadgeCheck size={16} className="pv-verified" aria-label="Verified account" />
-          </p>
-          <p className="pv-post-sub">
-            @{profile.username} <span aria-hidden="true">•</span> {timeAgo(post.created_at)}
-          </p>
-        </div>
-        <div className="pv-post-tools">
-          {post.is_pinned && (
-            <span className="pv-post-pinned">
-              <Pin size={14} aria-hidden="true" /> Pinned
-            </span>
-          )}
-          <button type="button" className="pv-post-more" aria-label="Post options">
-            <MoreHorizontal size={18} />
-          </button>
-        </div>
-      </header>
-
-      <p className="pv-post-body">{post.body}</p>
-
-      <footer className="pv-post-actions">
-        <button type="button" className="pv-post-action" aria-label="Like">
-          <Heart size={18} /> {post.like_count ?? 0}
-        </button>
-        <button type="button" className="pv-post-action" aria-label="Comment">
-          <MessageCircle size={18} /> {post.comment_count ?? 0}
-        </button>
-        <button type="button" className="pv-post-action" aria-label="Repost">
-          <Repeat2 size={18} /> {post.repost_count ?? 0}
-        </button>
-        <button type="button" className="pv-post-action" aria-label="Share">
-          <Share size={18} />
-        </button>
-      </footer>
-    </article>
   )
 }
 

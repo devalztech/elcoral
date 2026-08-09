@@ -7,6 +7,8 @@ import {
 import { api } from '../../api/client.js'
 import { useAuth } from '../auth/hooks/useAuth.jsx'
 import { avatarTone, formatCount, initialsOf, timeAgo } from '../social/format.js'
+import VoiceNote from '../messages/VoiceNote.jsx'
+import Lightbox from '../../components/Lightbox.jsx'
 
 function Avatar({ person, size = 44 }) {
   const name = person?.full_name || person?.username || 'Member'
@@ -51,16 +53,21 @@ function AuthorLine({ author, meta, size = 44 }) {
 }
 
 function MediaGrid({ media }) {
+  const [preview, setPreview] = useState(null)
   if (!media?.length) return null
   return (
     <div className={`pc-media count-${Math.min(media.length, 4)}`}>
       {media.map((m, i) => {
         const type = m.mime_type || ''
         if (type.startsWith('video/')) {
-          return <video key={i} src={m.url} controls preload="metadata" playsInline className="pc-media-item" />
+          return (
+            <div key={i} className="pc-frame">
+              <video src={m.url} controls preload="metadata" playsInline className="pc-media-item" />
+            </div>
+          )
         }
         if (type.startsWith('audio/')) {
-          return <audio key={i} src={m.url} controls className="pc-audio" />
+          return <VoiceNote key={i} src={m.url} title="Audio clip" />
         }
         if (type === 'application/pdf') {
           return (
@@ -69,8 +76,19 @@ function MediaGrid({ media }) {
             </a>
           )
         }
-        return <img key={i} src={m.url} alt="" loading="lazy" className="pc-media-item" />
+        return (
+          <button
+            key={i}
+            type="button"
+            className="pc-frame pc-frame-btn"
+            onClick={() => setPreview(m.url)}
+            aria-label="Open image preview"
+          >
+            <img src={m.url} alt="" loading="lazy" className="pc-media-item" />
+          </button>
+        )
       })}
+      <Lightbox src={preview} onClose={() => setPreview(null)} />
     </div>
   )
 }
@@ -490,10 +508,20 @@ export default function PostCard({ post: initial, onDeleted }) {
         .pc-media.count-2, .pc-media.count-4 { grid-template-columns: 1fr 1fr; }
         .pc-media.count-3 { grid-template-columns: 1fr 1fr; }
         .pc-media.count-3 > :first-child { grid-column: 1 / -1; }
-        .pc-media-item {
-          width: 100%; max-height: 460px; object-fit: cover;
-          border-radius: 12px; background: var(--panel-raised); display: block;
+        .pc-frame {
+          position: relative; display: block; width: 100%; aspect-ratio: 16 / 9;
+          padding: 0; border: 1px solid var(--border); border-radius: 14px;
+          overflow: hidden; background: var(--panel-raised);
         }
+        .pc-frame-btn { cursor: zoom-in; }
+        .pc-frame-btn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+        .pc-media-item {
+          width: 100%; height: 100%; object-fit: cover;
+          background: var(--panel-raised); display: block;
+          transition: transform 200ms ease;
+        }
+        .pc-frame-btn:hover .pc-media-item { transform: scale(1.02); }
+        @media (prefers-reduced-motion: reduce) { .pc-media-item { transition: none; } }
         .pc-audio { width: 100%; }
         .pc-doc {
           display: flex; align-items: center; gap: 8px; padding: 12px;

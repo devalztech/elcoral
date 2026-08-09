@@ -18,6 +18,7 @@ import { useMessaging } from '../features/messages/useMessaging.jsx'
 import { OnlineDot, TypingDots, presenceLabel } from '../features/messages/Presence.jsx'
 import Attachment from '../features/messages/Attachment.jsx'
 import Composer from '../features/messages/Composer.jsx'
+import Lightbox from '../components/Lightbox.jsx'
 import {
   avatarTone, dayLabel, displayName, initialsOf, timeOfDay,
 } from '../features/social/format.js'
@@ -39,6 +40,8 @@ export default function MessageThread() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [theirReadAt, setTheirReadAt] = useState(null)
   const [error, setError] = useState('')
+  // Tapping an image opens a client-side overlay — never a new tab.
+  const [preview, setPreview] = useState(null)
 
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
@@ -240,7 +243,7 @@ export default function MessageThread() {
                           <Attachment
                             key={attachment.url}
                             attachment={attachment}
-                            onOpenImage={(url) => window.open(url, '_blank', 'noopener')}
+                            onOpenImage={(url) => setPreview(url)}
                           />
                         ))}
                       </div>
@@ -265,6 +268,8 @@ export default function MessageThread() {
         ))}
         <div ref={bottomRef} />
       </div>
+
+      <Lightbox src={preview} onClose={() => setPreview(null)} />
 
       <Composer
         token={accessToken}
@@ -303,21 +308,21 @@ export default function MessageThread() {
           background: color-mix(in srgb, var(--ink) 6%, transparent);
           padding: 3px 10px; border-radius: 999px;
         }
-        .mt-msg { display: flex; margin-bottom: 6px; }
+        .mt-msg { display: flex; margin-bottom: 8px; }
         .mt-mine { justify-content: flex-end; }
         .mt-bubble {
-          max-width: 78%; padding: 8px 11px 6px; border-radius: 16px;
+          max-width: 78%; padding: 9px 13px 7px; border-radius: 22px;
           background: var(--panel); border: 1px solid var(--border);
           display: flex; flex-direction: column; gap: 6px;
         }
         .mt-mine .mt-bubble {
           background: var(--lemon); color: var(--on-accent); border-color: transparent;
-          border-bottom-right-radius: 6px;
+          border-bottom-right-radius: 8px;
         }
-        .mt-theirs .mt-bubble { border-bottom-left-radius: 6px; }
+        .mt-theirs .mt-bubble { border-bottom-left-radius: 8px; }
         .mt-failed { border-color: crimson; }
         .mt-text { margin: 0; font-size: 14.5px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
-        .mt-media { display: flex; flex-direction: column; gap: 6px; }
+        .mt-media { display: flex; flex-direction: column; gap: 6px; width: 100%; }
         .mt-meta {
           display: inline-flex; align-items: center; gap: 4px; align-self: flex-end;
           font-size: 10.5px; opacity: 0.7;
