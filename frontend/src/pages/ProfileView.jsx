@@ -1300,7 +1300,8 @@ function ProfileStyles() {
       .pv-tabpanel { padding: 18px 0 0; min-height: 140px; }
 
       /* ------------------------------- feed ------------------------------ */
-      .pv-feed { display: flex; flex-direction: column; gap: 8px; }
+      .pv-feed { display: flex; flex-direction: column; margin: 0 -20px; }
+      @media (min-width: 860px) { .pv-feed { margin: 0 -40px; } }
       .pv-post {
         background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
         border-radius: 18px; padding: 18px;

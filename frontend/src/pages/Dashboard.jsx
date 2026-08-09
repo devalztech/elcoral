@@ -414,7 +414,7 @@ export default function Dashboard() {
         }
         .hm-tab.on { border-color: var(--accent-ink); color: var(--accent-ink); }
 
-        .hm-feed { display: grid; gap: 8px; padding: 4px var(--gut) 0; }
+        .hm-feed { display: grid; padding: 4px 0 0; }
 
         .hm-skeleton {
           height: 190px; border-radius: 16px; border: 1px solid var(--border);

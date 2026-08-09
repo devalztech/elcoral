@@ -369,9 +369,11 @@ export default function CreatePost() {
         .cp-kind.on { border-color: var(--accent-ink); color: var(--accent-ink); }
 
         .cp-card {
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 14px; padding: 12px; display: grid; gap: 8px;
+          background: var(--panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+          padding: 12px 14px; display: grid; gap: 8px;
+          margin: 0 -20px;
         }
+        @media (min-width: 860px) { .cp-card { margin: 0 -40px; } }
         .cp-divider { height: 1px; background: var(--border); margin: 6px 0 2px; }
         .cp-who { margin: 0; font-size: 13px; color: var(--ink-dim); }
         .cp-who b { color: var(--ink); }

@@ -336,6 +336,7 @@ export default function PostCard({ post: initial, onDeleted }) {
 
   return (
     <article className="pc">
+      <div className="pc-inner">
       {post.reposted_by && (
         <p className="pc-repost-note">
           <Repeat2 size={15} strokeWidth={2} /> {post.reposted_by.full_name} reposted
@@ -380,9 +381,11 @@ export default function PostCard({ post: initial, onDeleted }) {
           <span>{post.link_url}</span>
         </a>
       )}
+      </div>
 
       <MediaGrid media={post.media?.length ? post.media : (post.media_urls ?? []).map((url) => ({ url }))} />
 
+      <div className="pc-inner">
       {post.poll?.length > 0 && <Poll post={post} onVote={vote} busy={busy} />}
 
       {post.tags?.length > 0 && (
@@ -445,12 +448,14 @@ export default function PostCard({ post: initial, onDeleted }) {
           }
         />
       )}
+      </div>
 
       <style>{`
         .pc {
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 12px; padding: 12px; display: grid; gap: 9px;
+          border-bottom: 1px solid var(--border);
+          padding: 12px 0; display: grid; gap: 9px;
         }
+        .pc-inner { display: grid; gap: 9px; padding: 0 14px; }
         .pc-av {
           display: inline-flex; align-items: center; justify-content: center;
           border-radius: 999px; flex: none; overflow: hidden; object-fit: cover;
@@ -504,10 +509,9 @@ export default function PostCard({ post: initial, onDeleted }) {
         }
         .pc-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* Media bleeds to the card edges instead of sitting in its own
-           bordered frame — one boundary (the card), not two. */
-        .pc-media { display: grid; gap: 2px; margin: 0 -12px; }
-        .pc-media.count-1 { margin: 0 -12px; }
+        /* Media is a direct child of .pc (not .pc-inner), so it runs
+           edge-to-edge against the screen with no card boundary at all. */
+        .pc-media { display: grid; gap: 2px; }
         .pc-media.count-2, .pc-media.count-4 { grid-template-columns: 1fr 1fr; }
         .pc-media.count-3 { grid-template-columns: 1fr 1fr; }
         .pc-media.count-3 > :first-child { grid-column: 1 / -1; }
