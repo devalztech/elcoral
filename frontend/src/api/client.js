@@ -94,7 +94,45 @@ export const api = {
   publicProfile: (username, token) => request(`/profile/${encodeURIComponent(username)}`, { token }),
 
   // Posts by a specific author, for a profile page's post list.
-  postsByUsername: (username) => request(`/posts?username=${encodeURIComponent(username)}`),
+  postsByUsername: (username, token) =>
+    request(`/posts?username=${encodeURIComponent(username)}`, { token }),
+
+  // ---------------------------------------------------------------- posts ----
+  // The feed is viewer-aware: pass the token when signed in so the server
+  // fills in liked/reposted/saved and honours followers-only visibility.
+  feed: (token, { tab = 'for-you', cursor, tag } = {}) => {
+    const params = new URLSearchParams({ tab })
+    if (cursor) params.set('cursor', cursor)
+    if (tag) params.set('tag', tag)
+    return request(`/posts?${params.toString()}`, { token })
+  },
+  getPost: (postId, token) => request(`/posts/${postId}`, { token }),
+  searchPosts: (q, token) => request(`/posts/search?q=${encodeURIComponent(q)}`, { token }),
+  createPost: (payload, token) => request('/posts', { method: 'POST', body: payload, token }),
+  updatePost: (postId, payload, token) =>
+    request(`/posts/${postId}`, { method: 'PATCH', body: payload, token }),
+  deletePost: (postId, token) => request(`/posts/${postId}`, { method: 'DELETE', token }),
+
+  likePost: (postId, token) => request(`/posts/${postId}/like`, { method: 'POST', token }),
+  unlikePost: (postId, token) => request(`/posts/${postId}/like`, { method: 'DELETE', token }),
+  repostPost: (postId, token, quote) =>
+    request(`/posts/${postId}/repost`, { method: 'POST', body: { quote: quote ?? null }, token }),
+  undoRepost: (postId, token) => request(`/posts/${postId}/repost`, { method: 'DELETE', token }),
+  savePost: (postId, token) => request(`/posts/${postId}/save`, { method: 'POST', token }),
+  unsavePost: (postId, token) => request(`/posts/${postId}/save`, { method: 'DELETE', token }),
+  votePoll: (postId, optionIndex, token) =>
+    request(`/posts/${postId}/poll/vote`, { method: 'POST', body: { option_index: optionIndex }, token }),
+
+  listComments: (postId, token) => request(`/posts/${postId}/comments`, { token }),
+  createComment: (postId, { body, parentId } = {}, token) =>
+    request(`/posts/${postId}/comments`, {
+      method: 'POST',
+      body: { body, parent_id: parentId ?? null },
+      token,
+    }),
+  deleteComment: (commentId, token) =>
+    request(`/posts/comments/${commentId}`, { method: 'DELETE', token }),
+  listLikers: (postId, token) => request(`/posts/${postId}/likes`, { token }),
 
   // Media — multipart upload, needs the token passed explicitly since
   // this can be called before/outside a normal page render cycle.

@@ -8,7 +8,29 @@ from app.models.user import User
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
-ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/quicktime"}
+ALLOWED_TYPES = {
+    # images
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/avif",
+    "image/heic",
+    "image/heif",
+    # video
+    "video/mp4",
+    "video/quicktime",
+    "video/webm",
+    "video/x-matroska",
+    # audio (voice notes / clips attached to a post)
+    "audio/mpeg",
+    "audio/mp4",
+    "audio/webm",
+    "audio/ogg",
+    "audio/wav",
+    # documents attached to a post or article
+    "application/pdf",
+}
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200MB — well under Telethon's ~2GB ceiling, generous for a first pass
 
 

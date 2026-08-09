@@ -8,6 +8,7 @@ import ResetPassword from '../pages/ResetPassword.jsx'
 import VerifyEmail from '../pages/VerifyEmail.jsx'
 import Onboarding from '../pages/Onboarding.jsx'
 import Dashboard from '../pages/Dashboard.jsx'
+import CreatePost from '../pages/CreatePost.jsx'
 import Create from '../pages/Create.jsx'
 import Jobs from '../pages/Jobs.jsx'
 import Community from '../pages/Community.jsx'
@@ -68,6 +69,11 @@ export default function App() {
             <Route path="/home/projects/:slug" element={<ComingSoon label="Project" />} />
             <Route path="/home/create" element={<Create />} />
             <Route path="/home/create/community" element={<CommunityCreate />} />
+            <Route path="/home/create/post" element={<CreatePost />} />
+            <Route path="/home/create/media" element={<CreatePost />} />
+            <Route path="/home/create/article" element={<CreatePost />} />
+            <Route path="/home/create/poll" element={<CreatePost />} />
+            <Route path="/home/create/link" element={<CreatePost />} />
             <Route path="/home/create/:slug" element={<ComingSoon label="Create" />} />
             <Route path="/home/community" element={<Community />} />
             <Route path="/home/community/:slug" element={<CommunityDetail />} />
