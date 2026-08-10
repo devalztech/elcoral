@@ -69,7 +69,7 @@ export function AuthField({
         }
         .auth-input::placeholder { color: var(--ink-faint); }
         .reveal { color: var(--ink-faint); display: grid; place-items: center; }
-        @media (hover: hover) and (pointer: fine) { .reveal:hover { color: var(--accent-ink); } }
+        .reveal:hover { color: var(--accent-ink); }
         .auth-hint { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-faint); }
         .auth-hint.error { color: var(--danger); }
       `}</style>
@@ -100,7 +100,7 @@ export function SocialButton({ provider, label, onClick }) {
           color: var(--ink);
           transition: border-color 0.15s ease, transform 0.15s ease;
         }
-        @media (hover: hover) and (pointer: fine) { .social-btn:hover { border-color: var(--accent-ink); } }
+        .social-btn:hover { border-color: var(--accent-ink); }
         .social-btn:active { transform: scale(0.99); }
       `}</style>
     </button>

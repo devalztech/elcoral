@@ -10,7 +10,6 @@ import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api } from '../api/client.js'
 import { avatarTone, initialsOf } from '../features/social/format.js'
-import Spinner from '../components/Spinner.jsx'
 
 export default function Discover() {
   const navigate = useNavigate()
@@ -67,7 +66,7 @@ export default function Discover() {
         </div>
       )}
 
-      {people === null && <Spinner page label="Loading people" />}
+      {people === null && <p className="dc-state">Loading…</p>}
       {people?.length === 0 && !error && (
         <p className="dc-state">
           {accessToken ? 'No suggestions right now — check back soon.' : 'Sign in to see people to follow.'}
@@ -116,7 +115,7 @@ export default function Discover() {
           display: flex; align-items: center; gap: 12px;
           padding: 11px var(--gut); border-bottom: 1px solid var(--border);
         }
-        @media (hover: hover) and (pointer: fine) { .dc-row:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
+        .dc-row:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
         .dc-row-main { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
         .dc-av {
           width: 44px; height: 44px; border-radius: 999px; flex: none; overflow: hidden;

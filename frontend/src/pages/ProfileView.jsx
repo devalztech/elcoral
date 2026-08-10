@@ -4,7 +4,7 @@ import {
   Loader2, Pencil, Share2, Settings, MapPin, MessageCircle, Bell,
   Github, Linkedin, Globe, Briefcase, MoreHorizontal, Plus, ImagePlus,
   BadgeCheck, Wifi, ChevronRight, ChevronDown, Check, Clock, SquarePen,
-  ArrowLeft, UserPlus, Crown, FlaskConical, Sprout, Rocket, Lock, Users,
+  ArrowLeft, UserPlus, Rocket, Lock, Users,
   CircleCheck, Twitter, Dribbble,
 } from 'lucide-react'
 import VerifiedBadge from '../components/VerifiedBadge.jsx'
@@ -37,15 +37,12 @@ import { completionChecklist, completionPct } from '../features/profile/completi
 // profile's `intents` — the same "what brings you here" goals collected
 // at onboarding — rather than a separate field.
 //
-// Frontend-only placeholders (no backend field yet, deliberately not
-// presented as real data): follower/following/like counts and the badge
-// chips. Everything else reads from the API when the field exists.
-
-const BADGES = [
-  { label: 'Official', Icon: Crown, tone: 'gold' },
-  { label: 'Beta Tester', Icon: FlaskConical, tone: 'ink' },
-  { label: 'Early Supporter', Icon: Sprout, tone: 'lemon' },
-]
+// Frontend-only placeholder (no backend field yet, deliberately not
+// presented as real data): follower/following/like counts. Everything
+// else reads from the API when the field exists. The fake "Official /
+// Beta Tester / Early Supporter" badge chips were removed — the only
+// identity badge on the profile now is the real, backend-driven blue
+// verification tick (see VerifiedBadge below).
 
 // "Currently building" — still frontend-placeholder copy (no backend
 // field for a pinned project yet), now shown on the Projects tab instead
@@ -241,7 +238,7 @@ function EmptyState({ title, body, actionTo, actionLabel }) {
           font-size: 13.5px; padding: 10px 20px; border-radius: 999px;
         }
         .pv-stat-link { text-decoration: none; color: inherit; cursor: pointer; }
-        @media (hover: hover) and (pointer: fine) { .pv-stat-link:hover .pv-stat-label { color: var(--ink); } }
+        .pv-stat-link:hover .pv-stat-label { color: var(--ink); }
         .pv-inline-error { margin: 8px 16px 0; font-size: 13px; color: var(--danger, #d33); text-align: center; }
 
       `}</style>
@@ -268,19 +265,6 @@ function Avatar({ profile, size = 108, ring = true, verified = false, children }
         </span>
       )}
       {children}
-    </div>
-  )
-}
-
-function BadgeRow({ align = 'center' }) {
-  return (
-    <div className={`pv-badges pv-badges-${align}`}>
-      {BADGES.map(({ label, Icon, tone }) => (
-        <span className="pv-badge" key={label}>
-          <Icon size={14} className={`pv-badge-icon pv-badge-icon-${tone}`} aria-hidden="true" />
-          {label}
-        </span>
-      ))}
     </div>
   )
 }
@@ -418,7 +402,6 @@ function OwnerProfile({ profile, posts }) {
       <div className="pv-head pv-head-center">
         <NameBlock profile={profile} align="center" />
         {profile.bio && <p className="pv-bio pv-bio-center">{profile.bio}</p>}
-        <BadgeRow align="center" />
         <MetaRow profile={profile} align="center" />
         <StatsRow profile={profile} postCount={posts.length} follow={follow} />
 
@@ -662,7 +645,6 @@ function VisitorProfile({ profile, posts }) {
 
       <div className="pv-head pv-head-left">
         <NameBlock profile={profile} align="left" />
-        <BadgeRow align="left" />
         {profile.bio && <p className="pv-bio pv-bio-left">{profile.bio}</p>}
         <MetaRow profile={profile} align="left" />
         <StatsRow profile={profile} postCount={posts.length} follow={follow} />
@@ -692,7 +674,6 @@ function GuestProfile({ profile, posts }) {
       <div className="pv-head pv-head-left pv-head-guest">
         <NameBlock profile={profile} align="left" />
         {profile.bio && <p className="pv-bio pv-bio-left">{profile.bio}</p>}
-        <BadgeRow align="left" />
         <MetaRow profile={profile} align="left" />
         <StatsRow profile={profile} postCount={posts.length} follow={follow} />
       </div>
@@ -1066,7 +1047,7 @@ function ProfileStyles() {
         backdrop-filter: blur(8px);
         transition: color 0.15s ease, border-color 0.15s ease;
       }
-      @media (hover: hover) and (pointer: fine) { .pv-round-btn:hover { color: var(--accent-ink); border-color: var(--accent-ink); } }
+      .pv-round-btn:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
       .pv-round-btn-lg { width: 48px; height: 48px; background: var(--pv-surface); }
       .pv-round-btn-on { color: var(--accent-ink); border-color: var(--accent-ink); }
 
@@ -1079,7 +1060,7 @@ function ProfileStyles() {
         border-radius: 999px; padding: 10px 18px;
         backdrop-filter: blur(8px);
       }
-      @media (hover: hover) and (pointer: fine) { .pv-cover-edit:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
+      .pv-cover-edit:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 
       .pv-avatar-slot { position: absolute; z-index: 4; }
       .pv-avatar-slot-center { left: 50%; bottom: -30px; transform: translateX(-50%); }
@@ -1136,19 +1117,6 @@ function ProfileStyles() {
       }
       .pv-bio-center { text-align: center; }
 
-      .pv-badges { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
-      .pv-badges-center { justify-content: center; }
-      .pv-badge {
-        display: inline-flex; align-items: center; gap: 7px;
-        font-size: 13px; font-weight: 600; color: var(--ink);
-        background: var(--pv-surface); border: 1px solid var(--pv-line);
-        border-radius: 999px; padding: 8px 15px;
-      }
-      .pv-badge-icon { flex-shrink: 0; }
-      .pv-badge-icon-gold { color: #E8B21F; }
-      .pv-badge-icon-lemon { color: var(--accent-ink); }
-      .pv-badge-icon-ink { color: var(--ink); }
-
       .pv-meta { display: flex; flex-wrap: wrap; align-items: center; margin-top: 16px; }
       .pv-meta-center { justify-content: center; }
       .pv-meta-slot { display: inline-flex; align-items: center; }
@@ -1186,11 +1154,11 @@ function ProfileStyles() {
         transition: border-color 0.15s ease, background 0.15s ease;
         white-space: nowrap;
       }
-      @media (hover: hover) and (pointer: fine) { .pv-btn:hover { border-color: var(--accent-ink); } }
+      .pv-btn:hover { border-color: var(--accent-ink); }
       .pv-btn-primary {
         background: var(--lemon); color: var(--on-accent); border-color: var(--accent-ink); font-weight: 700;
       }
-      @media (hover: hover) and (pointer: fine) { .pv-btn-primary:hover { background: var(--lemon-dim); border-color: var(--lemon-dim); } }
+      .pv-btn-primary:hover { background: var(--lemon-dim); border-color: var(--lemon-dim); }
       .pv-btn-square { flex: 0 0 62px; padding: 14px 0; }
       .pv-actionrow .pv-follow { flex: 0 0 auto; padding: 14px 28px; gap: 10px; }
       .pv-actionrow .pv-follow-on {
@@ -1209,10 +1177,10 @@ function ProfileStyles() {
         padding: 13px 16px; border-bottom: 1px solid var(--pv-line-soft);
       }
       .pv-menu-item:last-child { border-bottom: none; }
-      @media (hover: hover) and (pointer: fine) { .pv-menu-item:hover { color: var(--accent-ink); background: var(--pv-surface-2); } }
+      .pv-menu-item:hover { color: var(--accent-ink); background: var(--pv-surface-2); }
       .pv-menu-item-danger { color: var(--danger); }
       .pv-inline-error { margin: 0 16px 8px; font-size: 13px; color: var(--danger); }
-      @media (hover: hover) and (pointer: fine) { .pv-menu-item-danger:hover { color: var(--danger); } }
+      .pv-menu-item-danger:hover { color: var(--danger); }
 
       /* ------------------------------- cards ----------------------------- */
       .pv-cardgrid {
@@ -1271,7 +1239,7 @@ function ProfileStyles() {
         background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
         border-radius: 18px; padding: 18px; margin-top: 12px;
       }
-      @media (hover: hover) and (pointer: fine) { .pv-availability:hover { border-color: var(--accent-ink); } }
+      .pv-availability:hover { border-color: var(--accent-ink); }
       .pv-availability-title {
         display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0;
         font-family: var(--font-head); font-size: 15.5px; font-weight: 700; color: var(--ink);
@@ -1327,7 +1295,7 @@ function ProfileStyles() {
         font-size: 13px; font-weight: 600; color: var(--accent-ink);
       }
       .pv-post-more { color: var(--ink-faint); display: inline-flex; }
-      @media (hover: hover) and (pointer: fine) { .pv-post-more:hover { color: var(--ink); } }
+      .pv-post-more:hover { color: var(--ink); }
       .pv-post-body {
         font-size: 15px; line-height: 1.55; color: var(--ink);
         white-space: pre-wrap; margin-top: 14px;
@@ -1340,7 +1308,7 @@ function ProfileStyles() {
         display: inline-flex; align-items: center; gap: 9px;
         font-size: 14px; color: var(--ink-dim);
       }
-      @media (hover: hover) and (pointer: fine) { .pv-post-action:hover { color: var(--accent-ink); } }
+      .pv-post-action:hover { color: var(--accent-ink); }
 
       /* ------------------------------- gate ------------------------------ */
       .pv-gate {
@@ -1391,7 +1359,7 @@ function ProfileStyles() {
       .pv-portfolio-link span { flex: 1; min-width: 0; word-break: break-all; }
       .pv-portfolio-link svg:first-child { color: var(--accent-ink); flex-shrink: 0; }
       .pv-portfolio-chevron { color: var(--ink-faint); flex-shrink: 0; }
-      @media (hover: hover) and (pointer: fine) { .pv-portfolio-link:hover { border-color: var(--accent-ink); } }
+      .pv-portfolio-link:hover { border-color: var(--accent-ink); }
 
       .pv-about-section { padding: 18px 0; border-top: 1px solid var(--pv-line-soft); }
       .pv-about-section:first-child { border-top: none; padding-top: 0; }
@@ -1417,14 +1385,14 @@ function ProfileStyles() {
         background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
         color: var(--ink-dim);
       }
-      @media (hover: hover) and (pointer: fine) { .pv-social a:hover { color: var(--accent-ink); border-color: var(--accent-ink); } }
+      .pv-social a:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
       .pv-social + .pv-portfolio { margin-top: 14px; }
 
       .pv-about-empty-link {
         display: inline-flex; align-items: center; gap: 7px;
         font-size: 14px; font-weight: 600; color: var(--accent-ink);
       }
-      @media (hover: hover) and (pointer: fine) { .pv-about-empty-link:hover { text-decoration: underline; } }
+      .pv-about-empty-link:hover { text-decoration: underline; }
 
       .pv-emptytab {
         display: flex; flex-direction: column; align-items: center; text-align: center;

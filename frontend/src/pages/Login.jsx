@@ -135,7 +135,7 @@ export default function Login() {
           font-weight: 700;
           transition: background 0.15s ease, transform 0.15s ease;
         }
-        @media (hover: hover) and (pointer: fine) { .submit-btn:hover:not(:disabled) { background: var(--ink); } }
+        .submit-btn:hover:not(:disabled) { background: var(--ink); }
         .submit-btn:active { transform: scale(0.99); }
         .submit-btn:disabled { opacity: 0.7; cursor: default; }
         .switch-line { margin: 18px 0 0; text-align: center; font-size: 13.5px; color: var(--ink-dim); }

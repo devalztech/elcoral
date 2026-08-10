@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  Bookmark, Globe, Heart, ImagePlus, Link2, MessageSquare, MoreHorizontal,
-  Repeat2, Send, Trash2, Users2, X,
+  Bookmark, Globe, Heart, Link2, MessageSquare, MoreHorizontal,
+  Repeat2, Send, Trash2, Users2,
 } from 'lucide-react'
 import { api } from '../../api/client.js'
 import { useAuth } from '../auth/hooks/useAuth.jsx'
 import { avatarTone, formatCount, initialsOf, timeAgo } from '../social/format.js'
 import PostMedia from './PostMedia.jsx'
 import VerifiedBadge from '../../components/VerifiedBadge.jsx'
-import Spinner from '../../components/Spinner.jsx'
 
 // X's own post metrics, used verbatim below:
 //   avatar 40px · avatar→content gutter 12px · card padding 12px 16px
@@ -85,29 +84,13 @@ function Poll({ post, onVote, busy }) {
 }
 
 
-/**
- * The comment thread under a post.
- *
- * Two layouts, one component:
- *  · inline (feed) — list and composer flow with the card
- *  · docked (`docked`, used on the full post page) — the composer leaves
- *    the flow and sits on the bottom edge of the screen exactly like the
- *    DM composer, so replying never means scrolling to the end
- *
- * Replies are collapsed behind "View N replies" — a busy post shouldn't
- * bury the next top-level comment under someone else's sub-thread.
- * A comment may be text, a photo, or a photo with a caption.
- */
-function Comments({ post, onCountChange, docked = false }) {
+function Comments({ post, onCountChange }) {
   const { accessToken, user } = useAuth()
   const [items, setItems] = useState(null)
   const [value, setValue] = useState('')
   const [replyTo, setReplyTo] = useState(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
-  const [open, setOpen] = useState({}) // comment id -> replies expanded
-  const [photo, setPhoto] = useState(null) // { file, preview, ref, mime, status }
-  const fileRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -118,50 +101,17 @@ function Comments({ post, onCountChange, docked = false }) {
     return () => { cancelled = true }
   }, [post.id, accessToken])
 
-  // Upload starts the moment a photo is picked, so pressing send is
-  // instant in the common case — the caption is typed while it flies.
-  const pickPhoto = async (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    const preview = URL.createObjectURL(file)
-    setPhoto({ preview, status: 'uploading', mime: file.type })
-    setError('')
-    try {
-      const result = await api.uploadMedia(file, accessToken)
-      setPhoto((p) => (p ? { ...p, status: 'ready', ref: result.ref, mime: result.mime_type || p.mime } : p))
-    } catch (err) {
-      setPhoto(null)
-      setError(err.message)
-    }
-  }
-
-  const clearPhoto = () => {
-    if (photo?.preview) URL.revokeObjectURL(photo.preview)
-    setPhoto(null)
-  }
-
   const submit = async (e) => {
     e.preventDefault()
     const body = value.trim()
-    const ready = photo?.status === 'ready'
-    if (sending || photo?.status === 'uploading') return
-    if (!body && !ready) return
+    if (!body || sending) return
     setSending(true)
     setError('')
     try {
-      const created = await api.createComment(
-        post.id,
-        { body, parentId: replyTo?.id, mediaRef: ready ? photo.ref : null, mediaType: ready ? photo.mime : null },
-        accessToken,
-      )
+      const created = await api.createComment(post.id, { body, parentId: replyTo?.id }, accessToken)
       setItems((list) => [...(list ?? []), created])
-      // A new reply should be visible immediately, even if its parent's
-      // replies were still collapsed.
-      if (replyTo) setOpen((o) => ({ ...o, [replyTo.id]: true }))
       setValue('')
       setReplyTo(null)
-      clearPhoto()
       onCountChange?.(1)
     } catch (err) {
       setError(err.message)
@@ -183,124 +133,69 @@ function Comments({ post, onCountChange, docked = false }) {
   const roots = (items ?? []).filter((c) => !c.parent_id)
   const repliesOf = (id) => (items ?? []).filter((c) => c.parent_id === id)
 
-  const row = (comment, isReply = false) => {
-    const replies = isReply ? [] : repliesOf(comment.id)
-    const expanded = !!open[comment.id]
-    return (
-      <li key={comment.id} className={`pc-comment ${isReply ? 'reply' : ''}`}>
-        <Avatar person={comment.author} size={32} />
-        <div className="pc-comment-body">
-          <p className="pc-comment-meta">
-            <b>{comment.author.full_name}</b>
-            <span>{timeAgo(comment.created_at)}</span>
-          </p>
-          {comment.body && <p className="pc-comment-text">{comment.body}</p>}
-          {comment.media_url && (
-            <a
-              className="pc-comment-photo"
-              href={comment.media_url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <img src={comment.media_url} alt="" loading="lazy" />
-            </a>
-          )}
-          <div className="pc-comment-tools">
-            {!isReply && (
-              <button type="button" onClick={() => setReplyTo(comment)}>Reply</button>
-            )}
-            {(comment.is_mine || post.is_mine) && (
-              <button type="button" onClick={() => remove(comment)}>Delete</button>
-            )}
-          </div>
-          {replies.length > 0 && (
-            <button
-              type="button"
-              className="pc-replies-toggle"
-              onClick={() => setOpen((o) => ({ ...o, [comment.id]: !expanded }))}
-              aria-expanded={expanded}
-            >
-              <span className="pc-replies-rule" aria-hidden="true" />
-              {expanded
-                ? 'Hide replies'
-                : `View ${replies.length === 1 ? '1 reply' : `${replies.length} replies`}`}
-            </button>
-          )}
-          {replies.length > 0 && expanded && (
-            <ul className="pc-replies">{replies.map((r) => row(r, true))}</ul>
-          )}
-        </div>
-      </li>
-    )
-  }
-
-  const canSend = (value.trim() || photo?.status === 'ready') && !sending && photo?.status !== 'uploading'
-
-  const composer = user ? (
-    <form className={`pc-comment-form ${docked ? 'pc-comment-form-docked' : ''}`} onSubmit={submit}>
-      {replyTo && (
-        <p className="pc-replying">
-          Replying to {replyTo.author.full_name}
-          <button type="button" onClick={() => setReplyTo(null)}>Cancel</button>
+  const row = (comment, isReply = false) => (
+    <li key={comment.id} className={`pc-comment ${isReply ? 'reply' : ''}`}>
+      <Avatar person={comment.author} size={AVATAR} />
+      <div className="pc-comment-body">
+        <p className="pc-comment-meta">
+          <b className="pc-comment-author">
+            {comment.author.full_name}
+            {comment.author.is_verified && <VerifiedBadge size={13} className="pc-comment-verified" />}
+          </b>
+          <span>{timeAgo(comment.created_at)}</span>
         </p>
-      )}
-      {photo && (
-        <div className="pc-photo-chip">
-          <img src={photo.preview} alt="" />
-          {photo.status === 'uploading' && (
-            <span className="pc-photo-busy"><Spinner size={18} label="Uploading photo" /></span>
+        <p className="pc-comment-text">{comment.body}</p>
+        <div className="pc-comment-tools">
+          {!isReply && (
+            <button type="button" onClick={() => setReplyTo(comment)}>Reply</button>
           )}
-          <button type="button" onClick={clearPhoto} aria-label="Remove photo">
-            <X size={14} strokeWidth={2.4} />
-          </button>
+          {(comment.is_mine || post.is_mine) && (
+            <button type="button" onClick={() => remove(comment)}>Delete</button>
+          )}
         </div>
-      )}
-      <div className="pc-comment-input">
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          onChange={pickPhoto}
-          hidden
-        />
-        <button
-          type="button"
-          className="pc-comment-photo-btn"
-          onClick={() => fileRef.current?.click()}
-          aria-label="Add a photo"
-        >
-          <ImagePlus size={19} strokeWidth={2} />
-        </button>
-        <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={photo ? 'Add a caption…' : 'Write a comment…'}
-          maxLength={2000}
-          aria-label="Write a comment"
-        />
-        <button type="submit" disabled={!canSend} aria-label="Send comment">
-          {sending ? <Spinner size={17} /> : <Send size={18} strokeWidth={2} />}
-        </button>
+        {!isReply && repliesOf(comment.id).length > 0 && (
+          <ul className="pc-replies">{repliesOf(comment.id).map((r) => row(r, true))}</ul>
+        )}
       </div>
-      {error && <p className="pc-error">{error}</p>}
-    </form>
-  ) : (
-    <p className="pc-hint">
-      <Link to="/login" className="pc-inline-link">Sign in</Link> to join the conversation.
-    </p>
+    </li>
   )
 
   return (
-    <div className={`pc-comments ${docked ? 'pc-comments-docked' : ''}`}>
-      {items === null && <Spinner page label="Loading comments" />}
+    <div className="pc-comments">
+      {items === null && <p className="pc-hint">Loading comments…</p>}
       {items !== null && roots.length === 0 && <p className="pc-hint">No comments yet. Start the conversation.</p>}
       {roots.length > 0 && <ul className="pc-comment-list">{roots.map((c) => row(c))}</ul>}
-      {composer}
+
+      {user ? (
+        <form className="pc-comment-form" onSubmit={submit}>
+          {replyTo && (
+            <p className="pc-replying">
+              Replying to {replyTo.author.full_name}
+              <button type="button" onClick={() => setReplyTo(null)}>Cancel</button>
+            </p>
+          )}
+          <div className="pc-comment-input">
+            <input
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="Write a comment…"
+              maxLength={2000}
+              aria-label="Write a comment"
+            />
+            <button type="submit" disabled={!value.trim() || sending} aria-label="Send comment">
+              <Send size={18} strokeWidth={2} />
+            </button>
+          </div>
+          {error && <p className="pc-error">{error}</p>}
+        </form>
+      ) : (
+        <p className="pc-hint">
+          <Link to="/login" className="pc-inline-link">Sign in</Link> to join the conversation.
+        </p>
+      )}
     </div>
   )
 }
-
-
 
 export default function PostCard({ post: initial, onDeleted, detail = false }) {
   const { accessToken, user } = useAuth()
@@ -547,7 +442,6 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           {openComments && (
             <Comments
               post={post}
-              docked={detail}
               onCountChange={(delta) =>
                 setPost((p) => ({ ...p, comment_count: Math.max(0, p.comment_count + delta) }))
               }
@@ -577,7 +471,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           padding: 12px 16px;
         }
         .pc-tappable { cursor: pointer; }
-        @media (hover: hover) and (pointer: fine) { .pc-tappable:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
+        .pc-tappable:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
         .pc-detail { border-bottom: 0; }
 
         /* THE INDENT: fixed avatar rail + one content column. */
@@ -621,7 +515,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           font-family: var(--font-head); font-weight: 700; color: var(--ink);
           overflow: hidden; text-overflow: ellipsis; max-width: 60%;
         }
-        @media (hover: hover) and (pointer: fine) { .pc-name:hover { text-decoration: underline; } }
+        .pc-name:hover { text-decoration: underline; }
         .pc-handle {
           color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; min-width: 0;
         }
@@ -632,7 +526,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           color: var(--ink-faint); display: grid; place-items: center;
           width: 34.75px; height: 34.75px; border-radius: 999px; margin: -7px -8px 0 0;
         }
-        @media (hover: hover) and (pointer: fine) { .pc-more:hover { background: var(--panel-raised); color: var(--ink); } }
+        .pc-more:hover { background: var(--panel-raised); color: var(--ink); }
         .pc-menu-wrap { position: relative; }
         .pc-menu {
           position: absolute; right: 0; top: 34px; z-index: 20; min-width: 190px;
@@ -644,7 +538,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           display: flex; align-items: center; gap: 9px; width: 100%;
           padding: 10px; border-radius: 9px; font-size: 14px; color: var(--ink); text-align: left;
         }
-        @media (hover: hover) and (pointer: fine) { .pc-menu button:hover { background: var(--panel); } }
+        .pc-menu button:hover { background: var(--panel); }
         .pc-menu button.danger { color: #ff6b6b; }
 
         .pc-title { margin: 0; font-family: var(--font-head); font-size: 17px; line-height: 22px; font-weight: 700; color: var(--ink); }
@@ -676,7 +570,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           background: none; color: var(--ink);
           font-size: 15px; line-height: 20px; font-family: var(--font-head); font-weight: 600;
         }
-        @media (hover: hover) and (pointer: fine) { .pc-poll-option:not(.voted):hover { border-color: var(--accent-ink); } }
+        .pc-poll-option:not(.voted):hover { border-color: var(--accent-ink); }
         .pc-poll-option:disabled { opacity: .75; }
         .pc-poll-radio {
           position: relative; z-index: 1; flex: none;
@@ -724,7 +618,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           font-family: var(--font-head); font-size: 13px; line-height: 16px; font-weight: 500;
           color: var(--ink-faint);
         }
-        @media (hover: hover) and (pointer: fine) { .pc-action:hover { background: var(--panel-raised); color: var(--ink); } }
+        .pc-action:hover { background: var(--panel-raised); color: var(--ink); }
         .pc-action.liked { color: #f91880; }
         .pc-action.reposted { color: #00ba7c; }
         .pc-action.on { color: var(--accent-ink); }
@@ -737,15 +631,19 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
 
         .pc-comments { border-top: 1px solid var(--border); padding-top: 10px; display: grid; gap: 10px; }
         .pc-comment-list, .pc-replies { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-        /* Replies indent under their parent comment's 32px avatar + 10px. */
-        .pc-replies { margin-top: 10px; padding-left: 12px; border-left: 2px solid var(--border); }
-        .pc-comment { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 10px; }
+        /* Comments and replies align to the post's own avatar column
+           (AVATAR + GUTTER) — no extra indent for replies, everything
+           shares one left edge with the poster's avatar above. */
+        .pc-replies { margin-top: 10px; }
+        .pc-comment { display: grid; grid-template-columns: ${AVATAR}px minmax(0,1fr); column-gap: ${GUTTER}px; }
         .pc-comment-meta { margin: 0; display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: var(--ink-faint); }
         .pc-comment-meta b { color: var(--ink); font-family: var(--font-head); font-size: 14px; }
+        .pc-comment-author { display: inline-flex; align-items: center; gap: 3px; }
+        .pc-comment-verified { flex: none; color: var(--verified, #1D9BF0); }
         .pc-comment-text { margin: 2px 0 0; font-size: 15px; line-height: 20px; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
         .pc-comment-tools { display: flex; gap: 16px; margin-top: 6px; }
         .pc-comment-tools button { font-size: 13px; color: var(--ink-faint); font-family: var(--font-head); font-weight: 600; }
-        @media (hover: hover) and (pointer: fine) { .pc-comment-tools button:hover { color: var(--accent-ink); } }
+        .pc-comment-tools button:hover { color: var(--accent-ink); }
 
         .pc-replying { margin: 0 0 8px; font-size: 13px; color: var(--ink-dim); display: flex; gap: 10px; }
         .pc-replying button { color: var(--accent-ink); font-size: 13px; }
@@ -761,70 +659,6 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           background: var(--lemon); color: var(--on-accent);
         }
         .pc-comment-input button:disabled { opacity: .5; }
-        .pc-comment-input { grid-template-columns: auto minmax(0,1fr) auto; align-items: center; }
-        .pc-comment-photo-btn {
-          width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center;
-          background: var(--panel-raised); border: 1px solid var(--border); color: var(--ink-dim);
-        }
-
-        /* Replies stay folded until asked for, X style: one quiet line
-           with a short rule, not a wall of sub-comments. */
-        .pc-replies-toggle {
-          display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
-          font-family: var(--font-head); font-size: 13px; font-weight: 600;
-          color: var(--accent-ink); background: none;
-        }
-        .pc-replies-rule {
-          width: 22px; height: 1px; background: var(--border); flex: none;
-        }
-
-        /* A photo comment: capped so a tall shot can't push the next
-           comment off-screen, and always the same corner radius. */
-        .pc-comment-photo {
-          display: block; margin-top: 8px; width: 100%; max-width: 260px;
-          aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden;
-          border: 1px solid var(--border);
-        }
-        .pc-comment-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-
-        /* Pending attachment preview above the input. */
-        .pc-photo-chip {
-          position: relative; width: 72px; height: 72px; border-radius: 12px;
-          overflow: hidden; border: 1px solid var(--border);
-        }
-        .pc-photo-chip img { width: 100%; height: 100%; object-fit: cover; }
-        .pc-photo-busy {
-          position: absolute; inset: 0; display: grid; place-items: center;
-          background: color-mix(in srgb, #000 45%, transparent);
-        }
-        .pc-photo-chip > button {
-          position: absolute; top: 4px; right: 4px;
-          width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center;
-          background: color-mix(in srgb, #000 62%, transparent); color: #fff;
-        }
-
-        /* DOCKED COMPOSER (full post page)
-           The composer leaves the flow and pins to the bottom edge of the
-           viewport, exactly like the DM composer, so a reply is always one
-           tap away. The list reserves its height so the last comment is
-           never hidden underneath it. */
-        .pc-comments-docked { padding-bottom: 8px; }
-        .pc-comments-docked .pc-comment-list {
-          padding-bottom: calc(76px + env(safe-area-inset-bottom));
-        }
-        .pc-comment-form-docked {
-          position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-          display: grid; gap: 8px;
-          padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-          background: color-mix(in srgb, var(--bg) 92%, transparent);
-          backdrop-filter: blur(14px);
-          border-top: 1px solid var(--border);
-        }
-        @media (min-width: 860px) {
-          /* Desktop keeps the left nav rail, so the bar starts after it
-             and stays on the post's own measure. */
-          .pc-comment-form-docked { left: 88px; }
-        }
       `}</style>
 
     </article>

@@ -15,7 +15,6 @@ import MembersTab from '../features/community/MembersTab.jsx'
 import ProjectsTab from '../features/community/ProjectsTab.jsx'
 import ChatTab from '../features/community/ChatTab.jsx'
 import SettingsSheet from '../features/community/SettingsSheet.jsx'
-import Spinner from '../components/Spinner.jsx'
 
 const TABS = ['Posts', 'Projects', 'Chat', 'Members']
 
@@ -98,7 +97,7 @@ export function Avatar({ person, size = 46 }) {
 }
 
 export function SectionState({ loading, error, empty, emptyText, onRetry }) {
-  if (loading) return <Spinner page label="Loading community" />
+  if (loading) return <p className="cd-state">Loading…</p>
   if (error) {
     return (
       <p className="cd-state cd-state-error">
@@ -788,7 +787,7 @@ function CommunityDetailStyles() {
         display: inline-flex; align-items: center; justify-content: center;
         color: var(--ink); transition: background .15s ease, color .15s ease;
       }
-      @media (hover: hover) and (pointer: fine) { .cd-icon-btn:hover { background: var(--panel); color: var(--accent-ink); } }
+      .cd-icon-btn:hover { background: var(--panel); color: var(--accent-ink); }
 
       .cd-menu-wrap { position: relative; }
       .cd-menu {
@@ -801,7 +800,7 @@ function CommunityDetailStyles() {
         padding: 11px 12px; border-radius: 10px;
         font-size: 14px; font-weight: 600; color: var(--ink); text-align: left;
       }
-      @media (hover: hover) and (pointer: fine) { .cd-menu-item:hover { background: var(--panel); } }
+      .cd-menu-item:hover { background: var(--panel); }
       .cd-menu-item svg { color: var(--ink-dim); flex: none; }
 
       .cd-notfound { padding: 40px var(--gut); }
@@ -853,7 +852,7 @@ function CommunityDetailStyles() {
         font-family: var(--font-head); font-weight: 700; font-size: 14.5px;
         transition: background .15s ease, color .15s ease, transform .15s ease;
       }
-      @media (hover: hover) and (pointer: fine) { .cd-join:hover { background: color-mix(in srgb, var(--lemon) 14%, transparent); } }
+      .cd-join:hover { background: color-mix(in srgb, var(--lemon) 14%, transparent); }
       .cd-join:active { transform: scale(.97); }
       .cd-join.on { background: var(--lemon); color: var(--on-accent); }
       .cd-manage-btn {
@@ -899,7 +898,7 @@ function CommunityDetailStyles() {
       }
       .cd-composer-trigger span { flex: 1; color: var(--ink-faint); font-size: 14.5px; }
       .cd-composer-icon { color: var(--ink-faint); flex: none; }
-      @media (hover: hover) and (pointer: fine) { .cd-composer-trigger:hover { border-color: var(--lemon-deep); } }
+      .cd-composer-trigger:hover { border-color: var(--lemon-deep); }
 
       .cd-textarea {
         width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
@@ -929,24 +928,24 @@ function CommunityDetailStyles() {
         flex: 1 1 auto; min-width: 0; text-align: left;
         font-family: var(--font-head); font-weight: 700; font-size: 15.5px; line-height: 1.3; color: var(--ink);
       }
-      @media (hover: hover) and (pointer: fine) { .cd-disc-title-btn:hover { color: var(--accent-ink); } }
+      .cd-disc-title-btn:hover { color: var(--accent-ink); }
       .cd-disc-snippet {
         margin: 4px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--ink-dim);
         display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
       }
       .cd-more { flex: none; color: var(--ink-faint); line-height: 0; padding: 2px; }
-      @media (hover: hover) and (pointer: fine) { .cd-more:hover { color: var(--danger); } }
+      .cd-more:hover { color: var(--danger); }
       .cd-disc-meta { margin: 6px 0 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-dim); }
-      @media (hover: hover) and (pointer: fine) { .cd-disc-meta a:hover { color: var(--accent-ink); } }
+      .cd-disc-meta a:hover { color: var(--accent-ink); }
       .cd-disc-time { color: var(--ink-faint); }
       .cd-disc-edited { color: var(--ink-faint); font-style: italic; }
       .cd-disc-stats { margin-top: 10px; display: flex; align-items: center; gap: 18px; font-size: 13px; color: var(--ink-dim); }
       .cd-stat { display: inline-flex; align-items: center; gap: 7px; }
-      @media (hover: hover) and (pointer: fine) { .cd-stat-btn:hover { color: var(--ink); } }
+      .cd-stat-btn:hover { color: var(--ink); }
       .cd-stat-btn.on { color: var(--accent-ink); }
       .cd-stat-btn:disabled { opacity: .6; }
       .cd-save { margin-left: auto; color: var(--ink-dim); line-height: 0; }
-      @media (hover: hover) and (pointer: fine) { .cd-save:hover, .cd-save.on { color: var(--accent-ink); } }
+      .cd-save:hover, .cd-save.on { color: var(--accent-ink); }
 
       /* ---------------------------------------------------------- thread */
       .cd-overlay {
@@ -964,7 +963,7 @@ function CommunityDetailStyles() {
       }
       .cd-thread-head h2 { flex: 1; margin: 0; font-family: var(--font-head); font-size: 17px; font-weight: 700; color: var(--ink); }
       .cd-thread-close { flex: none; color: var(--ink-faint); }
-      @media (hover: hover) and (pointer: fine) { .cd-thread-close:hover { color: var(--ink); } }
+      .cd-thread-close:hover { color: var(--ink); }
       .cd-thread-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
       .cd-thread-author { display: flex; align-items: center; gap: 10px; }
       .cd-thread-author-name { margin: 0; font-family: var(--font-head); font-weight: 700; font-size: 14.5px; color: var(--ink); }
@@ -979,7 +978,7 @@ function CommunityDetailStyles() {
       .cd-comment-name { font-weight: 700; color: var(--ink-dim); }
       .cd-comment-text { margin: 3px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink); }
       .cd-comment-delete { flex: none; color: var(--ink-faint); margin-top: 2px; }
-      @media (hover: hover) and (pointer: fine) { .cd-comment-delete:hover { color: var(--danger); } }
+      .cd-comment-delete:hover { color: var(--danger); }
       .cd-thread-composer {
         display: flex; gap: 10px; padding: 12px 18px calc(14px + env(safe-area-inset-bottom));
         border-top: 1px solid var(--border);

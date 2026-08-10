@@ -86,7 +86,7 @@ export default function EditSheet({ title, subtitle, onClose, onSave, saving, er
           position: absolute; top: 14px; right: 16px;
           color: var(--ink-faint); padding: 6px; border-radius: 8px;
         }
-        @media (hover: hover) and (pointer: fine) { .es-close:hover { color: var(--ink); background: var(--panel-raised); } }
+        .es-close:hover { color: var(--ink); background: var(--panel-raised); }
         .es-head { margin: 10px 0 20px; padding-right: 24px; }
         .es-head h2 { font-family: var(--font-head); font-size: 19px; font-weight: 700; color: var(--ink); }
         .es-head p { font-size: 13px; color: var(--ink-faint); margin-top: 4px; }

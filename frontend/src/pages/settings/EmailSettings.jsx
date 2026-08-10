@@ -1,7 +1,6 @@
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 import ToggleRow from '../../features/settings/components/ToggleRow.jsx'
 import { useSettings } from '../../features/settings/hooks/useSettings.jsx'
-import Spinner from '../../components/Spinner.jsx'
 
 const ROWS = [
   { key: 'email_product_updates', label: 'Product updates', desc: 'New features and changes to Elcoral' },
@@ -12,7 +11,7 @@ const ROWS = [
 export default function EmailSettings() {
   const { settings, loading, error, updateEmail } = useSettings()
 
-  if (loading) return <SettingsSubpage title="Email preferences"><Spinner page label="Loading settings" /></SettingsSubpage>
+  if (loading) return <SettingsSubpage title="Email preferences"><p className="set-loading">Loading…</p></SettingsSubpage>
 
   return (
     <SettingsSubpage title="Email preferences">

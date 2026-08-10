@@ -47,7 +47,7 @@ export default function InterestsStep({ progress, onNext, onBack, nextLoading })
           border-radius: 999px;
           padding: 10px 18px;
         }
-        @media (hover: hover) and (pointer: fine) { .interest-chip:hover { border-color: var(--ink-faint); } }
+        .interest-chip:hover { border-color: var(--ink-faint); }
         .interest-chip-selected { background: rgba(196,241,53,0.12); border-color: var(--accent-ink); color: var(--ink); }
       `}</style>
     </StepShell>

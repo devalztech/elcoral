@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Bell, MessageCircle, Plus, RefreshCw, Search, Users,
+  Bell, MessageCircle, Plus, RefreshCw, Search,
 } from 'lucide-react'
 import ElcoralMark from '../components/ElcoralMark.jsx'
 import PostCard from '../features/feed/PostCard.jsx'
@@ -10,17 +10,16 @@ import { api } from '../api/client.js'
 import { avatarTone, formatCount, initialsOf, pluralize } from '../features/social/format.js'
 import { RECOMMENDED as JOBS } from '../features/jobs/jobs.js'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
-import Spinner from '../components/Spinner.jsx'
 
 /**
  * Home feed.
  *
- * The For you tab has exactly one suggestion surface: "Recommended for
- * you", a horizontal-scroll rail mixing real people and real communities
- * the viewer hasn't followed/joined yet, each card its own CTA (Connect
- * / Join) plus a tap-through to the full profile or community. No jobs
- * card — jobs has no live API and this rail never shows placeholder
- * data. Nothing else sits between the rail and the posts feed.
+ * The For you tab has no suggestion surface — it goes straight to the
+ * posts feed. (Follow/join suggestions for people and communities are
+ * fetched elsewhere, e.g. the Discover and Community pages; that state
+ * lives here too since the composer's empty-feed message and the
+ * Community tab still read it, but nothing on the For you tab renders
+ * it anymore.)
  */
 
 const TABS = [
@@ -47,68 +46,6 @@ function PersonAvatar({ person, size = 40 }) {
     </span>
   )
 }
-
-function SectionHead({ title, to }) {
-  return (
-    <div className="hm-section-head">
-      <h2>{title}</h2>
-      <Link to={to} className="hm-see-all">See all</Link>
-    </div>
-  )
-}
-
-/**
- * One card in the "Recommended for you" rail — a person or a community.
- *
- * Layout is fixed so people and communities are interchangeable tiles:
- *   avatar/icon 52px on the left, name on the same row
- *   one grey sub-line underneath (role, or "Community · N members")
- *   one small status chip
- *   one full-width accent CTA (Connect / Join)
- */
-function RecommendCard({ item, busy, onAct }) {
-  const isPerson = item.kind === 'person'
-  const href = isPerson
-    ? (item.username ? `/u/${item.username}` : '/home')
-    : `/home/community/${item.slug}`
-  const sub = isPerson
-    ? (item.headline || (item.username ? `@${item.username}` : 'On Elcoral'))
-    : `Community · ${pluralize(item.members_count ?? 0, 'member')}`
-  const chip = isPerson
-    ? (item.is_open_to_work ? 'Open to work' : (item.location || 'Member'))
-    : (item.topic || 'Open to join')
-
-  return (
-    <div className="hm-rec-card">
-      <Link to={href} className="hm-rec-main">
-        <span className="hm-rec-top">
-          {isPerson
-            ? <PersonAvatar person={item} size={52} />
-            : (
-              <span className="hm-tile hm-rec-tile" aria-hidden="true">
-                {item.icon_url ? <img src={item.icon_url} alt="" /> : <Users size={24} strokeWidth={1.9} />}
-              </span>
-            )}
-          <span className="hm-rec-name">{isPerson ? item.full_name : item.name}</span>
-        </span>
-        <span className="hm-rec-sub">{sub}</span>
-      </Link>
-      <span className="hm-rec-chip">
-        {isPerson && item.is_open_to_work && <span className="hm-rec-dot" aria-hidden="true" />}
-        {chip}
-      </span>
-      <button
-        type="button"
-        className="hm-rec-cta"
-        disabled={busy}
-        onClick={() => onAct(item)}
-      >
-        {busy ? <Spinner size={16} /> : (isPerson ? 'Connect' : 'Join')}
-      </button>
-    </div>
-  )
-}
-
 
 export default function Dashboard() {
   const { user, accessToken, authLoading } = useAuth()
@@ -160,7 +97,7 @@ export default function Dashboard() {
     if (token) {
       setPeopleError('')
       api.followSuggestions(token, 10)
-        .then((data) => { if (!cancelled) setPeople((data.items ?? []).filter((p) => !p.is_following && !p.followed_by_me)) })
+        .then((data) => { if (!cancelled) setPeople(data.items ?? []) })
         .catch((err) => { if (!cancelled) { setPeople([]); setPeopleError(err.message) } })
       api.myProfile(token)
         .then((data) => { if (!cancelled) setProfile(data) })
@@ -230,21 +167,6 @@ export default function Dashboard() {
     }
   }
 
-  const showSuggestions = tab === 'for-you'
-
-  // "Recommended for you" interleaves real people and real communities —
-  // never jobs, since that list has no live API and this rail never
-  // shows placeholder data. Longest source decides the interleave length.
-  const recommended = []
-  const maxLen = Math.max(people.length, communities.length)
-  for (let i = 0; i < maxLen; i += 1) {
-    if (people[i]) recommended.push({ ...people[i], kind: 'person' })
-    if (communities[i]) recommended.push({ ...communities[i], kind: 'community' })
-  }
-
-  const actOnRecommended = (item) => (item.kind === 'person' ? follow(item) : join(item))
-  const recommendedBusy = (item) => (item.kind === 'person' ? !!followBusy[item.id] : !!joinBusy[item.id])
-
   return (
     <div className="hm">
       <header className="hm-bar">
@@ -296,31 +218,6 @@ export default function Dashboard() {
         </Link>
       )}
 
-      {showSuggestions && peopleError && communities.length === 0 && (
-        <section className="hm-block">
-          <SectionHead title="Recommended for you" to="/home/discover" />
-          <div className="hm-empty">
-            <p>{peopleError}</p>
-          </div>
-        </section>
-      )}
-
-      {showSuggestions && recommended.length > 0 && (
-        <section className="hm-block">
-          <SectionHead title="Recommended for you" to="/home/discover" />
-          <div className="hm-rec-rail">
-            {recommended.map((item) => (
-              <RecommendCard
-                key={`${item.kind}-${item.id}`}
-                item={item}
-                busy={recommendedBusy(item)}
-                onAct={actOnRecommended}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       <div className="hm-feed">
         {error && (
           <div className="hm-empty">
@@ -331,7 +228,12 @@ export default function Dashboard() {
           </div>
         )}
 
-        {loading && <Spinner page label="Loading posts" />}
+        {loading && (
+          <>
+            <div className="hm-skeleton" />
+            <div className="hm-skeleton" />
+          </>
+        )}
 
         {/* ------------------------------------------------ posts feed --- */}
         {!loading && FEED_TABS.has(tab) && posts?.length === 0 && !error && (
@@ -360,7 +262,7 @@ export default function Dashboard() {
 
         {!loading && FEED_TABS.has(tab) && posts?.length > 0 && !exhausted && (
           <button type="button" className="hm-more" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? <Spinner size={18} label="Loading more posts" /> : 'Load more'}
+            {loadingMore ? 'Loading…' : 'Load more'}
           </button>
         )}
 
@@ -436,7 +338,7 @@ export default function Dashboard() {
           position: relative; display: grid; place-items: center;
           width: 40px; height: 40px; border-radius: 999px; color: var(--ink);
         }
-        @media (hover: hover) and (pointer: fine) { .hm-icon-btn:hover { color: var(--accent-ink); } }
+        .hm-icon-btn:hover { color: var(--accent-ink); }
         .hm-badge {
           position: absolute; top: -2px; right: -3px;
           min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
@@ -460,7 +362,7 @@ export default function Dashboard() {
           font-family: var(--font-head); font-size: 14px; font-weight: 600;
           color: var(--ink-dim);
         }
-        @media (hover: hover) and (pointer: fine) { .hm-tab:hover { color: var(--ink); } }
+        .hm-tab:hover { color: var(--ink); }
         .hm-tab.on { color: var(--accent-ink); }
         .hm-tab.on::after {
           content: ''; position: absolute; left: 50%; bottom: -1px;
@@ -487,22 +389,12 @@ export default function Dashboard() {
         }
 
         .hm-block { border-bottom: 1px solid var(--border); }
-        .hm-section-head {
-          display: flex; align-items: baseline; justify-content: space-between;
-          gap: 12px; padding: 14px var(--gut) 6px;
-        }
-        .hm-section-head h2 {
-          margin: 0; font-family: var(--font-head);
-          font-size: 16px; font-weight: 700; color: var(--ink);
-        }
-        .hm-see-all { font-family: var(--font-head); font-size: 13.5px; font-weight: 600; color: var(--accent-ink); }
-        @media (hover: hover) and (pointer: fine) { .hm-see-all:hover { text-decoration: underline; } }
 
         .hm-row {
           display: flex; align-items: center; gap: 12px;
           padding: 10px var(--gut);
         }
-        @media (hover: hover) and (pointer: fine) { .hm-row:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
+        .hm-row:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
         .hm-row-main { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
         .hm-row-text { display: flex; flex-direction: column; min-width: 0; }
         .hm-row-title {
@@ -528,69 +420,11 @@ export default function Dashboard() {
         }
         .hm-tile img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Recommended rail: horizontal scroll of mixed person/community
-           cards. Every card is exactly the same width AND height, so a
-           person tile and a community tile are interchangeable and the
-           row of CTAs lines up across the whole rail. Snaps to card
-           edges; scrollbar hidden so it reads as a carousel. */
-        .hm-rec-rail {
-          display: flex; gap: 12px; padding: 6px var(--gut) 16px;
-          overflow-x: auto; scroll-snap-type: x mandatory;
-          scrollbar-width: none;
-        }
-        .hm-rec-rail::-webkit-scrollbar { display: none; }
-
-        .hm-rec-card {
-          flex: none; width: 250px; min-height: 200px; scroll-snap-align: start;
-          display: grid; grid-template-rows: auto auto 1fr auto; gap: 10px;
-          padding: 14px; border-radius: 14px;
-          background: var(--panel-raised); border: 1px solid var(--border);
-        }
-        .hm-rec-main { display: grid; gap: 8px; min-width: 0; }
-        .hm-rec-top {
-          display: grid; grid-template-columns: 52px minmax(0, 1fr);
-          align-items: center; gap: 12px;
-        }
-        .hm-rec-tile { width: 52px; height: 52px; border-radius: 999px; }
-        .hm-rec-name {
-          font-family: var(--font-head); font-size: 16px; font-weight: 700; line-height: 20px;
-          color: var(--ink);
-          overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
-          -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-        }
-        .hm-rec-sub {
-          font-size: 14px; line-height: 18px; color: var(--ink-dim);
-          overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
-          -webkit-line-clamp: 1; -webkit-box-orient: vertical;
-        }
-        /* Status chip: a pill outline, self-sized to its label. */
-        .hm-rec-chip {
-          justify-self: start; align-self: start;
-          display: inline-flex; align-items: center; gap: 7px;
-          max-width: 100%; padding: 7px 13px; border-radius: 999px;
-          border: 1px solid var(--border);
-          font-family: var(--font-head); font-size: 12.5px; font-weight: 600;
-          color: var(--ink-dim);
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .hm-rec-dot {
-          width: 8px; height: 8px; flex: none; border-radius: 999px;
-          background: var(--lemon);
-        }
-        .hm-rec-cta {
-          display: grid; place-items: center;
-          min-height: 44px; padding: 10px; border-radius: 12px; border: 0;
-          background: var(--lemon); color: var(--on-accent);
-          font-family: var(--font-head); font-size: 15px; font-weight: 700;
-        }
-        .hm-rec-cta:disabled { opacity: .6; }
-
-
         .hm-feed { display: grid; }
 
         /* Community / job rows in the feed body match the post cell. */
         .hm-item { display: block; padding: 12px var(--gut); border-bottom: 1px solid var(--border); }
-        @media (hover: hover) and (pointer: fine) { .hm-item:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
+        .hm-item:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
         .hm-item-eyebrow { margin: 0; font-size: 12.5px; color: var(--accent-ink); font-weight: 600; }
         .hm-item-title { margin: 3px 0 0; font-family: var(--font-head); font-size: 15px; line-height: 20px; font-weight: 700; color: var(--ink); }
         .hm-item-body {
@@ -617,7 +451,7 @@ export default function Dashboard() {
           font-family: var(--font-head); font-weight: 700; font-size: 13.5px;
         }
         .hm-more {
-          display: grid; place-items: center; padding: 15px; border: 0; border-bottom: 1px solid var(--border); background: none;
+          padding: 15px; border: 0; border-bottom: 1px solid var(--border); background: none;
           font-family: var(--font-head); font-weight: 600; font-size: 14px; color: var(--accent-ink);
         }
         .hm-end { margin: 0; padding: 16px; text-align: center; font-size: 12.5px; color: var(--ink-faint); }

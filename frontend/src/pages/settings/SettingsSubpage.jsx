@@ -15,7 +15,7 @@ export default function SettingsSubpage({ title, children }) {
           font-size: 13.5px; font-weight: 600; color: var(--ink-dim);
           margin-bottom: 18px;
         }
-        @media (hover: hover) and (pointer: fine) { .back-link:hover { color: var(--accent-ink); } }
+        .back-link:hover { color: var(--accent-ink); }
         .settings-sub-title { font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--ink); margin-bottom: 20px; }
       `}</style>
     </div>

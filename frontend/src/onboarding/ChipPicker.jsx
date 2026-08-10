@@ -43,7 +43,7 @@ export default function ChipPicker({ options, selected, onToggle, columns = 2 })
         }
         .chip-icon { flex-shrink: 0; color: var(--ink-faint); }
         .chip-label { flex: 1; }
-        @media (hover: hover) and (pointer: fine) { .chip:hover { border-color: var(--ink-faint); } }
+        .chip:hover { border-color: var(--ink-faint); }
         .chip-selected {
           background: rgba(196, 241, 53, 0.12);
           border-color: var(--accent-ink);

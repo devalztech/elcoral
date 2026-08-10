@@ -65,7 +65,7 @@ export default function MembersTab({ community, accessToken }) {
         .mt-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
         .mt-id { flex: 1; min-width: 0; }
         .mt-name { font-family: var(--font-head); font-weight: 700; font-size: 14.5px; color: var(--ink); }
-        @media (hover: hover) and (pointer: fine) { .mt-name:hover { color: var(--accent-ink); } }
+        .mt-name:hover { color: var(--accent-ink); }
         .mt-headline { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .mt-role {
           flex: none; display: inline-flex; align-items: center; gap: 5px;

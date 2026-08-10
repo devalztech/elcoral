@@ -178,7 +178,7 @@ export default function AccountSettings() {
         .danger-zone { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border); }
         .danger-zone h2 { font-family: var(--font-head); font-size: 14px; font-weight: 600; color: var(--danger); margin-bottom: 12px; }
         .danger-btn { border-color: var(--danger); color: var(--danger); }
-        @media (hover: hover) and (pointer: fine) { .danger-btn:hover { background: rgba(255,107,74,0.1); } }
+        .danger-btn:hover { background: rgba(255,107,74,0.1); }
         .confirm-text { font-size: 13px; color: var(--ink-dim); margin-bottom: 14px; }
         .confirm-actions { display: flex; gap: 10px; }
         .confirm-actions .btn { flex: 1; }

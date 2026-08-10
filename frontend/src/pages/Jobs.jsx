@@ -294,7 +294,7 @@ export default function Jobs() {
           width: 38px; height: 38px; border-radius: 12px; color: var(--ink);
           transition: background .16s ease;
         }
-        @media (hover: hover) and (pointer: fine) { .jb-icon-btn:hover { background: var(--panel); } }
+        .jb-icon-btn:hover { background: var(--panel); }
         .jb-badge {
           position: absolute; top: -1px; right: -1px;
           min-width: 18px; height: 18px; padding: 0 5px;
@@ -320,7 +320,7 @@ export default function Jobs() {
           font-family: var(--font-head); font-size: 14px; font-weight: 600;
           border: 1px solid transparent; transition: all .16s ease; white-space: nowrap;
         }
-        @media (hover: hover) and (pointer: fine) { .jb-filter:hover { border-color: var(--border); } }
+        .jb-filter:hover { border-color: var(--border); }
         .jb-filter.on { background: var(--lemon); color: var(--on-accent); border-color: var(--accent-ink); }
 
         /* ------------------------------------------------------ promo */
@@ -360,14 +360,14 @@ export default function Jobs() {
           font-family: var(--font-head); font-weight: 700; font-size: 14.5px;
           transition: filter .16s ease;
         }
-        @media (hover: hover) and (pointer: fine) { .jb-promo-cta:hover { filter: brightness(1.06); } }
+        .jb-promo-cta:hover { filter: brightness(1.06); }
         .jb-promo-close {
           position: absolute; top: 8px; right: 8px;
           width: 28px; height: 28px; border-radius: 8px;
           display: inline-flex; align-items: center; justify-content: center;
           color: var(--ink-dim);
         }
-        @media (hover: hover) and (pointer: fine) { .jb-promo-close:hover { background: var(--panel-raised); color: var(--ink); } }
+        .jb-promo-close:hover { background: var(--panel-raised); color: var(--ink); }
 
         /* ------------------------------------------------ section head */
         .jb-section-head {
@@ -420,7 +420,7 @@ export default function Jobs() {
           width: 30px; height: 30px; border-radius: 9px; color: var(--ink-dim);
           transition: color .16s ease, background .16s ease;
         }
-        @media (hover: hover) and (pointer: fine) { .jb-save:hover { background: var(--panel-raised); color: var(--ink); } }
+        .jb-save:hover { background: var(--panel-raised); color: var(--ink); }
         .jb-save.on { color: var(--accent-ink); }
 
         .jb-feat-desc { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-dim); }
@@ -441,7 +441,7 @@ export default function Jobs() {
           transition: filter .16s ease;
         }
         .jb-apply.lg { height: 42px; padding: 0 20px; font-size: 14.5px; }
-        @media (hover: hover) and (pointer: fine) { .jb-apply:hover { filter: brightness(1.06); } }
+        .jb-apply:hover { filter: brightness(1.06); }
 
         .jb-dots { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 14px 0 0; }
         .jb-dot {
@@ -459,7 +459,7 @@ export default function Jobs() {
           border: 0; border-bottom: 1px solid var(--border); background: none;
           transition: background .16s ease;
         }
-        @media (hover: hover) and (pointer: fine) { .jb-card:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
+        .jb-card:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
         .jb-card-id { flex: 1 1 auto; min-width: 0; }
         .jb-card-id h3 {
           margin: 0; font-family: var(--font-head); font-weight: 700;
@@ -498,7 +498,7 @@ export default function Jobs() {
           font-family: var(--font-head); font-weight: 700; font-size: 13.5px;
           transition: border-color .16s ease, background .16s ease;
         }
-        @media (hover: hover) and (pointer: fine) { .jb-notice-cta:hover { border-color: var(--accent-ink); background: var(--panel-raised); } }
+        .jb-notice-cta:hover { border-color: var(--accent-ink); background: var(--panel-raised); }
 
         /* --------------------------------------------------- narrow */
         @media (max-width: 420px) {

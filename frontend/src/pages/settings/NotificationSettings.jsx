@@ -1,7 +1,6 @@
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 import ToggleRow from '../../features/settings/components/ToggleRow.jsx'
 import { useSettings } from '../../features/settings/hooks/useSettings.jsx'
-import Spinner from '../../components/Spinner.jsx'
 
 const ROWS = [
   { key: 'notify_messages', label: 'Messages', desc: 'Someone sends you a direct message' },
@@ -14,7 +13,7 @@ const ROWS = [
 export default function NotificationSettings() {
   const { settings, loading, error, updateNotifications } = useSettings()
 
-  if (loading) return <SettingsSubpage title="Notifications"><Spinner page label="Loading settings" /></SettingsSubpage>
+  if (loading) return <SettingsSubpage title="Notifications"><p className="set-loading">Loading…</p></SettingsSubpage>
 
   return (
     <SettingsSubpage title="Notifications">

@@ -1,7 +1,6 @@
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 import ToggleRow from '../../features/settings/components/ToggleRow.jsx'
 import { useSettings } from '../../features/settings/hooks/useSettings.jsx'
-import Spinner from '../../components/Spinner.jsx'
 
 const SCALES = [
   { key: 'small', label: 'A', size: 12 },
@@ -13,7 +12,7 @@ const SCALES = [
 export default function AccessibilitySettings() {
   const { settings, loading, error, updateAccessibility } = useSettings()
 
-  if (loading) return <SettingsSubpage title="Accessibility"><Spinner page label="Loading settings" /></SettingsSubpage>
+  if (loading) return <SettingsSubpage title="Accessibility"><p className="set-loading">Loading…</p></SettingsSubpage>
 
   const a11y = settings.accessibility
 

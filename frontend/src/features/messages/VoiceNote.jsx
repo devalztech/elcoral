@@ -116,7 +116,7 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
           background: var(--lemon, var(--accent-ink)); color: var(--on-accent, #111);
           transition: transform 120ms ease, filter 120ms ease;
         }
-        @media (hover: hover) and (pointer: fine) { .vn-play:hover { filter: brightness(1.05); } }
+        .vn-play:hover { filter: brightness(1.05); }
         .vn-play:active { transform: scale(0.94); }
         .vn-play:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
         .vn-track { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }

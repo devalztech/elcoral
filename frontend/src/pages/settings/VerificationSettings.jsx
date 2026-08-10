@@ -4,7 +4,6 @@ import { BadgeCheck, CircleAlert, Mail, UserCheck } from 'lucide-react'
 import { useAuth } from '../../features/auth/hooks/useAuth.jsx'
 import { api } from '../../api/client.js'
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
-import Spinner from '../../components/Spinner.jsx'
 
 export default function VerificationSettings() {
   const { accessToken, authLoading } = useAuth()
@@ -39,7 +38,7 @@ export default function VerificationSettings() {
   if (!status) {
     return (
       <SettingsSubpage title="Account verification">
-        {error ? <p className="set-error" role="alert">{error}</p> : <Spinner page label="Loading settings" />}
+        {error ? <p className="set-error" role="alert">{error}</p> : <p className="set-loading">Loading…</p>}
       </SettingsSubpage>
     )
   }

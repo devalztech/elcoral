@@ -92,7 +92,7 @@ export default function MultiSelectDropdown({ options, selected, onToggle, place
           padding: 12px 14px;
           font-size: 14.5px;
         }
-        @media (hover: hover) and (pointer: fine) { .msd-trigger:hover { border-color: var(--ink-faint); } }
+        .msd-trigger:hover { border-color: var(--ink-faint); }
         .msd-value { color: var(--ink); }
         .msd-placeholder { color: var(--ink-faint); }
         .msd-chevron { color: var(--ink-faint); transition: transform 0.15s ease; flex-shrink: 0; }
@@ -109,7 +109,7 @@ export default function MultiSelectDropdown({ options, selected, onToggle, place
           color: var(--ink-faint); font-size: 14px; line-height: 1;
           padding: 2px 4px; border-radius: 50%;
         }
-        @media (hover: hover) and (pointer: fine) { .msd-tag button:hover { color: var(--danger); } }
+        .msd-tag button:hover { color: var(--danger); }
 
         .msd-menu {
           position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20;
@@ -136,7 +136,7 @@ export default function MultiSelectDropdown({ options, selected, onToggle, place
           font-size: 14px; color: var(--ink-dim);
           border-radius: 8px;
         }
-        @media (hover: hover) and (pointer: fine) { .msd-option:hover { background: var(--panel); } }
+        .msd-option:hover { background: var(--panel); }
         .msd-option-selected { color: var(--ink); }
         .msd-option-icon { color: var(--ink-faint); flex-shrink: 0; }
         .msd-option-selected .msd-option-icon { color: var(--accent-ink); }

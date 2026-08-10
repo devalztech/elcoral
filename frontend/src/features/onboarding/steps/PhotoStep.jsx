@@ -82,7 +82,7 @@ export default function PhotoStep({ progress, onNext, onBack }) {
           color: var(--ink-faint);
           overflow: hidden;
         }
-        @media (hover: hover) and (pointer: fine) { .photo-circle:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
+        .photo-circle:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
         .photo-circle img { width: 100%; height: 100%; object-fit: cover; }
         .spin { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -91,7 +91,7 @@ export default function PhotoStep({ progress, onNext, onBack }) {
           font-size: 13px; color: var(--ink-faint);
           padding: 6px 0;
         }
-        @media (hover: hover) and (pointer: fine) { .photo-remove:hover { color: var(--danger); } }
+        .photo-remove:hover { color: var(--danger); }
         .photo-error { font-size: 13px; color: var(--danger); text-align: center; }
       `}</style>
     </StepShell>

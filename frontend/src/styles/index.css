@@ -219,48 +219,17 @@ input:-webkit-autofill:focus {
   background: var(--lemon);
   color: #0B0D0A;
 }
-@media (hover: hover) and (pointer: fine) { .btn-primary:hover { background: var(--ink); } }
+.btn-primary:hover { background: var(--ink); }
 
 .btn-ghost {
   background: transparent;
   color: var(--ink);
   border-color: var(--border);
 }
-@media (hover: hover) and (pointer: fine) { .btn-ghost:hover { border-color: var(--lemon); color: var(--lemon); } }
+.btn-ghost:hover { border-color: var(--lemon); color: var(--lemon); }
 
 .btn-block { width: 100%; }
 
 @media (max-width: 640px) {
   .wrap { padding: 0 18px; }
 }
-
-/* ---------------------------------------------------------------------------
-   Touch behaviour.
-
-   Every :hover rule in the app is now wrapped in
-   `@media (hover: hover) and (pointer: fine)`, so a tap on a phone no
-   longer leaves a "stuck" highlight behind. These two rules finish the
-   job by killing the browser's own grey tap flash and the iOS long-press
-   callout on interactive chrome.
---------------------------------------------------------------------------- */
-* { -webkit-tap-highlight-color: transparent; }
-a, button, [role='button'] { -webkit-touch-callout: none; }
-
-/* ---------------------------------------------------------------------------
-   Loading spinner (components/Spinner.jsx).
-
-   The single loading indicator for Elcoral: a hairline circular track with
-   one accent arc rotating on it — X-style, no logo. Defined here so any
-   screen can render <Spinner /> without shipping its own animation.
---------------------------------------------------------------------------- */
-.el-spin {
-  display: inline-block;
-  flex: none;
-  box-sizing: border-box;
-  border-style: solid;
-  border-color: color-mix(in srgb, var(--ink) 18%, transparent);
-  border-top-color: var(--accent-ink);
-  border-radius: 999px;
-  animation: el-spin 700ms linear infinite;
-}
-@keyframes el-spin { to { transform: rotate(360deg); } }

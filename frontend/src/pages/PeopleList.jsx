@@ -13,7 +13,6 @@ import { ChevronLeft, Users } from 'lucide-react'
 import { api } from '../api/client.js'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { avatarTone, displayName, formatCount, initialsOf } from '../features/social/format.js'
-import Spinner from '../components/Spinner.jsx'
 
 function FollowButton({ person, onChanged }) {
   const { accessToken } = useAuth()
@@ -148,7 +147,7 @@ export default function PeopleList() {
       {error && <p className="pl-error">{error}</p>}
 
       {items === null && (
-        <Spinner page label="Loading people" />
+        <ul className="pl-list">{[0, 1, 2, 3, 4].map((i) => <li key={i} className="pl-skeleton" />)}</ul>
       )}
 
       {items !== null && items.length === 0 && !error && (
@@ -185,7 +184,7 @@ export default function PeopleList() {
 
       {cursor && (
         <button type="button" className="pl-more" onClick={loadMore} disabled={loadingMore}>
-          {loadingMore ? <Spinner size={17} label="Loading more" /> : 'Load more'}
+          {loadingMore ? 'Loading…' : 'Load more'}
         </button>
       )}
 

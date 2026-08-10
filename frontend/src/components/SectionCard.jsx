@@ -28,7 +28,7 @@ export default function SectionCard({ label, preview, isEmpty, onEdit }) {
           text-align: left;
           transition: border-color 0.15s ease;
         }
-        @media (hover: hover) and (pointer: fine) { .sc:hover { border-color: var(--ink-faint); } }
+        .sc:hover { border-color: var(--ink-faint); }
         .sc-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
         .sc-label {
           font-family: var(--font-head); font-size: 13px; font-weight: 600;
@@ -40,7 +40,7 @@ export default function SectionCard({ label, preview, isEmpty, onEdit }) {
         }
         .sc-preview-empty { color: var(--accent-ink); font-weight: 600; }
         .sc-action { color: var(--ink-faint); flex-shrink: 0; }
-        @media (hover: hover) and (pointer: fine) { .sc:hover .sc-action { color: var(--accent-ink); } }
+        .sc:hover .sc-action { color: var(--accent-ink); }
       `}</style>
     </button>
   )

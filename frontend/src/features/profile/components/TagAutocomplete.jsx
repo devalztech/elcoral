@@ -90,7 +90,7 @@ export default function TagAutocomplete({ suggestions, selected, onAdd, onRemove
           background: var(--panel); border: 1px solid var(--border);
           border-radius: 999px; padding: 6px 11px;
         }
-        @media (hover: hover) and (pointer: fine) { .ta-suggestion:hover { border-color: var(--accent-ink); color: var(--ink); } }
+        .ta-suggestion:hover { border-color: var(--accent-ink); color: var(--ink); }
         .ta-selected {
           display: flex; flex-wrap: wrap; gap: 7px;
           margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);
@@ -102,7 +102,7 @@ export default function TagAutocomplete({ suggestions, selected, onAdd, onRemove
           border-radius: 999px; padding: 6px 7px 6px 12px;
         }
         .ta-tag button { color: var(--ink-dim); display: flex; }
-        @media (hover: hover) and (pointer: fine) { .ta-tag button:hover { color: var(--danger); } }
+        .ta-tag button:hover { color: var(--danger); }
       `}</style>
     </div>
   )

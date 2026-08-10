@@ -184,7 +184,7 @@ export default function AuthSheet({ initialRole = 'client', mode: initialMode = 
           background: none; border: none; color: var(--ink-faint);
           font-size: 26px; line-height: 1; padding: 4px;
         }
-        @media (hover: hover) and (pointer: fine) { .sheet-close:hover { color: var(--ink); } }
+        .sheet-close:hover { color: var(--ink); }
         .sheet-head { margin: 12px 0 20px; }
         .sheet-head h2 { font-family: var(--font-head); font-size: 24px; font-weight: 700; margin-top: 6px; color: var(--ink); }
         .role-toggle {

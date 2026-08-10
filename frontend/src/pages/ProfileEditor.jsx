@@ -550,7 +550,7 @@ function ProfileEditorBody() {
           padding: 14px 16px 12px;
         }
         .pe-back { display: flex; align-items: center; color: var(--ink); }
-        @media (hover: hover) and (pointer: fine) { .pe-back:hover { color: var(--accent-ink); } }
+        .pe-back:hover { color: var(--accent-ink); }
         .pe-title {
           margin: 0; text-align: center;
           font-family: var(--font-head); font-size: 21px; font-weight: 700;
@@ -590,7 +590,7 @@ function ProfileEditorBody() {
             repeating-linear-gradient(78deg, rgba(196, 241, 53, 0.09) 0 1px, transparent 1px 7px);
           color: var(--accent-ink);
         }
-        @media (hover: hover) and (pointer: fine) { .pe-cover:hover { border-color: var(--accent-ink); } }
+        .pe-cover:hover { border-color: var(--accent-ink); }
         .pe-cover-inner {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           gap: 6px; height: 100%; padding: 10px;
@@ -619,7 +619,7 @@ function ProfileEditorBody() {
           display: flex; align-items: center; justify-content: center;
           color: var(--accent-ink);
         }
-        @media (hover: hover) and (pointer: fine) { .pe-avatar-btn:hover { background: rgba(196, 241, 53, 0.12); } }
+        .pe-avatar-btn:hover { background: rgba(196, 241, 53, 0.12); }
         .pe-avatar-copy { padding-top: 42px; min-width: 0; }
         .pe-avatar-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
         .pe-avatar-hint { margin: 3px 0 0; font-size: 12.5px; color: var(--ink-faint); }
@@ -645,7 +645,7 @@ function ProfileEditorBody() {
           border: 1px solid rgba(196, 241, 53, 0.5);
           color: var(--accent-ink); font-size: 14px; font-weight: 600;
         }
-        @media (hover: hover) and (pointer: fine) { .pe-add-skill:hover { background: rgba(196, 241, 53, 0.1); } }
+        .pe-add-skill:hover { background: rgba(196, 241, 53, 0.1); }
 
         /* Fields */
         .pe-stack { display: flex; flex-direction: column; gap: 10px; }
@@ -674,7 +674,7 @@ function ProfileEditorBody() {
         .pe-select option { background: var(--panel); color: var(--ink); }
         .pe-chev, .pe-lead { color: var(--ink-faint); flex: 0 0 auto; }
         .pe-clear { display: flex; color: var(--ink-dim); flex: 0 0 auto; padding: 4px; }
-        @media (hover: hover) and (pointer: fine) { .pe-clear:hover { color: var(--ink); } }
+        .pe-clear:hover { color: var(--ink); }
         .pe-url {
           margin: 6px 0 0; font-size: 12.5px; color: var(--ink-faint);
         }
@@ -697,7 +697,7 @@ function ProfileEditorBody() {
           color: var(--ink-dim);
           display: flex; align-items: center; justify-content: center;
         }
-        @media (hover: hover) and (pointer: fine) { .pe-portfolio-add:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
+        .pe-portfolio-add:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 
         /* Skills */
         .pe-skill-add { margin-bottom: 12px; }
@@ -710,7 +710,7 @@ function ProfileEditorBody() {
           padding: 7px 13px; border-radius: 999px;
           border: 1px dashed var(--border); color: var(--ink-dim); font-size: 13.5px;
         }
-        @media (hover: hover) and (pointer: fine) { .pe-suggestion:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
+        .pe-suggestion:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
         .pe-chips { display: flex; flex-wrap: wrap; gap: 9px; }
         .pe-empty { margin: 0; font-size: 13.5px; color: var(--ink-faint); }
         .pe-chip {
@@ -720,7 +720,7 @@ function ProfileEditorBody() {
           font-size: 14.5px; color: var(--ink);
         }
         .pe-chip button { display: flex; color: var(--ink-dim); }
-        @media (hover: hover) and (pointer: fine) { .pe-chip button:hover { color: var(--danger); } }
+        .pe-chip button:hover { color: var(--danger); }
 
         /* Looking for */
         .pe-looking {
@@ -749,7 +749,7 @@ function ProfileEditorBody() {
           width: 100%; padding: 16px 14px; border-radius: 12px;
           background: var(--field); border: 1px solid var(--field-border);
         }
-        @media (hover: hover) and (pointer: fine) { .pe-row:hover { border-color: rgba(196, 241, 53, 0.4); } }
+        .pe-row:hover { border-color: rgba(196, 241, 53, 0.4); }
         .pe-row-label { font-size: 15.5px; color: var(--ink); }
         .pe-row-right {
           display: inline-flex; align-items: center; gap: 6px;

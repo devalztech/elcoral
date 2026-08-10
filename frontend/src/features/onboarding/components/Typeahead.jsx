@@ -139,7 +139,7 @@ export default function Typeahead({
           font-size: 14.5px;
           color: var(--ink);
         }
-        @media (hover: hover) and (pointer: fine) { .typeahead-option:hover { background: var(--panel); } }
+        .typeahead-option:hover { background: var(--panel); }
       `}</style>
     </div>
   )

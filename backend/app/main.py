@@ -46,7 +46,20 @@ app.add_middleware(
 )
 
 if settings.is_production:
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["elcoral.com", "*.elcoral.com"])
+    from urllib.parse import urlparse
+
+    # Trusted hosts = hostnames from CORS_ORIGINS (the frontend calling
+    # this API) plus the API's own public hostname (for direct hits like
+    # /api/health from a browser). Derived from config instead of
+    # hardcoded, so it can't drift out of sync with the real domains the
+    # way a fixed elcoral.com list did.
+    trusted_hosts = {urlparse(o).hostname for o in settings.cors_origin_list if urlparse(o).hostname}
+    if settings.public_api_url:
+        api_host = urlparse(settings.public_api_url).hostname
+        if api_host:
+            trusted_hosts.add(api_host)
+
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(trusted_hosts) or ["*"])
 
 
 @app.middleware("http")

@@ -60,7 +60,7 @@ export default function Lightbox({ src, alt = '', onClose }) {
           color: #fff; border: 0; cursor: pointer;
           transition: background 150ms ease;
         }
-        @media (hover: hover) and (pointer: fine) { .lb-close:hover { background: color-mix(in srgb, #fff 28%, transparent); } }
+        .lb-close:hover { background: color-mix(in srgb, #fff 28%, transparent); }
         @keyframes lb-fade { from { opacity: 0 } to { opacity: 1 } }
         @keyframes lb-zoom { from { opacity: 0; transform: scale(0.96) } to { opacity: 1; transform: none } }
         @media (prefers-reduced-motion: reduce) {

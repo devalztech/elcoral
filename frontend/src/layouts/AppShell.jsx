@@ -10,23 +10,16 @@ import InstallPrompt from '../features/pwa/InstallPrompt.jsx'
 const isConversationThread = (pathname) =>
   /^\/home\/messages\/[^/]+$/.test(pathname)
 
-// A single post opened full-screen (/home/posts/:id) behaves like a
-// thread: its comment composer is docked to the bottom of the screen, so
-// the mobile bottom bar has to get out of the way or the two stack on top
-// of each other. Desktop keeps its left sidebar.
-const isPostDetail = (pathname) => /^\/home\/posts\/[^/]+$/.test(pathname)
-
 export default function AppShell() {
   const { pathname } = useLocation()
   const inThread = isConversationThread(pathname)
-  const hideMobileNav = inThread || isPostDetail(pathname)
 
   return (
     <div className="shell">
       <main className={`shell-content ${inThread ? 'shell-content-full' : ''}`}>
         <Outlet />
       </main>
-      <div className={hideMobileNav ? 'shell-nav-mobile-hidden' : undefined}>
+      <div className={inThread ? 'shell-nav-mobile-hidden' : undefined}>
         <BottomNav />
       </div>
       <InstallPrompt />

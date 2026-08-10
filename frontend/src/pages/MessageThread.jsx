@@ -19,10 +19,10 @@ import { OnlineDot, TypingDots, presenceLabel } from '../features/messages/Prese
 import Attachment from '../features/messages/Attachment.jsx'
 import Composer from '../features/messages/Composer.jsx'
 import Lightbox from '../components/Lightbox.jsx'
+import VerifiedBadge from '../components/VerifiedBadge.jsx'
 import {
   avatarTone, dayLabel, displayName, initialsOf, timeOfDay,
 } from '../features/social/format.js'
-import Spinner from '../components/Spinner.jsx'
 
 // How long we can go without re-telling the server "still typing".
 const TYPING_PING_MS = 3000
@@ -206,7 +206,10 @@ export default function MessageThread() {
               <OnlineDot online={online} size={10} />
             </span>
             <span className="mt-who-text">
-              <span className="mt-name">{displayName(participant)}</span>
+              <span className="mt-name">
+                {displayName(participant)}
+                {participant.is_verified && <VerifiedBadge size={16} className="mt-verified" />}
+              </span>
               {typing ? <TypingDots /> : status && <span className="mt-status">{status}</span>}
             </span>
           </Link>
@@ -218,7 +221,7 @@ export default function MessageThread() {
       <div className="mt-scroll" ref={scrollRef}>
         {cursor && (
           <button type="button" className="mt-more" onClick={loadOlder} disabled={loadingMore}>
-            {loadingMore ? <Spinner size={17} label="Loading earlier messages" /> : 'Load earlier messages'}
+            {loadingMore ? 'Loading…' : 'Load earlier messages'}
           </button>
         )}
 
@@ -334,7 +337,11 @@ export default function MessageThread() {
         .mt-av.tone-a { background: color-mix(in srgb, var(--lemon) 45%, transparent); }
         .mt-av.tone-b { background: color-mix(in srgb, var(--accent-ink) 18%, transparent); }
         .mt-who-text { display: flex; flex-direction: column; min-width: 0; }
-        .mt-name { font-family: var(--font-head); font-size: 16px; line-height: 21px; font-weight: 600; color: var(--ink); }
+        .mt-name {
+          display: inline-flex; align-items: center; gap: 4px;
+          font-family: var(--font-head); font-size: 16px; line-height: 21px; font-weight: 600; color: var(--ink);
+        }
+        .mt-verified { flex: none; color: var(--verified, #1D9BF0); }
         .mt-status { font-size: 13px; line-height: 17px; color: var(--ink-faint); }
 
         .mt-scroll { flex: 1; overflow-y: auto; padding: 8px 9px 6px; display: flex; flex-direction: column; }
