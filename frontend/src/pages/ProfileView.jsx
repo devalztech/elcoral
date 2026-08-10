@@ -8,6 +8,7 @@ import {
   CircleCheck, Twitter, Dribbble,
 } from 'lucide-react'
 import VerifiedBadge from '../components/VerifiedBadge.jsx'
+import BellBadge from '../components/BellBadge.jsx'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import ReportDialog from '../features/settings/components/ReportDialog.jsx'
 import { api } from '../api/client.js'

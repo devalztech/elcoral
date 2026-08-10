@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Bell, Heart, MessageCircle, CornerDownRight, UserPlus, AtSign,
+  ChevronLeft, Bell, Heart, MessageCircle, CornerDownRight, UserPlus, AtSign,
   SlidersHorizontal,
 } from 'lucide-react'
 import { api } from '../api/client.js'
@@ -144,24 +144,23 @@ export default function Notifications() {
 
   return (
     <div className="nt">
-      <header className="nt-bar">
-        <button type="button" className="nt-icon-btn" onClick={() => navigate(-1)} aria-label="Back">
-          <ArrowLeft size={22} strokeWidth={2.2} />
+      <header className="nt-head">
+        <button type="button" className="nt-back" onClick={() => navigate(-1)} aria-label="Go back">
+          <ChevronLeft size={22} />
         </button>
         <h1>Notifications</h1>
         <button
           type="button"
-          className="nt-icon-btn nt-icon-btn-end"
+          className="nt-back nt-head-end"
           aria-label="Notification settings"
           onClick={() => navigate('/home/settings/notifications')}
         >
-          <SlidersHorizontal size={21} strokeWidth={2} />
+          <SlidersHorizontal size={19} />
         </button>
       </header>
 
-      <div className="nt-filters" role="tablist" aria-label="Filter notifications">
+      <div className="nt-tabs" role="tablist" aria-label="Filter notifications">
         {FILTERS.map((f) => {
-          const Icon = f.icon
           const on = f.id === filter
           return (
             <button
@@ -169,10 +168,9 @@ export default function Notifications() {
               type="button"
               role="tab"
               aria-selected={on}
-              className={`nt-chip ${on ? 'on' : ''}`}
+              className={`nt-tab ${on ? 'nt-tab-on' : ''}`}
               onClick={() => setFilter(f.id)}
             >
-              <Icon size={15} strokeWidth={2} />
               {f.label}
             </button>
           )
@@ -181,231 +179,147 @@ export default function Notifications() {
 
       {error && <p className="nt-error">{error}</p>}
 
-      {items === null ? (
-        <div className="nt-loading"><Spinner /></div>
-      ) : items.length === 0 ? (
-        <div className="nt-empty">
-          <span className="nt-empty-badge"><Bell size={24} strokeWidth={1.8} /></span>
-          <p>{filter === 'all' ? 'No notifications yet' : `No ${activeFilter.label.toLowerCase()} yet`}</p>
-          <span className="nt-empty-copy">
-            Likes, comments, replies, mentions and new followers land here.
-          </span>
-        </div>
-      ) : (
-        <div className="nt-groups">
-          {groups.map((group) => (
-            <section className="nt-group" key={group.key}>
-              <h2 className="nt-group-title">{group.title}</h2>
-              <ul className="nt-list">
-                {group.rows.map((n) => {
-                  const meta = COPY[n.kind] ?? { icon: Bell, text: 'sent you an update', tone: 'accent' }
-                  const Icon = meta.icon
-                  const person = n.actor
-                  const name = person?.full_name || person?.username || 'Someone'
-                  const showFollowBack = n.kind === 'follow' && !!person?.username && !n.actor_is_following
-                  return (
-                    <li key={n.id} className={`nt-row ${n.is_read ? '' : 'unread'}`}>
-                      <button type="button" className="nt-link" onClick={() => openRow(n)}>
-                        {!n.is_read && <span className="nt-dot" aria-hidden="true" />}
-                        <span className="nt-avatar" style={{ background: avatarTone(person?.username || name) }}>
-                          {person?.avatar_url || person?.photo_url
-                            ? <img src={person.avatar_url || person.photo_url} alt="" />
-                            : initialsOf(name)}
-                          <span className={`nt-kind nt-kind-${meta.tone}`}>
-                            <Icon size={11} strokeWidth={2.6} />
-                          </span>
-                        </span>
-                        <span className="nt-body">
-                          <span className="nt-line">
-                            <b>{name}</b>
-                            {person?.is_verified && <VerifiedBadge size={14} />}
-                            <span className="nt-what">{meta.text}</span>
-                          </span>
-                          {n.preview && <span className="nt-preview">{n.preview}</span>}
-                          <span className="nt-time">{whenLabel(n.created_at, group.key)}</span>
-                        </span>
-                      </button>
+      {items === null && <Spinner page label="Loading notifications" />}
 
-                      {showFollowBack ? (
-                        <button
-                          type="button"
-                          className="nt-followback"
-                          onClick={() => followBack(n)}
-                        >
-                          Follow back
-                        </button>
-                      ) : n.media_url ? (
-                        <button
-                          type="button"
-                          className="nt-thumb"
-                          onClick={() => openRow(n)}
-                          aria-label="Open post"
-                        >
-                          <img src={n.media_url} alt="" loading="lazy" />
-                        </button>
-                      ) : null}
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
-          ))}
+      {items !== null && items.length === 0 && !error && (
+        <div className="nt-empty">
+          <Bell size={28} strokeWidth={1.6} aria-hidden="true" />
+          <p>{filter === 'all' ? 'No notifications yet.' : `No ${activeFilter.label.toLowerCase()} yet.`}</p>
         </div>
       )}
 
-      {(items ?? []).length > 0 && (
-        <div className="nt-footer">
-          <button type="button" className="nt-markall" onClick={markAll} disabled={!anyUnread}>
-            <Bell size={17} strokeWidth={2} />
-            Mark all as read
-          </button>
-        </div>
+      {items !== null && items.length > 0 && groups.map((group) => (
+        <section className="nt-group" key={group.key}>
+          <h2 className="nt-group-title">{group.title}</h2>
+          <ul className="nt-list">
+            {group.rows.map((n) => {
+              const meta = COPY[n.kind] ?? { icon: Bell, text: 'sent you an update', tone: 'accent' }
+              const Icon = meta.icon
+              const person = n.actor
+              const name = person?.full_name || person?.username || 'Someone'
+              const photo = person?.photo_url || person?.avatar_url
+              const showFollowBack = n.kind === 'follow' && !!person?.username && !n.actor_is_following
+              return (
+                <li key={n.id}>
+                  <button type="button" className={`nt-row ${n.is_read ? '' : 'nt-row-unread'}`} onClick={() => openRow(n)}>
+                    <span className="nt-av-wrap">
+                      {photo ? (
+                        <img className="nt-av" src={photo} alt="" />
+                      ) : (
+                        <span className="nt-av" style={{ background: avatarTone(person?.username || name) }} aria-hidden="true">
+                          {initialsOf(name)}
+                        </span>
+                      )}
+                      <span className={`nt-kind nt-kind-${meta.tone}`}>
+                        <Icon size={10} strokeWidth={2.6} />
+                      </span>
+                    </span>
+
+                    <span className="nt-text">
+                      <span className="nt-name">
+                        {name}
+                        {person?.is_verified && <VerifiedBadge size={14} className="nt-verified" />}
+                      </span>
+                      <span className="nt-sub">
+                        {meta.text}{n.preview ? ` · ${n.preview}` : ''} · {whenLabel(n.created_at, group.key)}
+                      </span>
+                    </span>
+
+                    {showFollowBack ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="nt-follow"
+                        onClick={(e) => { e.stopPropagation(); followBack(n) }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); followBack(n) } }}
+                      >
+                        Follow back
+                      </span>
+                    ) : n.media_url ? (
+                      <img className="nt-thumb" src={n.media_url} alt="" loading="lazy" />
+                    ) : null}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ))}
+
+      {(items ?? []).length > 0 && anyUnread && (
+        <button type="button" className="nt-more" onClick={markAll}>Mark all as read</button>
       )}
 
       <style>{`
-        .nt { padding-bottom: 20px; }
-        .nt-bar {
-          display: flex; align-items: center; gap: 12px;
-          padding: 14px 16px 10px; position: sticky; top: 0; z-index: 6;
-          background: linear-gradient(to bottom, var(--bg) 76%, transparent);
-        }
-        .nt-bar h1 {
-          font-family: var(--font-display); font-size: 26px; font-weight: 800;
-          letter-spacing: -0.02em; color: var(--ink);
-        }
-        .nt-icon-btn {
-          color: var(--ink); display: inline-flex; align-items: center; justify-content: center;
-          width: 34px; height: 34px; border-radius: 999px; flex: none;
-          transition: background 0.15s ease;
-        }
-        .nt-icon-btn-end { margin-left: auto; color: var(--ink-dim); }
-        @media (hover: hover) { .nt-icon-btn:hover { background: var(--surface-2); color: var(--ink); } }
+        .nt-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+        .nt-head h1 { font-family: var(--font-head); font-size: 18px; margin: 0; color: var(--ink); }
+        .nt-back { display: grid; place-items: center; width: 34px; height: 34px; margin-left: -8px; color: var(--ink-dim); background: none; }
+        .nt-head-end { margin-left: auto; margin-right: -8px; }
 
-        /* --- filter strip: edge-to-edge, horizontally scrollable --- */
-        .nt-filters {
-          display: flex; gap: 10px; padding: 4px 16px 14px;
-          overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
-          position: sticky; top: 58px; z-index: 5; background: var(--bg);
+        .nt-tabs {
+          display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+          overflow-x: auto; scrollbar-width: none;
         }
-        .nt-filters::-webkit-scrollbar { display: none; }
-        .nt-chip {
-          display: inline-flex; align-items: center; gap: 7px; flex: none;
-          padding: 9px 16px; border-radius: 999px;
-          font-size: 14px; font-weight: 500; color: var(--ink-dim);
-          background: var(--surface-2); border: 1px solid transparent;
-          transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+        .nt-tabs::-webkit-scrollbar { display: none; }
+        .nt-tab {
+          flex: 1; min-width: 74px; text-align: center; padding: 10px 4px; font-size: 13.5px;
+          color: var(--ink-faint); border-bottom: 2px solid transparent; background: none;
         }
-        .nt-chip.on {
-          color: var(--accent-ink); font-weight: 600;
-          background: color-mix(in srgb, var(--lemon) 14%, transparent);
-          border-color: color-mix(in srgb, var(--lemon) 55%, transparent);
+        .nt-tab-on {
+          color: var(--accent-ink); font-weight: 700;
+          border-bottom-color: var(--lemon);
+          background: color-mix(in srgb, var(--lemon) 12%, transparent);
+          border-radius: 10px 10px 0 0;
         }
-        @media (hover: hover) { .nt-chip:not(.on):hover { color: var(--ink); } }
 
-        .nt-error { padding: 12px 18px; font-size: 13px; color: var(--danger); }
-        .nt-loading { display: flex; justify-content: center; padding: 48px 0; }
+        .nt-error { font-size: 13px; color: var(--danger); }
 
-        .nt-empty {
-          display: flex; flex-direction: column; align-items: center; gap: 8px;
-          padding: 72px 40px; text-align: center; color: var(--ink-faint);
-        }
-        .nt-empty-badge {
-          width: 60px; height: 60px; border-radius: 999px; display: grid; place-items: center;
-          background: var(--surface-2); color: var(--ink-dim); margin-bottom: 6px;
-        }
-        .nt-empty p { font-size: 16px; font-weight: 700; color: var(--ink); }
-        .nt-empty-copy { font-size: 13.5px; line-height: 1.6; max-width: 260px; }
-
-        /* --- groups --- */
-        .nt-groups { display: flex; flex-direction: column; gap: 22px; padding: 2px 0 6px; }
+        .nt-group { margin-top: 6px; }
         .nt-group-title {
-          font-size: 17px; font-weight: 500; color: var(--ink);
-          padding: 0 18px 10px; letter-spacing: -0.01em;
+          font-family: var(--font-head); font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em;
+          text-transform: uppercase; color: var(--ink-faint); margin: 10px 6px 2px;
         }
-        .nt-list {
-          list-style: none; margin: 0 12px; padding: 0;
-          background: color-mix(in srgb, var(--surface-2) 62%, transparent);
-          border-radius: 18px; overflow: hidden;
-        }
+        .nt-list { list-style: none; margin: 0; padding: 0; }
+
         .nt-row {
-          display: flex; align-items: center; gap: 10px; padding-right: 14px;
-          position: relative;
+          width: 100%; display: flex; align-items: center; gap: 12px; padding: 9px 6px;
+          border-radius: 14px; color: inherit; background: none; text-align: left;
         }
-        .nt-row + .nt-row::before {
-          content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 1px;
-          background: color-mix(in srgb, var(--surface-line) 55%, transparent);
+        .nt-row:active { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+        .nt-row-unread { background: color-mix(in srgb, var(--lemon) 6%, transparent); }
+
+        .nt-av-wrap { position: relative; flex: none; width: 44px; height: 44px; }
+        .nt-av {
+          width: 44px; height: 44px; border-radius: 999px; object-fit: cover;
+          display: grid; place-items: center; font-family: var(--font-head); font-size: 15px;
+          background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--ink);
         }
-        .nt-row.unread { background: color-mix(in srgb, var(--lemon) 5%, transparent); }
-        .nt-link {
-          flex: 1; min-width: 0; display: flex; gap: 13px; align-items: flex-start;
-          padding: 15px 4px 15px 18px; text-align: left; color: inherit; background: none;
-        }
-        .nt-dot {
-          position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
-          width: 6px; height: 6px; border-radius: 999px; background: var(--lemon);
-        }
-        .nt-row.unread .nt-link { padding-left: 22px; }
-        .nt-avatar {
-          position: relative; flex: none; width: 46px; height: 46px; border-radius: 50%;
-          display: grid; place-items: center;
-          font-size: 15px; font-weight: 800; color: var(--ink);
-        }
-        .nt-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         .nt-kind {
-          position: absolute; right: -3px; bottom: -3px;
-          width: 21px; height: 21px; border-radius: 50%;
-          display: grid; place-items: center;
-          border: 2.5px solid var(--bg);
+          position: absolute; right: -2px; bottom: -2px;
+          width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center;
+          border: 2px solid var(--bg);
         }
         .nt-kind-like { background: #F2385A; color: #fff; }
         .nt-kind-accent { background: var(--lemon); color: var(--on-accent); }
 
-        .nt-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-        .nt-line {
-          display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
-          font-size: 15px; line-height: 1.35; color: var(--ink-dim);
+        .nt-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .nt-verified { color: var(--verified, #1D9BF0); flex: none; margin-left: 3px; vertical-align: -2px; }
+        .nt-name {
+          font-family: var(--font-head); font-size: 14.5px; font-weight: 600; color: var(--ink);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        .nt-line b { font-weight: 700; color: var(--ink); }
-        .nt-what { color: var(--ink-dim); }
-        .nt-preview {
-          font-size: 14px; color: var(--ink-dim); line-height: 1.45;
-          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-        }
-        .nt-time { font-size: 12.5px; color: var(--ink-faint); }
+        .nt-what { font-family: var(--font-body); font-weight: 400; color: var(--ink-dim); }
+        .nt-sub { font-size: 12.5px; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .nt-followback {
-          flex: none; padding: 10px 18px; border-radius: 999px;
-          font-size: 13.5px; font-weight: 600; color: var(--accent-ink);
-          border: 1px solid color-mix(in srgb, var(--lemon) 60%, transparent);
-          background: transparent; transition: background 0.16s ease;
+        .nt-follow {
+          flex: none; padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+          font-family: var(--font-head); background: var(--lemon); color: var(--on-accent);
         }
-        @media (hover: hover) {
-          .nt-followback:hover { background: color-mix(in srgb, var(--lemon) 12%, transparent); }
-        }
-        .nt-thumb {
-          flex: none; width: 72px; height: 56px; border-radius: 10px; overflow: hidden;
-          background: var(--surface); padding: 0;
-        }
-        .nt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .nt-thumb { flex: none; width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
 
-        .nt-footer { padding: 18px 12px 6px; }
-        .nt-markall {
-          width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-          padding: 15px; border-radius: 16px;
-          font-size: 15px; font-weight: 600; color: var(--accent-ink);
-          background: color-mix(in srgb, var(--surface-2) 62%, transparent);
-          transition: background 0.16s ease, opacity 0.16s ease;
-        }
-        .nt-markall:disabled { opacity: 0.45; }
-        @media (hover: hover) {
-          .nt-markall:not(:disabled):hover { background: color-mix(in srgb, var(--lemon) 10%, transparent); }
-        }
-
-        /* Wider screens keep the same mobile rhythm, centred. */
-        @media (min-width: 720px) {
-          .nt-groups, .nt-footer, .nt-filters, .nt-bar { max-width: 640px; margin-inline: auto; }
-          .nt-list { margin-inline: 0; }
-        }
+        .nt-more { display: block; margin: 12px auto; font-size: 13px; color: var(--accent-ink); padding: 8px 16px; background: none; }
+        .nt-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 44px 20px; color: var(--ink-faint); }
+        .nt-empty p { margin: 0; font-size: 14px; }
       `}</style>
     </div>
   )
