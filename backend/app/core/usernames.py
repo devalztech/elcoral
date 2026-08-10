@@ -1,11 +1,10 @@
 """
-Single source of truth for username rules.
+Single source of truth for handle rules.
 
-Previously RESERVED_USERNAMES lived only in app/routers/profile.py, while
-app/routers/auth.py's signup referenced it (and `func`) without importing
-either — every signup that supplied a username raised NameError and the
-client showed a generic "Something went wrong". Keeping the rule here
-means every surface (signup, onboarding, profile editor) agrees.
+Signup, onboarding and profile editing all claim or validate the same
+`profiles.username` column, so the regex, the reserved list and the
+rejection messages live here instead of being re-declared (and drifting)
+in three routers.
 """
 import re
 
@@ -18,3 +17,13 @@ RESERVED_USERNAMES = {
     "home", "onboarding", "profile", "u", "me", "support", "help", "about",
     "terms", "privacy", "jobs", "community", "create", "messages", "search",
 }
+
+
+def username_rejection(username: str) -> str | None:
+    """Return a user-facing reason the handle is unusable, or None if fine."""
+    value = (username or "").strip()
+    if not USERNAME_RE.match(value):
+        return "Only letters, numbers, and underscores allowed"
+    if value.lower() in RESERVED_USERNAMES:
+        return "That username is reserved"
+    return None

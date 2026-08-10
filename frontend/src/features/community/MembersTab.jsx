@@ -7,6 +7,7 @@ import { Crown, Shield, ShieldCheck } from 'lucide-react'
 import { api } from '../../api/client.js'
 import { displayName } from '../social/format.js'
 import { Avatar, SectionState } from '../../pages/CommunityDetail.jsx'
+import VerifiedBadge from '../../components/VerifiedBadge.jsx'
 
 const ROLE_ICON = { owner: Crown, admin: ShieldCheck, moderator: Shield }
 const ROLE_LABEL = { owner: 'Owner', admin: 'Admin', moderator: 'Moderator', member: 'Member' }
@@ -42,9 +43,15 @@ export default function MembersTab({ community, accessToken }) {
                 <Avatar person={m.person} size={44} />
                 <div className="mt-id">
                   {m.person.username ? (
-                    <Link to={`/u/${m.person.username}`} className="mt-name">{displayName(m.person)}</Link>
+                    <Link to={`/u/${m.person.username}`} className="mt-name">
+                      {displayName(m.person)}
+                      {m.person.is_verified && <VerifiedBadge size={14} className="mt-verified" />}
+                    </Link>
                   ) : (
-                    <span className="mt-name">{displayName(m.person)}</span>
+                    <span className="mt-name">
+                      {displayName(m.person)}
+                      {m.person.is_verified && <VerifiedBadge size={14} className="mt-verified" />}
+                    </span>
                   )}
                   {m.person.headline && <p className="mt-headline">{m.person.headline}</p>}
                 </div>
@@ -64,8 +71,9 @@ export default function MembersTab({ community, accessToken }) {
         .mt-list > li + li { border-top: 1px solid var(--border); }
         .mt-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
         .mt-id { flex: 1; min-width: 0; }
+        .mt-verified { color: var(--verified, #1D9BF0); flex: none; margin-left: 3px; vertical-align: -2px; }
         .mt-name { font-family: var(--font-head); font-weight: 700; font-size: 14.5px; color: var(--ink); }
-        .mt-name:hover { color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .mt-name:hover { color: var(--accent-ink); } }
         .mt-headline { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .mt-role {
           flex: none; display: inline-flex; align-items: center; gap: 5px;

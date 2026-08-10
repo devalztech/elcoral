@@ -1,20 +1,15 @@
-import re
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, get_optional_user, require_verified
-from app.core.usernames import RESERVED_USERNAMES
+from app.core.deps import get_current_user, require_verified
+from app.core.usernames import username_rejection
 from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.profile import OnboardingRequest, OwnerProfileOut
 
 router = APIRouter(prefix="/api/onboarding", tags=["onboarding"])
-
-_USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{3,30}$")
-
 
 async def _get_or_create_profile(db: AsyncSession, user_id) -> Profile:
     result = await db.execute(select(Profile).where(Profile.user_id == user_id))
@@ -28,25 +23,17 @@ async def _get_or_create_profile(db: AsyncSession, user_id) -> Profile:
 @router.get("/username-available")
 async def check_username_available(
     username: str = Query(min_length=3, max_length=30),
-    user: User | None = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
     username = username.strip()
-    if not _USERNAME_RE.match(username):
-        return {"available": False, "reason": "Only letters, numbers, and underscores allowed"}
+    reason = username_rejection(username)
+    if reason:
+        return {"available": False, "reason": reason}
 
-    if username.lower() in RESERVED_USERNAMES:
-        return {"available": False, "reason": "That username is reserved"}
-
-    # Case-insensitive, exactly like the claim in POST /api/onboarding —
-    # otherwise "Ada" reads as available and then fails on submit.
     existing = await db.scalar(
         select(Profile).where(func.lower(Profile.username) == username.lower())
     )
-    # Viewer-aware: signup already claims the handle the user picked, so
-    # without this the onboarding username step tells people their own
-    # handle is taken and blocks them from finishing.
-    if existing is not None and (user is None or existing.user_id != user.id):
+    if existing is not None:
         return {"available": False, "reason": "That username is already taken"}
     return {"available": True}
 
@@ -63,7 +50,11 @@ async def submit_onboarding(
     # endpoint) since another user could grab it between the frontend's
     # last check and this submit — the DB unique constraint would catch
     # it too, but this gives a clean error instead of a raw IntegrityError.
-    if profile.username != payload.username:
+    reason = username_rejection(payload.username)
+    if reason:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=reason)
+
+    if (profile.username or "").lower() != payload.username.lower():
         existing = await db.scalar(
             select(Profile).where(func.lower(Profile.username) == payload.username.lower())
         )

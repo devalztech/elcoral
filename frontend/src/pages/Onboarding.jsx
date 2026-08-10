@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api, ApiError } from '../api/client.js'
@@ -28,7 +28,7 @@ export default function Onboarding() {
 }
 
 function OnboardingWizard() {
-  const { data } = useOnboarding()
+  const { data, update } = useOnboarding()
   const { user, accessToken } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
@@ -36,6 +36,30 @@ function OnboardingWizard() {
   const [submitError, setSubmitError] = useState('')
   const [completionPct, setCompletionPct] = useState(0)
   const [verifiedOverride, setVerifiedOverride] = useState(false)
+  const [accountType, setAccountType] = useState(null)
+
+  // The signup form already collected a handle and a "Join as" choice, so
+  // the wizard reads the profile row back and seeds itself instead of
+  // asking the same two questions again (people were typing their handle
+  // twice and being told it was taken — by their own account).
+  useEffect(() => {
+    if (!accessToken) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const profile = await api.getMyProfile(accessToken)
+        if (cancelled) return
+        setAccountType(profile.account_type || null)
+        if (profile.username) update({ username: profile.username })
+      } catch {
+        // Non-fatal: the wizard still works, it just starts empty.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken])
 
   // require_verified on the backend blocks POST /api/onboarding entirely
   // until the user has clicked their emailed verification link — this
@@ -50,7 +74,10 @@ function OnboardingWizard() {
 
   // WorkDetailsStep only makes sense if the person picked an intent it
   // covers — skipped entirely otherwise rather than shown empty.
-  const needsWorkDetails = data.intents.includes('find_work') || data.intents.includes('hire')
+  const needsWorkDetails =
+    accountType === 'organization' ||
+    data.intents.includes('find_work') ||
+    data.intents.includes('hire')
 
   const steps = [
     'welcome',

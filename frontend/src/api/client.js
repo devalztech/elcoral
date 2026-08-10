@@ -5,22 +5,6 @@
 // e.g. https://api.elcoral.com — with no trailing slash.
 const BASE = `${import.meta.env.VITE_API_URL ?? ''}/api`
 
-function messageFromDetail(detail) {
-  // FastAPI returns a plain string for hand-written errors (e.g. "Could
-  // not create account with those details") but an array of Pydantic
-  // validation-error objects for a 422 — [{ msg: "...", loc: [...] }].
-  // Without this, an array detail stringifies to "[object Object]" and
-  // that's what the user sees on screen.
-  if (!detail) return null
-  if (typeof detail === 'string') return detail
-  if (Array.isArray(detail) && detail.length > 0) {
-    const first = detail[0]
-    if (typeof first === 'string') return first
-    if (first?.msg) return String(first.msg).replace(/^Value error,\s*/, '')
-  }
-  return null
-}
-
 class ApiError extends Error {
   constructor(message, status, detail) {
     super(message)
@@ -49,7 +33,7 @@ async function request(path, { method = 'GET', body, token, isFormData = false }
   }
 
   if (!res.ok) {
-    const message = messageFromDetail(data?.detail) || 'Something went wrong. Please try again.'
+    const message = data?.detail || 'Something went wrong. Please try again.'
     throw new ApiError(message, res.status, data?.detail)
   }
 
@@ -140,10 +124,17 @@ export const api = {
     request(`/posts/${postId}/poll/vote`, { method: 'POST', body: { option_index: optionIndex }, token }),
 
   listComments: (postId, token) => request(`/posts/${postId}/comments`, { token }),
-  createComment: (postId, { body, parentId } = {}, token) =>
+  // A comment can carry one photo (uploaded first via uploadMedia) with
+  // the text acting as its caption; either half may be empty, not both.
+  createComment: (postId, { body, parentId, mediaRef, mediaType } = {}, token) =>
     request(`/posts/${postId}/comments`, {
       method: 'POST',
-      body: { body, parent_id: parentId ?? null },
+      body: {
+        body: body || null,
+        parent_id: parentId ?? null,
+        media_ref: mediaRef ?? null,
+        media_type: mediaType ?? null,
+      },
       token,
     }),
   deleteComment: (commentId, token) =>

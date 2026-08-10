@@ -243,6 +243,10 @@ class OwnerProfileOut(ProfileOut):
     photo_ref: str | None = None
     cover_ref: str | None = None
 
+    # Chosen on the signup form ("Join as"): the onboarding wizard reads it
+    # back so it doesn't ask the same question twice.
+    account_type: str | None = None
+
     full_name: str | None = None
     email: str | None = None
     is_verified: bool = False

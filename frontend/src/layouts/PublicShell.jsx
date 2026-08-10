@@ -55,15 +55,15 @@ export default function PublicShell() {
         }
         .pshell-actions { display: flex; align-items: center; gap: 14px; }
         .pshell-icon-link { color: var(--ink); display: inline-flex; }
-        .pshell-icon-link:hover { color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .pshell-icon-link:hover { color: var(--accent-ink); } }
         .pshell-login { font-size: 15px; font-weight: 600; color: var(--ink-dim); }
-        .pshell-login:hover { color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .pshell-login:hover { color: var(--ink); } }
         .pshell-signup {
           background: var(--lemon); color: var(--on-accent);
           font-size: 15px; font-weight: 700;
           border-radius: 999px; padding: 11px 20px;
         }
-        .pshell-signup:hover { background: var(--lemon-dim); }
+        @media (hover: hover) and (pointer: fine) { .pshell-signup:hover { background: var(--lemon-dim); } }
 
         .pshell-content {
           padding: 16px 20px 60px;

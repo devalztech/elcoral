@@ -13,6 +13,7 @@ import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
 import { OnlineDot, TypingDots } from '../features/messages/Presence.jsx'
 import { avatarTone, displayName, initialsOf, timeAgo } from '../features/social/format.js'
+import Spinner from '../components/Spinner.jsx'
 import VerifiedBadge from '../components/VerifiedBadge.jsx'
 
 function previewOf(message) {
@@ -122,7 +123,7 @@ export default function Messages() {
 
       {items === null && (
         <ul className="mi-list">
-          {[0, 1, 2, 3].map((i) => <li key={i} className="mi-skeleton" />)}
+          <Spinner page label="Loading conversations" />
         </ul>
       )}
 
@@ -146,10 +147,8 @@ export default function Messages() {
                   <Avatar person={person} online={online} />
                   <span className="mi-body">
                     <span className="mi-top">
-                      <span className="mi-name">
-                        <span className="mi-name-text">{displayName(person)}</span>
-                        {person.is_verified && <VerifiedBadge size={14.5} className="mi-verified" />}
-                      </span>
+                      <span className="mi-name">{displayName(person)}</span>
+                      {person.is_verified && <VerifiedBadge size={15} className="mi-verified" />}
                       <span className="mi-time">{timeAgo(c.last_message_at)}</span>
                     </span>
                     <span className="mi-bottom">
@@ -195,15 +194,8 @@ export default function Messages() {
         .mi-av.tone-b { background: color-mix(in srgb, var(--accent-ink) 18%, transparent); }
         .mi-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
         .mi-top { display: flex; align-items: baseline; gap: 8px; }
-        .mi-name {
-          display: inline-flex; align-items: center; gap: 3px;
-          flex: 1; min-width: 0;
-        }
-        .mi-name-text {
-          font-family: var(--font-head); font-size: 14.5px; font-weight: 600; color: var(--ink);
-          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-        .mi-verified { flex: none; color: var(--verified, #1D9BF0); }
+        .mi-verified { color: var(--verified, #1D9BF0); flex: none; }
+        .mi-name { font-family: var(--font-head); font-size: 14.5px; font-weight: 600; color: var(--ink); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .mi-time { font-size: 11.5px; color: var(--ink-faint); flex: none; }
         .mi-bottom { display: flex; align-items: center; gap: 8px; }
         .mi-preview { flex: 1; font-size: 13px; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

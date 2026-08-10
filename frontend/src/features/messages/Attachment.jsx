@@ -6,13 +6,14 @@
  * has to sniff a URL to decide between an <img>, a <video>, a voice-note
  * player and a document row.
  *
- * Images and videos size themselves to their real aspect ratio (clamped
- * to a sane portrait/landscape range) once loaded, rather than forcing
- * every clip and photo into the same fixed box. Every colour comes from
- * a theme token so the attachment follows light/dark like the rest of
- * the app.
+ * SIZING: every photo and every clip in a DM uses ONE fixed frame —
+ * MEDIA_W x MEDIA_H below — no matter what the file's own aspect ratio
+ * is. A 9:16 phone clip, a 16:9 screen recording and a square photo all
+ * occupy the same box, so a thread never jumps around as media loads.
+ * The frame width is the voice-note width (246px, the messaging bubble
+ * measure) and its height is that width x 4/3; change these two numbers
+ * and every image/video bubble in messages follows.
  */
-import { useState } from 'react'
 import { Download, FileText } from 'lucide-react'
 import VoiceNote from './VoiceNote.jsx'
 import MediaPlayer from '../../components/MediaPlayer.jsx'
@@ -26,59 +27,46 @@ function fileName(url) {
   }
 }
 
-const MIN_RATIO = 4 / 5
-const MAX_RATIO = 16 / 9
-const clampRatio = (r) => (Number.isFinite(r) && r > 0 ? Math.min(MAX_RATIO, Math.max(MIN_RATIO, r)) : MAX_RATIO)
+// The one media size used by every image and video bubble in messages.
+const MEDIA_W = 246
+const MEDIA_H = Math.round((MEDIA_W * 4) / 3) // 328
 
-/* WhatsApp media metrics: a photo/video bubble is at most 330px wide,
-   the media itself gets a 6px corner inside the bubble's 3px padding,
-   and it is never taller than 1.4x its width (WhatsApp crops portraits
-   at roughly 5:7 before it offers "open"). */
 const frameCss = `
   .ma-frame {
-    display: block; position: relative; width: 100%;
-    max-width: 330px; min-width: 120px; aspect-ratio: 4 / 3;
-    max-height: 420px;
+    display: block; position: relative;
+    width: ${MEDIA_W}px; height: ${MEDIA_H}px;
+    flex: none;
     padding: 0; background: color-mix(in srgb, var(--ink) 6%, transparent);
     border-radius: 6px; overflow: hidden;
   }
   .ma-frame > img, .ma-frame > video {
-    display: block; width: 100%; height: 100%; object-fit: cover; background: color-mix(in srgb, var(--ink) 8%, transparent);
+    display: block; width: 100%; height: 100%; object-fit: cover;
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
   }
-  @media (max-width: 480px) { .ma-frame { max-width: 100%; } }
+  /* On a narrow phone the frame shrinks to the bubble but keeps the
+     same shape, so it is still one predictable size everywhere. */
+  @media (max-width: 420px) {
+    .ma-frame { width: 100%; max-width: ${MEDIA_W}px; height: auto; aspect-ratio: 3 / 4; }
+  }
 `
 
 
 export default function Attachment({ attachment, onOpenImage }) {
   const { url, kind, mime_type: mime } = attachment
-  const [ratio, setRatio] = useState(null)
-  const frameStyle = ratio ? { aspectRatio: ratio } : undefined
 
   if (kind === 'image') {
     return (
       <button
         type="button"
         className="ma-frame ma-image"
-        style={frameStyle}
         onClick={() => onOpenImage?.(url)}
         aria-label="Open image preview"
       >
-        <img
-          src={url}
-          alt=""
-          loading="lazy"
-          onLoad={(e) => {
-            const { naturalWidth: w, naturalHeight: h } = e.currentTarget
-            if (w && h) setRatio(clampRatio(w / h))
-          }}
-        />
+        <img src={url} alt="" loading="lazy" />
         <style>{`
           ${frameCss}
           .ma-image { cursor: zoom-in; }
-          .ma-image > img { transition: transform 200ms ease; }
-          .ma-image:hover > img { transform: scale(1.02); }
           .ma-image:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
-          @media (prefers-reduced-motion: reduce) { .ma-image > img { transition: none; } }
         `}</style>
       </button>
     )
@@ -86,17 +74,19 @@ export default function Attachment({ attachment, onOpenImage }) {
 
   if (kind === 'video') {
     // Elcoral's own player rather than the browser's default chrome, so
-    // a clip in a DM looks the same as a clip in the feed.
+    // a clip in a DM looks the same as a clip in the feed — and it sits
+    // in the exact same fixed frame a photo would.
     return (
-      <div className="ma-video">
-        <MediaPlayer src={url} ratio={ratio} onRatio={(r) => setRatio(clampRatio(r))} />
+      <div className="ma-frame ma-video">
+        <MediaPlayer src={url} fill rounded={false} />
         <style>{`
-          .ma-video { width: 100%; max-width: 330px; }
-          @media (max-width: 480px) { .ma-video { max-width: 100%; } }
+          ${frameCss}
+          .ma-video { background: #000; }
         `}</style>
       </div>
     )
   }
+
 
   if (kind === 'audio') {
     // Voice notes get the themed player: play button, scrubbable

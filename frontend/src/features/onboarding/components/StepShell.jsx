@@ -92,7 +92,7 @@ export default function StepShell({
           color: var(--ink-dim);
           margin-bottom: 20px;
         }
-        .back-btn:hover { border-color: var(--accent-ink); color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .back-btn:hover { border-color: var(--accent-ink); color: var(--ink); } }
         .step-title {
           font-family: var(--font-display);
           font-weight: 800;

@@ -109,7 +109,7 @@ export default function SkillsStep({ progress, onNext, onBack }) {
           border-radius: 999px;
           padding: 7px 12px;
         }
-        .skill-suggestion:hover { border-color: var(--accent-ink); color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .skill-suggestion:hover { border-color: var(--accent-ink); color: var(--ink); } }
         .skills-selected {
           display: flex; flex-wrap: wrap; gap: 8px;
           margin-top: 22px;
@@ -127,7 +127,7 @@ export default function SkillsStep({ progress, onNext, onBack }) {
           padding: 7px 8px 7px 13px;
         }
         .skill-tag button { color: var(--ink-dim); display: flex; }
-        .skill-tag button:hover { color: var(--danger); }
+        @media (hover: hover) and (pointer: fine) { .skill-tag button:hover { color: var(--danger); } }
       `}</style>
     </StepShell>
   )

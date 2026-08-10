@@ -174,7 +174,7 @@ export default function CommunityCreate() {
           width: 38px; height: 38px; border-radius: 999px; flex: none;
           display: inline-flex; align-items: center; justify-content: center; color: var(--ink);
         }
-        .cc-icon-btn:hover { background: var(--panel); color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .cc-icon-btn:hover { background: var(--panel); color: var(--accent-ink); } }
         .cc-bar-title { margin: 0 0 0 4px; font-family: var(--font-head); font-weight: 700; font-size: 17px; color: var(--ink); }
 
         .cc-form { padding: 12px var(--gut) 0; display: flex; flex-direction: column; gap: 16px; max-width: 520px; }

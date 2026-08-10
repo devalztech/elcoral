@@ -101,7 +101,7 @@ export default function Create() {
           color: var(--ink); white-space: nowrap;
         }
         .cr-templates svg { color: var(--accent-ink); }
-        .cr-templates:hover { border-color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .cr-templates:hover { border-color: var(--accent-ink); } }
         .cr-templates:active { transform: scale(0.97); }
 
         .cr-section {
@@ -132,7 +132,7 @@ export default function Create() {
           font-size: 13px; line-height: 1.42; color: var(--ink-dim); flex: 1;
         }
         .cr-card-arrow { color: var(--accent-ink); margin-top: 14px; }
-        .cr-card:hover { border-color: rgba(196, 241, 53, 0.35); }
+        @media (hover: hover) and (pointer: fine) { .cr-card:hover { border-color: rgba(196, 241, 53, 0.35); } }
         .cr-card:active { transform: scale(0.99); }
 
         .cr-quick { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
@@ -151,7 +151,7 @@ export default function Create() {
         .cr-row-label { font-family: var(--font-head); font-size: 15.5px; font-weight: 700; color: var(--ink); }
         .cr-row-desc { font-size: 13px; line-height: 1.35; color: var(--ink-dim); }
         .cr-row-chevron { color: var(--ink-faint); }
-        .cr-row:hover { border-color: rgba(196, 241, 53, 0.35); }
+        @media (hover: hover) and (pointer: fine) { .cr-row:hover { border-color: rgba(196, 241, 53, 0.35); } }
         .cr-row:active { background: var(--panel-raised); }
 
         .cr-promo {

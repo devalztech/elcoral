@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -9,7 +10,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.limiter import limiter
-from app.core.usernames import RESERVED_USERNAMES
+from app.core.usernames import username_rejection
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -32,6 +33,8 @@ from app.schemas.auth import (
     TokenResponse,
     UserOut,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -75,11 +78,10 @@ async def signup(request: Request, response: Response, body: SignupRequest, db: 
         full_name=body.full_name,
     )
     db.add(user)
-    # flush, not commit: everything below (profile, refresh token,
-    # verification token) must land in the SAME transaction. Committing
-    # here meant a later failure left an orphan user row that could never
-    # sign up again and had no profile — exactly what happened while the
-    # username lookup was crashing.
+    # flush (not commit): the User and its Profile must be created in one
+    # transaction. Committing here left orphaned accounts behind whenever
+    # anything below failed, and those rows then blocked the same email
+    # from ever signing up again ("something went wrong" forever).
     await db.flush()
 
     # The signup form also collects a handle and "Join as" choice, so the
@@ -92,7 +94,7 @@ async def signup(request: Request, response: Response, body: SignupRequest, db: 
         taken = await db.scalar(
             select(Profile).where(func.lower(Profile.username) == requested_username.lower())
         )
-        if taken or requested_username.lower() in RESERVED_USERNAMES:
+        if taken or username_rejection(requested_username):
             requested_username = None
     db.add(
         Profile(
@@ -127,7 +129,13 @@ async def signup(request: Request, response: Response, body: SignupRequest, db: 
             f"{settings.frontend_url}/verify-email"
             f"?token_id={verify_row.id}&token={raw_verify_token}"
         )
-        await email_service.send_verification_email(user.email, user.full_name, verify_url)
+        try:
+            await email_service.send_verification_email(user.email, user.full_name, verify_url)
+        except Exception:  # noqa: BLE001
+            # An SMTP hiccup must not throw away a perfectly good signup —
+            # the account is created and the user can request a new link
+            # from the "resend verification" action.
+            logger.exception("signup: verification email failed for %s", user.email)
     else:
         # No SMTP configured — there's no way to deliver a verification
         # link, so don't leave the user permanently unverified waiting for

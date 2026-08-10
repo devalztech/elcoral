@@ -11,7 +11,6 @@ Split from app/routers/onboarding.py on purpose:
 - /api/profile/{username} is the viewer-aware public profile the profile
   page renders for owners, logged-in visitors and logged-out guests.
 """
-import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
@@ -19,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_optional_user
-from app.core.usernames import RESERVED_USERNAMES
 from app.models.post import Post
 from app.models.profile import Profile
 from app.models.user import User
@@ -33,8 +31,7 @@ from app.schemas.profile import (
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
-_USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{3,30}$")
-
+from app.core.usernames import RESERVED_USERNAMES, username_rejection  # noqa: E402
 
 
 async def _get_or_create_profile(db: AsyncSession, user_id) -> Profile:
@@ -59,10 +56,9 @@ async def username_available(
     their own username is taken.
     """
     username = username.strip()
-    if not _USERNAME_RE.match(username):
-        return {"available": False, "reason": "Only letters, numbers, and underscores allowed"}
-    if username.lower() in RESERVED_USERNAMES:
-        return {"available": False, "reason": "That username is reserved"}
+    reason = username_rejection(username)
+    if reason:
+        return {"available": False, "reason": reason}
 
     existing = await db.scalar(select(Profile).where(func.lower(Profile.username) == username.lower()))
     if existing is None:

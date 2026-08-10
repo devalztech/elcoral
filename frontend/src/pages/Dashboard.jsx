@@ -7,19 +7,16 @@ import ElcoralMark from '../components/ElcoralMark.jsx'
 import PostCard from '../features/feed/PostCard.jsx'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api } from '../api/client.js'
-import { avatarTone, formatCount, initialsOf, pluralize } from '../features/social/format.js'
+import { formatCount, initialsOf, pluralize } from '../features/social/format.js'
 import { RECOMMENDED as JOBS } from '../features/jobs/jobs.js'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
+import Spinner from '../components/Spinner.jsx'
 
 /**
  * Home feed.
  *
- * The For you tab has no suggestion surface — it goes straight to the
- * posts feed. (Follow/join suggestions for people and communities are
- * fetched elsewhere, e.g. the Discover and Community pages; that state
- * lives here too since the composer's empty-feed message and the
- * Community tab still read it, but nothing on the For you tab renders
- * it anymore.)
+ * The For you tab is a pure feed: composer, then posts. No suggestion
+ * rails sit between the tabs and the posts.
  */
 
 const TABS = [
@@ -32,21 +29,6 @@ const TABS = [
 // Which tabs are backed by the posts feed endpoint.
 const FEED_TABS = new Set(['for-you', 'following'])
 
-function PersonAvatar({ person, size = 40 }) {
-  if (person.photo_url) {
-    return <img className="hm-av" src={person.photo_url} alt={person.full_name} style={{ width: size, height: size }} />
-  }
-  return (
-    <span
-      className={`hm-av tone-${avatarTone(person.id || person.full_name)}`}
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.34) }}
-      aria-hidden="true"
-    >
-      {initialsOf(person.full_name)}
-    </span>
-  )
-}
-
 export default function Dashboard() {
   const { user, accessToken, authLoading } = useAuth()
   const { unreadTotal } = useMessaging()
@@ -58,12 +40,7 @@ export default function Dashboard() {
   const [exhausted, setExhausted] = useState(false)
   const [error, setError] = useState('')
 
-  const [people, setPeople] = useState([])
-  const [peopleError, setPeopleError] = useState('')
-  const [communities, setCommunities] = useState([])
   const [discussions, setDiscussions] = useState([])
-  const [followBusy, setFollowBusy] = useState({})
-  const [joinBusy, setJoinBusy] = useState({})
   const [profile, setProfile] = useState(null)
 
   const loadFeed = useCallback(async () => {
@@ -95,18 +72,10 @@ export default function Dashboard() {
     const token = accessToken ?? undefined
 
     if (token) {
-      setPeopleError('')
-      api.followSuggestions(token, 10)
-        .then((data) => { if (!cancelled) setPeople(data.items ?? []) })
-        .catch((err) => { if (!cancelled) { setPeople([]); setPeopleError(err.message) } })
       api.myProfile(token)
         .then((data) => { if (!cancelled) setProfile(data) })
         .catch(() => { if (!cancelled) setProfile(null) })
     }
-
-    api.listCommunities({ scope: 'trending', limit: 5 }, token)
-      .then((data) => { if (!cancelled) setCommunities((data.items ?? []).filter((c) => !c.is_member)) })
-      .catch(() => { if (!cancelled) setCommunities([]) })
 
     return () => { cancelled = true }
   }, [authLoading, accessToken])
@@ -138,32 +107,6 @@ export default function Dashboard() {
       setError(err.message)
     } finally {
       setLoadingMore(false)
-    }
-  }
-
-  const follow = async (person) => {
-    if (!person.username || followBusy[person.id]) return
-    setFollowBusy((s) => ({ ...s, [person.id]: true }))
-    try {
-      await api.followUser(person.username, accessToken)
-      setPeople((list) => list.filter((p) => p.id !== person.id))
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setFollowBusy((s) => ({ ...s, [person.id]: false }))
-    }
-  }
-
-  const join = async (community) => {
-    if (!accessToken || joinBusy[community.id]) return
-    setJoinBusy((s) => ({ ...s, [community.id]: true }))
-    try {
-      await api.joinCommunity(community.slug, accessToken)
-      setCommunities((list) => list.filter((c) => c.id !== community.id))
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setJoinBusy((s) => ({ ...s, [community.id]: false }))
     }
   }
 
@@ -228,12 +171,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {loading && (
-          <>
-            <div className="hm-skeleton" />
-            <div className="hm-skeleton" />
-          </>
-        )}
+        {loading && <Spinner page label="Loading posts" />}
 
         {/* ------------------------------------------------ posts feed --- */}
         {!loading && FEED_TABS.has(tab) && posts?.length === 0 && !error && (
@@ -262,7 +200,7 @@ export default function Dashboard() {
 
         {!loading && FEED_TABS.has(tab) && posts?.length > 0 && !exhausted && (
           <button type="button" className="hm-more" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? 'Loading…' : 'Load more'}
+            {loadingMore ? <Spinner size={18} label="Loading more posts" /> : 'Load more'}
           </button>
         )}
 
@@ -338,7 +276,7 @@ export default function Dashboard() {
           position: relative; display: grid; place-items: center;
           width: 40px; height: 40px; border-radius: 999px; color: var(--ink);
         }
-        .hm-icon-btn:hover { color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .hm-icon-btn:hover { color: var(--accent-ink); } }
         .hm-badge {
           position: absolute; top: -2px; right: -3px;
           min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
@@ -362,7 +300,7 @@ export default function Dashboard() {
           font-family: var(--font-head); font-size: 14px; font-weight: 600;
           color: var(--ink-dim);
         }
-        .hm-tab:hover { color: var(--ink); }
+        @media (hover: hover) and (pointer: fine) { .hm-tab:hover { color: var(--ink); } }
         .hm-tab.on { color: var(--accent-ink); }
         .hm-tab.on::after {
           content: ''; position: absolute; left: 50%; bottom: -1px;
@@ -389,12 +327,22 @@ export default function Dashboard() {
         }
 
         .hm-block { border-bottom: 1px solid var(--border); }
+        .hm-section-head {
+          display: flex; align-items: baseline; justify-content: space-between;
+          gap: 12px; padding: 14px var(--gut) 6px;
+        }
+        .hm-section-head h2 {
+          margin: 0; font-family: var(--font-head);
+          font-size: 16px; font-weight: 700; color: var(--ink);
+        }
+        .hm-see-all { font-family: var(--font-head); font-size: 13.5px; font-weight: 600; color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .hm-see-all:hover { text-decoration: underline; } }
 
         .hm-row {
           display: flex; align-items: center; gap: 12px;
           padding: 10px var(--gut);
         }
-        .hm-row:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+        @media (hover: hover) and (pointer: fine) { .hm-row:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
         .hm-row-main { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
         .hm-row-text { display: flex; flex-direction: column; min-width: 0; }
         .hm-row-title {
@@ -420,11 +368,14 @@ export default function Dashboard() {
         }
         .hm-tile img { width: 100%; height: 100%; object-fit: cover; }
 
+        /* Status chip: a pill outline, self-sized to its label. */
+
+
         .hm-feed { display: grid; }
 
         /* Community / job rows in the feed body match the post cell. */
         .hm-item { display: block; padding: 12px var(--gut); border-bottom: 1px solid var(--border); }
-        .hm-item:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+        @media (hover: hover) and (pointer: fine) { .hm-item:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); } }
         .hm-item-eyebrow { margin: 0; font-size: 12.5px; color: var(--accent-ink); font-weight: 600; }
         .hm-item-title { margin: 3px 0 0; font-family: var(--font-head); font-size: 15px; line-height: 20px; font-weight: 700; color: var(--ink); }
         .hm-item-body {
@@ -451,7 +402,7 @@ export default function Dashboard() {
           font-family: var(--font-head); font-weight: 700; font-size: 13.5px;
         }
         .hm-more {
-          padding: 15px; border: 0; border-bottom: 1px solid var(--border); background: none;
+          display: grid; place-items: center; padding: 15px; border: 0; border-bottom: 1px solid var(--border); background: none;
           font-family: var(--font-head); font-weight: 600; font-size: 14px; color: var(--accent-ink);
         }
         .hm-end { margin: 0; padding: 16px; text-align: center; font-size: 12.5px; color: var(--ink-faint); }

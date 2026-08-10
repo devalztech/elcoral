@@ -270,7 +270,7 @@ export default function AuthLayout({
           color: var(--ink);
           transition: border-color 0.15s ease, color 0.15s ease;
         }
-        .back-btn:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+        @media (hover: hover) and (pointer: fine) { .back-btn:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
         .auth-form-wrap { width: 100%; max-width: 470px; padding-top: 26px; }
         .auth-head { text-align: center; }
         .auth-title {

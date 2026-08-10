@@ -13,6 +13,8 @@ import { ChevronLeft, Users } from 'lucide-react'
 import { api } from '../api/client.js'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { avatarTone, displayName, formatCount, initialsOf } from '../features/social/format.js'
+import Spinner from '../components/Spinner.jsx'
+import VerifiedBadge from '../components/VerifiedBadge.jsx'
 
 function FollowButton({ person, onChanged }) {
   const { accessToken } = useAuth()
@@ -147,7 +149,7 @@ export default function PeopleList() {
       {error && <p className="pl-error">{error}</p>}
 
       {items === null && (
-        <ul className="pl-list">{[0, 1, 2, 3, 4].map((i) => <li key={i} className="pl-skeleton" />)}</ul>
+        <Spinner page label="Loading people" />
       )}
 
       {items !== null && items.length === 0 && !error && (
@@ -170,7 +172,10 @@ export default function PeopleList() {
                   </span>
                 )}
                 <span className="pl-text">
-                  <span className="pl-name">{displayName(person)}</span>
+                  <span className="pl-name">
+                    {displayName(person)}
+                    {person.is_verified && <VerifiedBadge size={14} className="pl-verified" />}
+                  </span>
                   {(person.username || person.headline) && (
                     <span className="pl-sub">{person.headline || `@${person.username}`}</span>
                   )}
@@ -184,7 +189,7 @@ export default function PeopleList() {
 
       {cursor && (
         <button type="button" className="pl-more" onClick={loadMore} disabled={loadingMore}>
-          {loadingMore ? 'Loading…' : 'Load more'}
+          {loadingMore ? <Spinner size={17} label="Loading more" /> : 'Load more'}
         </button>
       )}
 
@@ -212,6 +217,7 @@ export default function PeopleList() {
         .pl-av.tone-a { background: color-mix(in srgb, var(--lemon) 45%, transparent); }
         .pl-av.tone-b { background: color-mix(in srgb, var(--accent-ink) 18%, transparent); }
         .pl-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .pl-verified { color: var(--verified, #1D9BF0); flex: none; margin-left: 3px; vertical-align: -2px; }
         .pl-name { font-family: var(--font-head); font-size: 14.5px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pl-sub { font-size: 12.5px; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pl-follow {

@@ -1,6 +1,7 @@
 import { Monitor, Moon, Sun } from 'lucide-react'
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 import { useSettings } from '../../features/settings/hooks/useSettings.jsx'
+import Spinner from '../../components/Spinner.jsx'
 
 const THEMES = [
   { key: 'dark', label: 'Dark', icon: Moon },
@@ -19,7 +20,7 @@ const ACCENTS = [
 export default function AppearanceSettings() {
   const { settings, loading, error, updateAppearance } = useSettings()
 
-  if (loading) return <SettingsSubpage title="Appearance"><p className="set-loading">Loading…</p></SettingsSubpage>
+  if (loading) return <SettingsSubpage title="Appearance"><Spinner page label="Loading settings" /></SettingsSubpage>
 
   const { theme, accent } = settings.appearance
 

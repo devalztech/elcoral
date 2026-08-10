@@ -3,6 +3,7 @@ import { useAuth } from '../../features/auth/hooks/useAuth.jsx'
 import { api } from '../../api/client.js'
 import SettingsSubpage from '../../features/settings/components/SettingsSubpage.jsx'
 import ToggleRow from '../../features/settings/components/ToggleRow.jsx'
+import Spinner from '../../components/Spinner.jsx'
 
 export default function PrivacySettings() {
   const { accessToken, authLoading } = useAuth()
@@ -50,7 +51,7 @@ export default function PrivacySettings() {
   if (authLoading || loading) {
     return (
       <SettingsSubpage title="Privacy">
-        <p className="privacy-loading">Loading…</p>
+        <Spinner page label="Loading settings" />
         <style>{`.privacy-loading { font-size: 13.5px; color: var(--ink-faint); }`}</style>
       </SettingsSubpage>
     )
