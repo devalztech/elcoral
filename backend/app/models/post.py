@@ -134,3 +134,22 @@ class PostPollVote(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     option_index: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class PostCommentLike(Base):
+    """A like on a comment or on a reply — same shape as PostLike."""
+
+    __tablename__ = "post_comment_likes"
+    __table_args__ = (
+        UniqueConstraint("comment_id", "user_id", name="uq_post_comment_likes_pair"),
+        Index("ix_post_comment_likes_comment_id", "comment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    comment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("post_comments.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

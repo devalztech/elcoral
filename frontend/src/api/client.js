@@ -139,6 +139,11 @@ export const api = {
     }),
   deleteComment: (commentId, token) =>
     request(`/posts/comments/${commentId}`, { method: 'DELETE', token }),
+  // Comments and replies can be liked, exactly like posts.
+  likeComment: (commentId, token) =>
+    request(`/posts/comments/${commentId}/like`, { method: 'POST', token }),
+  unlikeComment: (commentId, token) =>
+    request(`/posts/comments/${commentId}/like`, { method: 'DELETE', token }),
   listLikers: (postId, token) => request(`/posts/${postId}/likes`, { token }),
 
   // Media — multipart upload, needs the token passed explicitly since
@@ -206,6 +211,17 @@ export const api = {
       { token },
     ),
   followSuggestions: (token, limit = 10) => request(`/social/suggestions?limit=${limit}`, { token }),
+  // Typeahead behind the "@" mention menu.
+  searchPeople: (q, token, limit = 8) =>
+    request(`/social/search/people?q=${encodeURIComponent(q)}&limit=${limit}`, { token }),
+
+  // --------------------------------------------------------- notifications
+  listNotifications: (token, limit = 50) => request(`/notifications?limit=${limit}`, { token }),
+  unreadNotificationCount: (token) => request('/notifications/unread-count', { token }),
+  markNotificationRead: (id, token) =>
+    request(`/notifications/${id}/read`, { method: 'POST', token }),
+  markAllNotificationsRead: (token) =>
+    request('/notifications/read-all', { method: 'POST', token }),
 
   // -------------------------------------------------------------- messages
   listConversations: (token) => request('/messages/conversations', { token }),

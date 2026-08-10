@@ -18,6 +18,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core import notify
 from app.core.deps import get_current_user, get_optional_user
 from app.models.profile import Profile
 from app.models.settings import BlockedUser
@@ -203,6 +204,7 @@ async def follow_user(
     )
     if existing is None:
         db.add(Follow(follower_id=viewer.id, following_id=target.id))
+        await notify.push(db, user_id=target.id, actor_id=viewer.id, kind="follow")
         await db.commit()
 
     followers, following = await follower_counts(db, target.id)
@@ -320,6 +322,56 @@ async def follow_suggestions(
     followed_by_ids = await _viewer_followed_by_ids(db, viewer.id, ids)
     items = [
         PersonOut.from_user(user, profile, is_following=False, follows_you=user.id in followed_by_ids)
+        for user, profile in rows
+    ]
+    return PersonListOut(items=items, total=len(items))
+
+
+@router.get("/search/people", response_model=PersonListOut)
+async def search_people(
+    q: str = Query(default="", max_length=60),
+    limit: int = Query(default=8, ge=1, le=20),
+    viewer: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Typeahead behind the "@" mention menu: public, active accounts whose
+    handle or name starts with what has been typed so far.
+    """
+    term = q.strip().lstrip("@").lower()
+    if not term:
+        return PersonListOut(items=[], total=0)
+
+    hidden = await _blocked_ids(db, viewer.id)
+    prefix = f"{term}%"
+    query = (
+        select(User, Profile)
+        .join(Profile, Profile.user_id == User.id)
+        .where(
+            User.is_active.is_(True),
+            Profile.username.is_not(None),
+            Profile.is_public.is_(True),
+            or_(
+                func.lower(Profile.username).like(prefix),
+                func.lower(User.full_name).like(prefix),
+                func.lower(User.full_name).like(f"% {term}%"),
+            ),
+        )
+        .order_by(func.lower(Profile.username))
+        .limit(limit + len(hidden))
+    )
+    rows = [r for r in (await db.execute(query)).all() if r[0].id not in hidden][:limit]
+    ids = [r[0].id for r in rows]
+    following_ids = await _viewer_following_ids(db, viewer.id, ids)
+    followed_by_ids = await _viewer_followed_by_ids(db, viewer.id, ids)
+    items = [
+        PersonOut.from_user(
+            user,
+            profile,
+            is_following=user.id in following_ids,
+            follows_you=user.id in followed_by_ids,
+            is_self=user.id == viewer.id,
+        )
         for user, profile in rows
     ]
     return PersonListOut(items=items, total=len(items))

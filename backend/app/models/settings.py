@@ -63,7 +63,8 @@ class ReportTargetType(str, PyEnum):
 # layer rather than the DB for the same reason as the profile vocabularies
 # (see app/models/profile.py): the palette will grow, a migration per
 # color would be absurd.
-ACCENT_CHOICES = ["lemon", "coral", "sky", "violet", "amber"]
+# "royal" is Elcoral's default brand blue; "lemon" is the original green.
+ACCENT_CHOICES = ["royal", "lemon", "coral", "sky", "violet", "amber"]
 
 # Locales the UI ships copy for. Same reasoning as above.
 LANGUAGE_CHOICES = ["en", "fr", "es", "pt", "de", "ar", "sw"]
@@ -113,7 +114,7 @@ class UserSettings(Base):
     theme: Mapped[Theme] = mapped_column(
         Enum(Theme, name="theme"), nullable=False, default=Theme.dark, server_default=Theme.dark.value
     )
-    accent: Mapped[str] = mapped_column(String(20), nullable=False, default="lemon", server_default="lemon")
+    accent: Mapped[str] = mapped_column(String(20), nullable=False, default="royal", server_default="royal")
 
     # --- Language ---
     language: Mapped[str] = mapped_column(String(8), nullable=False, default="en", server_default="en")

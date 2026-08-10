@@ -10,6 +10,7 @@ from app.models import (  # noqa: F401 — registers models with Base.metadata
     admin,
     community,
     message,
+    notification,
     post,
     profile,
     settings as settings_models,

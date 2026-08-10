@@ -350,7 +350,10 @@ function NameBlock({ profile, align = 'center' }) {
     <>
       <h1 className={`pv-name pv-name-${align}`}>
         {profile.full_name}
-        <VerifiedBadge size={22} className="pv-verified" />
+        {/* The tick is the admin-granted badge only — never email verification. */}
+        {(profile.is_badge_verified ?? profile.is_verified) && (
+          <VerifiedBadge size={22} className="pv-verified" />
+        )}
       </h1>
       {profile.username && <p className={`pv-username pv-username-${align}`}>@{profile.username}</p>}
     </>
@@ -609,7 +612,7 @@ function VisitorProfile({ profile, posts }) {
       <div className="pv-cover">
         {profile.cover_url && <img src={profile.cover_url} alt="" />}
         <div className="pv-avatar-slot pv-avatar-slot-left">
-          <Avatar profile={profile} size={104} verified />
+          <Avatar profile={profile} size={104} verified={!!(profile.is_badge_verified ?? profile.is_verified)} />
         </div>
       </div>
 
@@ -665,7 +668,7 @@ function GuestProfile({ profile, posts }) {
       <div className="pv-cover pv-cover-guest">
         {profile.cover_url && <img src={profile.cover_url} alt="" />}
         <div className="pv-avatar-slot pv-avatar-slot-left">
-          <Avatar profile={profile} size={104} verified />
+          <Avatar profile={profile} size={104} verified={!!(profile.is_badge_verified ?? profile.is_verified)} />
         </div>
       </div>
 

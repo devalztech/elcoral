@@ -10,6 +10,7 @@ const THEMES = [
 ]
 
 const ACCENTS = [
+  { key: 'royal', label: 'Royal blue', swatch: '#2F6BFF' },
   { key: 'lemon', label: 'Lemon', swatch: '#C4F135' },
   { key: 'coral', label: 'Coral', swatch: '#FF7A5A' },
   { key: 'sky', label: 'Sky', swatch: '#5AC8FF' },

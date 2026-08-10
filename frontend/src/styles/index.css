@@ -4,9 +4,12 @@
   --panel: #14170F;
   --panel-raised: #1B1F15;
   --border: #2A2F21;
-  --lemon: #C4F135;
-  --lemon-dim: #8FBF2B;
-  --lemon-deep: #6E9922;
+  /* Elcoral's default accent is royal blue. The old lemon green is still
+     available as an accent choice in Settings -> Appearance; the token
+     names stay --lemon* so every component keeps working unchanged. */
+  --lemon: #2F6BFF;
+  --lemon-dim: #2455CC;
+  --lemon-deep: #1B3F99;
   --ink: #F7FBEE;
   --ink-dim: #A8B39A;
   --ink-faint: #6B7560;
@@ -42,7 +45,7 @@
   --tile: #0F1309;
   --scrim: rgba(0, 0, 0, 0.62);
   --shadow-drop: 0 12px 32px rgba(0, 0, 0, 0.45);
-  --on-accent: #0B0D0A;
+  --on-accent: #F7FBEE;
   --accent-ink: var(--lemon);
   --auth-page-bg: #000000;
 
@@ -76,8 +79,8 @@
   --ink: #15180F;
   --ink-dim: #4C5442;
   --ink-faint: #7C856F;
-  --lemon-dim: #6E9922;
-  --lemon-deep: #4E6E17;
+  --lemon-dim: #2455CC;
+  --lemon-deep: #1B3F99;
 
   --surface: #FFFFFF;
   --verified: #1D9BF0;
@@ -95,6 +98,8 @@
   --auth-page-bg: #F4F6EC;
 }
 
+:root[data-accent='royal'] { --lemon: #2F6BFF; --lemon-dim: #2455CC; --lemon-deep: #1B3F99; --on-accent: #F7FBEE; }
+:root[data-accent='lemon'] { --lemon: #C4F135; --lemon-dim: #8FBF2B; --lemon-deep: #6E9922; --on-accent: #0B0D0A; }
 :root[data-accent='coral'] { --lemon: #FF7A5A; --lemon-dim: #E45C3C; --lemon-deep: #B94327; }
 :root[data-accent='sky']   { --lemon: #5AC8FF; --lemon-dim: #2FA6E4; --lemon-deep: #1B7EB0; }
 :root[data-accent='violet']{ --lemon: #A98BFF; --lemon-dim: #8A69E6; --lemon-deep: #6647BC; }
@@ -217,7 +222,7 @@ input:-webkit-autofill:focus {
 
 .btn-primary {
   background: var(--lemon);
-  color: #0B0D0A;
+  color: var(--on-accent);
 }
 @media (hover: hover) and (pointer: fine) { .btn-primary:hover { background: var(--ink); } }
 

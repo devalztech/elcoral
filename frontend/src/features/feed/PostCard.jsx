@@ -9,6 +9,9 @@ import { useAuth } from '../auth/hooks/useAuth.jsx'
 import { avatarTone, formatCount, initialsOf, timeAgo } from '../social/format.js'
 import PostMedia from './PostMedia.jsx'
 import VerifiedBadge from '../../components/VerifiedBadge.jsx'
+import RichText from '../../components/RichText.jsx'
+import MentionInput from '../../components/MentionInput.jsx'
+import Lightbox from '../../components/Lightbox.jsx'
 import Spinner from '../../components/Spinner.jsx'
 
 // X's own post metrics, used verbatim below:
@@ -94,10 +97,19 @@ function Poll({ post, onVote, busy }) {
  *    the flow and sits on the bottom edge of the screen exactly like the
  *    DM composer, so replying never means scrolling to the end
  *
- * Replies are collapsed behind "View N replies" — a busy post shouldn't
- * bury the next top-level comment under someone else's sub-thread.
- * A comment may be text, a photo, or a photo with a caption.
+ * Threading is unlimited: you can reply to a comment and to a reply, and
+ * each level nests under the one it answers. Only the latest REPLY_PEEK
+ * replies of a thread are drawn, behind a "View all N replies" line, so
+ * one busy sub-thread can never bury the next top-level comment.
+ *
+ * A comment or a reply may be text, a photo, or a photo with a caption,
+ * and every one of them can be liked. Tapping a photo opens the in-app
+ * lightbox — never the raw storage URL.
  */
+
+// How many replies of a thread are shown before "View all N replies".
+const REPLY_PEEK = 5
+
 function Comments({ post, onCountChange, docked = false }) {
   const { accessToken, user } = useAuth()
   const [items, setItems] = useState(null)
@@ -106,7 +118,9 @@ function Comments({ post, onCountChange, docked = false }) {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [open, setOpen] = useState({}) // comment id -> replies expanded
+  const [showAll, setShowAll] = useState({}) // comment id -> all replies, not just the last 5
   const [photo, setPhoto] = useState(null) // { file, preview, ref, mime, status }
+  const [preview, setPreview] = useState(null) // lightbox url
   const fileRef = useRef(null)
 
   useEffect(() => {
@@ -124,8 +138,8 @@ function Comments({ post, onCountChange, docked = false }) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    const preview = URL.createObjectURL(file)
-    setPhoto({ preview, status: 'uploading', mime: file.type })
+    const url = URL.createObjectURL(file)
+    setPhoto({ preview: url, status: 'uploading', mime: file.type })
     setError('')
     try {
       const result = await api.uploadMedia(file, accessToken)
@@ -173,22 +187,71 @@ function Comments({ post, onCountChange, docked = false }) {
   const remove = async (comment) => {
     try {
       await api.deleteComment(comment.id, accessToken)
-      setItems((list) => (list ?? []).filter((c) => c.id !== comment.id && c.parent_id !== comment.id))
-      onCountChange?.(-1)
+      // Deleting a parent removes its whole sub-tree server-side (ON
+      // DELETE CASCADE), so drop the descendants locally too.
+      setItems((list) => {
+        const all = list ?? []
+        const doomed = new Set([comment.id])
+        let grew = true
+        while (grew) {
+          grew = false
+          for (const c of all) {
+            if (c.parent_id && doomed.has(c.parent_id) && !doomed.has(c.id)) {
+              doomed.add(c.id)
+              grew = true
+            }
+          }
+        }
+        onCountChange?.(-doomed.size)
+        return all.filter((c) => !doomed.has(c.id))
+      })
     } catch (err) {
       setError(err.message)
+    }
+  }
+
+  const toggleLike = async (comment) => {
+    if (!user) { setError('Sign in to like comments.'); return }
+    const next = !comment.liked_by_me
+    // Optimistic — the heart must answer the tap, not the round trip.
+    setItems((list) => (list ?? []).map((c) => (
+      c.id === comment.id
+        ? { ...c, liked_by_me: next, like_count: Math.max(0, (c.like_count || 0) + (next ? 1 : -1)) }
+        : c
+    )))
+    try {
+      const fresh = next
+        ? await api.likeComment(comment.id, accessToken)
+        : await api.unlikeComment(comment.id, accessToken)
+      setItems((list) => (list ?? []).map((c) => (
+        c.id === comment.id ? { ...c, liked_by_me: fresh.liked_by_me, like_count: fresh.like_count } : c
+      )))
+    } catch (err) {
+      setError(err.message)
+      setItems((list) => (list ?? []).map((c) => (
+        c.id === comment.id
+          ? { ...c, liked_by_me: !next, like_count: Math.max(0, (c.like_count || 0) + (next ? -1 : 1)) }
+          : c
+      )))
     }
   }
 
   const roots = (items ?? []).filter((c) => !c.parent_id)
   const repliesOf = (id) => (items ?? []).filter((c) => c.parent_id === id)
 
-  const row = (comment, isReply = false) => {
-    const replies = isReply ? [] : repliesOf(comment.id)
+  const row = (comment, depth = 0) => {
+    const replies = repliesOf(comment.id)
     const expanded = !!open[comment.id]
+    const all = !!showAll[comment.id]
+    // Latest REPLY_PEEK first-class; the rest stay behind "View all".
+    const visible = all ? replies : replies.slice(-REPLY_PEEK)
+    const hidden = replies.length - visible.length
+
     return (
-      <li key={comment.id} className={`pc-comment ${isReply ? 'reply' : ''}`}>
-        <Avatar person={comment.author} size={32} />
+      <li key={comment.id} className={`pc-comment ${depth > 0 ? 'reply' : ''}`}>
+        <Link to={comment.author?.username ? `/u/${comment.author.username}` : '/home'}>
+          <Avatar person={comment.author} size={32} />
+        </Link>
         <div className="pc-comment-body">
           <p className="pc-comment-meta">
             <b>{comment.author.full_name}</b>
@@ -196,26 +259,35 @@ function Comments({ post, onCountChange, docked = false }) {
             <span>{timeAgo(comment.created_at)}</span>
           </p>
           {comment.body && (
-            <ExpandableText className="pc-comment-text" text={comment.body} limit={180} chunk={400} />
+            <RichText className="pc-comment-text" text={comment.body} limit={180} />
           )}
           {comment.media_url && (
-            <a
+            <button
+              type="button"
               className="pc-comment-photo"
-              href={comment.media_url}
-              target="_blank"
-              rel="noreferrer"
+              onClick={(e) => { e.stopPropagation(); setPreview(comment.media_url) }}
+              aria-label="Open photo"
             >
               <img src={comment.media_url} alt="" loading="lazy" />
-            </a>
+            </button>
           )}
           <div className="pc-comment-tools">
-            {!isReply && (
-              <button type="button" onClick={() => setReplyTo(comment)}>Reply</button>
-            )}
+            <button
+              type="button"
+              className={`pc-comment-like ${comment.liked_by_me ? 'on' : ''}`}
+              onClick={() => toggleLike(comment)}
+              aria-pressed={!!comment.liked_by_me}
+              aria-label="Like comment"
+            >
+              <Heart size={14} strokeWidth={2} fill={comment.liked_by_me ? 'currentColor' : 'none'} />
+              {comment.like_count > 0 && formatCount(comment.like_count)}
+            </button>
+            <button type="button" onClick={() => setReplyTo(comment)}>Reply</button>
             {(comment.is_mine || post.is_mine) && (
               <button type="button" onClick={() => remove(comment)}>Delete</button>
             )}
           </div>
+
           {replies.length > 0 && (
             <button
               type="button"
@@ -229,8 +301,21 @@ function Comments({ post, onCountChange, docked = false }) {
                 : `View ${replies.length === 1 ? '1 reply' : `${replies.length} replies`}`}
             </button>
           )}
+
           {replies.length > 0 && expanded && (
-            <ul className="pc-replies">{replies.map((r) => row(r, true))}</ul>
+            <>
+              {hidden > 0 && (
+                <button
+                  type="button"
+                  className="pc-replies-toggle"
+                  onClick={() => setShowAll((s) => ({ ...s, [comment.id]: true }))}
+                >
+                  <span className="pc-replies-rule" aria-hidden="true" />
+                  View {hidden} earlier {hidden === 1 ? 'reply' : 'replies'}
+                </button>
+              )}
+              <ul className="pc-replies">{visible.map((r) => row(r, depth + 1))}</ul>
+            </>
           )}
         </div>
       </li>
@@ -266,20 +351,24 @@ function Comments({ post, onCountChange, docked = false }) {
           onChange={pickPhoto}
           hidden
         />
+        {/* The same photo button serves comments and replies: whatever is
+            in `replyTo` decides where the photo lands. */}
         <button
           type="button"
           className="pc-comment-photo-btn"
           onClick={() => fileRef.current?.click()}
-          aria-label="Add a photo"
+          aria-label={replyTo ? 'Add a photo to your reply' : 'Add a photo'}
         >
           <ImagePlus size={19} strokeWidth={2} />
         </button>
-        <input
+        <MentionInput
           value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={photo ? 'Add a caption…' : 'Write a comment…'}
+          onChange={setValue}
+          placeholder={
+            photo ? 'Add a caption…' : replyTo ? 'Write a reply…  use @ to mention' : 'Write a comment…  use @ to mention'
+          }
           maxLength={2000}
-          aria-label="Write a comment"
+          aria-label={replyTo ? 'Write a reply' : 'Write a comment'}
         />
         <button type="submit" disabled={!canSend} aria-label="Send comment">
           {sending ? <Spinner size={17} /> : <Send size={18} strokeWidth={2} />}
@@ -294,52 +383,17 @@ function Comments({ post, onCountChange, docked = false }) {
   )
 
   return (
-    <div className={`pc-comments ${docked ? 'pc-comments-docked' : ''}`}>
+    <div className={`pc-comments ${docked ? 'pc-comments-docked' : ''}`} data-stop="true">
       {items === null && <Spinner page label="Loading comments" />}
       {items !== null && roots.length === 0 && <p className="pc-hint">No comments yet. Start the conversation.</p>}
       {roots.length > 0 && <ul className="pc-comment-list">{roots.map((c) => row(c))}</ul>}
       {composer}
+      {/* In-app preview: a media comment never navigates to the storage URL. */}
+      <Lightbox src={preview} onClose={() => setPreview(null)} />
     </div>
   )
 }
 
-
-
-/**
- * Long text is revealed in chunks instead of all at once: the first tap on
- * "Read more" adds another slice rather than dumping a wall of text, and
- * the last tap collapses it back. `limit`/`chunk` are characters, and the
- * cut is nudged to the nearest space so words aren't sliced in half.
- */
-function ExpandableText({ text, className, limit = 280, chunk = 600 }) {
-  const [shown, setShown] = useState(limit)
-  const full = text || ''
-  if (full.length <= limit) return <p className={className}>{full}</p>
-
-  const isFull = shown >= full.length
-  let cut = full.slice(0, shown)
-  if (!isFull) {
-    const lastSpace = cut.lastIndexOf(' ')
-    if (lastSpace > limit * 0.6) cut = cut.slice(0, lastSpace)
-  }
-
-  return (
-    <p className={className}>
-      {isFull ? full : `${cut}… `}
-      <button
-        type="button"
-        className="pc-more"
-        onClick={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
-          setShown(isFull ? limit : Math.min(shown + chunk, full.length))
-        }}
-      >
-        {isFull ? 'Show less' : 'Read more'}
-      </button>
-    </p>
-  )
-}
 
 export default function PostCard({ post: initial, onDeleted, detail = false }) {
   const { accessToken, user } = useAuth()
@@ -514,7 +568,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           </header>
 
           {post.title && <h2 className="pc-title">{post.title}</h2>}
-          {post.body && <ExpandableText className="pc-body" text={post.body} />}
+          {post.body && <RichText className="pc-body" text={post.body} limit={280} />}
 
           {post.link_url && (
             <a className="pc-link" href={post.link_url} target="_blank" rel="noreferrer">
@@ -794,6 +848,10 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
         .pc-replying { margin: 0 0 8px; font-size: 13px; color: var(--ink-dim); display: flex; gap: 10px; }
         .pc-replying button { color: var(--accent-ink); font-size: 13px; }
         .pc-comment-input { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+        .pc-comment-like { display: inline-flex; align-items: center; gap: 5px; }
+        .pc-comment-like.on { color: #f91880; }
+        .pc-comment-photo { display: block; padding: 0; background: none; border: 0; }
+        .pc-comment-input .mi { min-width: 0; }
         .pc-comment-input input {
           width: 100%; padding: 11px 14px; border-radius: 999px;
           background: var(--panel-raised); border: 1px solid var(--border);

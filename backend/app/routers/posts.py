@@ -15,12 +15,22 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_optional_user, require_verified
-from app.models.post import Post, PostComment, PostLike, PostPollVote, PostRepost, PostSave
+from app.core import notify
+from app.models.post import (
+    Post,
+    PostComment,
+    PostCommentLike,
+    PostLike,
+    PostPollVote,
+    PostRepost,
+    PostSave,
+)
 from app.models.profile import Profile
 from app.models.social import Follow
 from app.models.user import User
 from app.schemas.post import (
     CommentCreateRequest,
+    CommentEngagementOut,
     CommentOut,
     PollVoteRequest,
     PostAuthorOut,
@@ -177,6 +187,9 @@ async def create_post(
         poll_options=payload.poll_options or None,
     )
     db.add(post)
+    await db.flush()
+    # Mentions in the body ("@handle") ping those people once the post exists.
+    await notify.notify_mentions(db, body=post.body, actor_id=user.id, post_id=post.id)
     await db.commit()
 
     post = await _load_post(db, post.id)
@@ -349,12 +362,20 @@ async def like_post(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _load_post(db, post_id)
+    post = await _load_post(db, post_id)
     exists = await db.scalar(
         select(PostLike.id).where(PostLike.post_id == post_id, PostLike.user_id == user.id)
     )
     if exists is None:
         db.add(PostLike(post_id=post_id, user_id=user.id))
+        await notify.push(
+            db,
+            user_id=post.author_id,
+            actor_id=user.id,
+            kind="post_like",
+            post_id=post_id,
+            preview=post.body,
+        )
         await db.commit()
     return await _engagement(db, post_id, user.id)
 
@@ -456,6 +477,37 @@ async def vote_poll(
 # ---------------------------------------------------------------- comments ----
 
 
+async def _comment_like_state(db: AsyncSession, comment_ids: list, viewer_id):
+    """(likes per comment, ids the viewer has liked) in at most two queries."""
+    if not comment_ids:
+        return {}, set()
+    rows = await db.execute(
+        select(PostCommentLike.comment_id, func.count(PostCommentLike.id))
+        .where(PostCommentLike.comment_id.in_(comment_ids))
+        .group_by(PostCommentLike.comment_id)
+    )
+    counts = {cid: int(n) for cid, n in rows.all()}
+    mine: set = set()
+    if viewer_id is not None:
+        liked = await db.execute(
+            select(PostCommentLike.comment_id).where(
+                PostCommentLike.comment_id.in_(comment_ids),
+                PostCommentLike.user_id == viewer_id,
+            )
+        )
+        mine = set(liked.scalars().all())
+    return counts, mine
+
+
+async def _comment_engagement(db: AsyncSession, comment_id, viewer_id) -> CommentEngagementOut:
+    counts, mine = await _comment_like_state(db, [comment_id], viewer_id)
+    return CommentEngagementOut(
+        id=comment_id,
+        like_count=counts.get(comment_id, 0),
+        liked_by_me=comment_id in mine,
+    )
+
+
 @router.get("/{post_id}/comments", response_model=list[CommentOut])
 async def list_comments(
     post_id: uuid.UUID,
@@ -468,7 +520,7 @@ async def list_comments(
         .options(selectinload(PostComment.author).selectinload(User.profile))
         .where(PostComment.post_id == post_id)
         .order_by(PostComment.created_at.asc())
-        .limit(200)
+        .limit(500)
     )
     viewer_id = viewer.id if viewer else None
     comments = list(rows.scalars().all())
@@ -478,8 +530,17 @@ async def list_comments(
     for c in comments:
         if c.parent_id is not None:
             reply_counts[c.parent_id] = reply_counts.get(c.parent_id, 0) + 1
+
+    like_counts, liked_ids = await _comment_like_state(db, [c.id for c in comments], viewer_id)
     return [
-        CommentOut.from_model(c, viewer_id, reply_counts.get(c.id, 0)) for c in comments
+        CommentOut.from_model(
+            c,
+            viewer_id,
+            reply_counts.get(c.id, 0),
+            like_count=like_counts.get(c.id, 0),
+            liked_by_me=c.id in liked_ids,
+        )
+        for c in comments
     ]
 
 
@@ -490,20 +551,19 @@ async def create_comment(
     user: User = Depends(require_verified),
     db: AsyncSession = Depends(get_db),
 ):
-    await _load_post(db, post_id)
+    post = await _load_post(db, post_id)
 
     body = (payload.body or "").strip()
     if not body and not payload.media_ref:
         raise HTTPException(status_code=400, detail="Write something or attach a photo.")
 
+    parent = None
     if payload.parent_id is not None:
         parent = await db.get(PostComment, payload.parent_id)
         if parent is None or parent.post_id != post_id:
             raise HTTPException(status_code=400, detail="Unknown comment to reply to.")
-        # One level of threading only — a reply to a reply attaches to the
-        # same top-level comment so threads stay readable on mobile.
-        if parent.parent_id is not None:
-            payload.parent_id = parent.parent_id
+        # Replies to replies are kept as real children: a sub-conversation
+        # under a comment reads in the order it actually happened.
 
     comment = PostComment(
         post_id=post_id,
@@ -514,6 +574,30 @@ async def create_comment(
         media_type=payload.media_type,
     )
     db.add(comment)
+    await db.flush()
+
+    if parent is not None:
+        await notify.push(
+            db,
+            user_id=parent.author_id,
+            actor_id=user.id,
+            kind="reply",
+            post_id=post_id,
+            comment_id=comment.id,
+            preview=body or "sent a photo",
+        )
+    await notify.push(
+        db,
+        user_id=post.author_id,
+        actor_id=user.id,
+        kind="comment",
+        post_id=post_id,
+        comment_id=comment.id,
+        preview=body or "sent a photo",
+    )
+    await notify.notify_mentions(
+        db, body=body, actor_id=user.id, post_id=post_id, comment_id=comment.id
+    )
     await db.commit()
 
     loaded = await db.execute(
@@ -522,6 +606,50 @@ async def create_comment(
         .where(PostComment.id == comment.id)
     )
     return CommentOut.from_model(loaded.scalar_one(), user.id)
+
+
+@router.post("/comments/{comment_id}/like", response_model=CommentEngagementOut)
+async def like_comment(
+    comment_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    comment = await db.get(PostComment, comment_id)
+    if comment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+    exists = await db.scalar(
+        select(PostCommentLike.id).where(
+            PostCommentLike.comment_id == comment_id, PostCommentLike.user_id == user.id
+        )
+    )
+    if exists is None:
+        db.add(PostCommentLike(comment_id=comment_id, user_id=user.id))
+        await notify.push(
+            db,
+            user_id=comment.author_id,
+            actor_id=user.id,
+            kind="comment_like",
+            post_id=comment.post_id,
+            comment_id=comment.id,
+            preview=comment.body or "your photo comment",
+        )
+        await db.commit()
+    return await _comment_engagement(db, comment_id, user.id)
+
+
+@router.delete("/comments/{comment_id}/like", response_model=CommentEngagementOut)
+async def unlike_comment(
+    comment_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await db.execute(
+        delete(PostCommentLike).where(
+            PostCommentLike.comment_id == comment_id, PostCommentLike.user_id == user.id
+        )
+    )
+    await db.commit()
+    return await _comment_engagement(db, comment_id, user.id)
 
 
 @router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)

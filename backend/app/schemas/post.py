@@ -134,12 +134,21 @@ class CommentOut(BaseModel):
     media_url: str | None = None
     media_type: str | None = None
     reply_count: int = 0
+    # Comments and replies carry the same like affordance as posts.
+    like_count: int = 0
+    liked_by_me: bool = False
     created_at: datetime
     author: PostAuthorOut
     is_mine: bool = False
 
     @staticmethod
-    def from_model(comment, viewer_id=None, reply_count: int = 0) -> "CommentOut":
+    def from_model(
+        comment,
+        viewer_id=None,
+        reply_count: int = 0,
+        like_count: int = 0,
+        liked_by_me: bool = False,
+    ) -> "CommentOut":
         return CommentOut(
             id=comment.id,
             post_id=comment.post_id,
@@ -148,6 +157,8 @@ class CommentOut(BaseModel):
             media_url=media_ref_to_url(getattr(comment, "media_ref", None)),
             media_type=getattr(comment, "media_type", None),
             reply_count=reply_count,
+            like_count=like_count,
+            liked_by_me=liked_by_me,
             created_at=comment.created_at,
             author=PostAuthorOut.from_user(comment.author),
             is_mine=viewer_id is not None and comment.author_id == viewer_id,
@@ -233,3 +244,11 @@ class PostEngagementOut(BaseModel):
     liked_by_me: bool
     reposted_by_me: bool
     saved_by_me: bool
+
+
+class CommentEngagementOut(BaseModel):
+    """Returned by the comment like/unlike endpoints."""
+
+    id: uuid.UUID
+    like_count: int = 0
+    liked_by_me: bool = False

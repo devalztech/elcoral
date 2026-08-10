@@ -203,7 +203,13 @@ export default function PeopleList() {
           color: var(--ink-faint); border-bottom: 2px solid transparent;
         }
         .pl-tab b { font-family: var(--font-head); color: var(--ink); }
-        .pl-tab-on { color: var(--ink); border-bottom-color: var(--lemon); }
+        .pl-tab-on {
+          color: var(--accent-ink); font-weight: 700;
+          border-bottom-color: var(--lemon);
+          background: color-mix(in srgb, var(--lemon) 12%, transparent);
+          border-radius: 10px 10px 0 0;
+        }
+        .pl-tab-on b { color: var(--accent-ink); }
         .pl-error { font-size: 13px; color: crimson; }
         .pl-list { list-style: none; margin: 0; padding: 0; }
         .pl-skeleton { height: 58px; border-radius: 14px; margin-bottom: 8px; background: color-mix(in srgb, var(--ink) 6%, transparent); }
