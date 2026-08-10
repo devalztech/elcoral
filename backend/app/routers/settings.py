@@ -174,7 +174,9 @@ async def get_verification_status(
         email_delivery_enabled=app_settings.smtp_configured,
         profile_complete=profile_complete,
         profile_completion_pct=completion,
-        verified=user.is_verified and profile_complete,
+        # The badge is an admin decision, never an automatic consequence of
+        # confirming an email or completing a profile.
+        verified=bool(getattr(user, "is_badge_verified", False)),
         member_since=user.created_at,
     )
 

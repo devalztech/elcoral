@@ -249,7 +249,10 @@ class OwnerProfileOut(ProfileOut):
 
     full_name: str | None = None
     email: str | None = None
+    # Owner view keeps BOTH: the email-confirmation state (used by the
+    # verification settings page) and the admin-granted badge.
     is_verified: bool = False
+    is_badge_verified: bool = False
 
     is_public: bool = True
     show_email: bool = False
@@ -262,6 +265,7 @@ class OwnerProfileOut(ProfileOut):
             full_name=user.full_name,
             email=user.email,
             is_verified=user.is_verified,
+            is_badge_verified=bool(getattr(user, "is_badge_verified", False)),
         )
 
 
@@ -272,8 +276,14 @@ class PublicProfileOut(ProfileOut):
     resolved media URLs and public fields ship here.
     """
 
+    # The public blue tick. Sourced from `is_badge_verified` — a badge is
+    # granted by an admin in the management app and has nothing to do with
+    # whether the account confirmed its email address. `is_verified` is
+    # kept as the wire name so existing clients keep rendering, and the
+    # explicit alias below makes the meaning unambiguous for new code.
     full_name: str | None = None
     is_verified: bool = False
+    is_badge_verified: bool = False
     is_owner: bool = False
 
     posts_count: int = 0
@@ -287,7 +297,8 @@ class PublicProfileOut(ProfileOut):
         return cls.from_model(
             profile,
             full_name=user.full_name,
-            is_verified=user.is_verified,
+            is_verified=bool(getattr(user, "is_badge_verified", False)),
+            is_badge_verified=bool(getattr(user, "is_badge_verified", False)),
             is_owner=is_owner,
             posts_count=posts_count,
         )

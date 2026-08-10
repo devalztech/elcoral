@@ -87,7 +87,13 @@ class PostAuthorOut(BaseModel):
     username: str | None = None
     photo_url: str | None = None
     headline: str | None = None
+    # The public blue tick. Sourced from `is_badge_verified` — a badge is
+    # granted by an admin in the management app and has nothing to do with
+    # whether the account confirmed its email address. `is_verified` is
+    # kept as the wire name so existing clients keep rendering, and the
+    # explicit alias below makes the meaning unambiguous for new code.
     is_verified: bool = False
+    is_badge_verified: bool = False
     categories: list[str] | None = None
 
     @staticmethod
@@ -101,7 +107,8 @@ class PostAuthorOut(BaseModel):
             headline=(getattr(profile, "headline", None) or getattr(profile, "company_name", None))
             if profile
             else None,
-            is_verified=bool(getattr(user, "is_verified", False)),
+            is_verified=bool(getattr(user, "is_badge_verified", False)),
+            is_badge_verified=bool(getattr(user, "is_badge_verified", False)),
             categories=getattr(profile, "categories", None) if profile else None,
         )
 

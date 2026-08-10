@@ -10,7 +10,12 @@ from app.core.database import Base
 
 class User(Base):
     """
-    Deliberately no `role` field. Elcoral defines people by the intents/
+    Deliberately no `role` COLUMN — authorization roles live in the
+    separate `user_roles` table (app/models/admin.py) so nothing a member
+    can edit about themselves sits next to the field that decides what
+    they may do.
+
+    Deliberately no product `role` field either. Elcoral defines people by the intents/
     categories they choose (possibly several, possibly changing over
     time) — see Profile.intents / Profile.categories — rather than a
     fixed account type decided at signup.
@@ -24,7 +29,26 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Email confirmation ONLY. This is not the blue tick — confirming an
+    # inbox proves you can read email, nothing else, so it must never by
+    # itself decorate a profile as "verified". See is_badge_verified.
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # The public verification badge (the blue rosette next to a name).
+    # Granted and revoked exclusively by an admin through the management
+    # app (POST/DELETE /api/admin/users/{id}/badge) — there is no code
+    # path anywhere in the member-facing API that writes this column, so
+    # a member can never award it to themselves by any combination of
+    # email changes, profile edits or onboarding submissions.
+    is_badge_verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+    badge_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    badge_verified_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     failed_login_attempts: Mapped[int] = mapped_column(default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -39,6 +63,12 @@ class User(Base):
 
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
+    )
+    roles: Mapped[list["UserRole"]] = relationship(  # noqa: F821
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="UserRole.user_id",
+        lazy="selectin",
     )
     profile: Mapped["Profile"] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"

@@ -52,12 +52,12 @@ export default function VerificationSettings() {
         {status.verified ? <BadgeCheck size={26} /> : <CircleAlert size={26} />}
         <div>
           <p className="verif-banner-title">
-            {status.verified ? 'Your account is verified' : 'Not fully verified yet'}
+            {status.verified ? 'Your account is verified' : 'No verification badge yet'}
           </p>
           <p className="verif-banner-desc">
             {status.verified
               ? 'The check badge shows on your profile and posts.'
-              : 'Finish the steps below to get the check badge on your profile.'}
+              : 'The check badge is granted by the Elcoral team, not automatically. Confirming your email and completing your profile below keeps your account in good standing, but neither one grants the badge.'}
           </p>
         </div>
       </div>
@@ -93,7 +93,8 @@ export default function VerificationSettings() {
           yet, so this screen doesn't pretend to offer it. */}
       <p className="verif-note">
         Member since {new Date(status.member_since).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}.
-        {' '}ID-document verification for hiring accounts is coming later.
+        {' '}The check badge is reviewed and granted manually by the Elcoral team — a confirmed
+        email address never grants it on its own.
         {!status.email_delivery_enabled && ' Email delivery is currently disabled on this environment.'}
       </p>
 

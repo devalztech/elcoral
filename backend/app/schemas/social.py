@@ -19,7 +19,13 @@ class PersonOut(BaseModel):
     username: str | None = None
     headline: str | None = None
     photo_url: str | None = None
+    # The public blue tick. Sourced from `is_badge_verified` — a badge is
+    # granted by an admin in the management app and has nothing to do with
+    # whether the account confirmed its email address. `is_verified` is
+    # kept as the wire name so existing clients keep rendering, and the
+    # explicit alias below makes the meaning unambiguous for new code.
     is_verified: bool = False
+    is_badge_verified: bool = False
     # Viewer-relative, omitted (False) for anonymous callers.
     is_following: bool = False
     follows_you: bool = False
@@ -36,7 +42,8 @@ class PersonOut(BaseModel):
             if profile
             else None,
             photo_url=media_ref_to_url(getattr(profile, "photo_ref", None)) if profile else None,
-            is_verified=bool(getattr(user, "is_verified", False)),
+            is_verified=bool(getattr(user, "is_badge_verified", False)),
+            is_badge_verified=bool(getattr(user, "is_badge_verified", False)),
             **flags,
         )
 

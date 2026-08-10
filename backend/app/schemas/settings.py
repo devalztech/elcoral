@@ -117,10 +117,15 @@ class LanguageUpdate(BaseModel):
 
 class VerificationStatusOut(BaseModel):
     """
-    Settings -> Account verification. Elcoral has no ID-document check
-    yet, so "verified" today means: a confirmed email address plus a
-    completed profile. Both facts are real, server-side state — nothing
-    here is decorative.
+    Settings -> Account verification.
+
+    Two independent things live here and must not be conflated:
+
+    * `email_verified` — the member confirmed their address. Automatic,
+      self-service, and grants no badge.
+    * `verified` — the public blue tick. Granted by hand by an admin in
+      the management app, never by completing a profile or clicking a
+      confirmation link.
     """
 
     email: str

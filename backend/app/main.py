@@ -18,6 +18,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.core import telegram_storage
 from app.routers import (
+    admin,
     auth,
     communities,
     community_ws,
@@ -62,6 +63,7 @@ async def security_headers(request: Request, call_next):
 
 
 app.include_router(auth.router)
+app.include_router(admin.router)
 app.include_router(onboarding.router)
 app.include_router(profile.router)
 app.include_router(posts.router)
@@ -73,6 +75,51 @@ app.include_router(messages.router)
 app.include_router(messages_ws.router)
 app.include_router(communities.router)
 app.include_router(community_ws.router)
+
+
+@app.on_event("startup")
+async def bootstrap_superadmin():
+    """
+    Grants the superadmin role to BOOTSTRAP_SUPERADMIN_EMAIL if that
+    account exists and doesn't have it yet. This is the only way a role
+    is ever created outside the admin API, and it's deliberately
+    env-gated, idempotent, and a no-op when the variable is blank.
+    """
+    email = settings.bootstrap_superadmin_email.strip().lower()
+    if not email:
+        return
+
+    import logging
+
+    from sqlalchemy import func, select
+
+    from app.core.database import AsyncSessionLocal
+    from app.models.admin import AppRole, UserRole
+    from app.models.user import User
+
+    log = logging.getLogger("uvicorn.error")
+    try:
+        async with AsyncSessionLocal() as db:
+            user = await db.scalar(select(User).where(func.lower(User.email) == email))
+            if user is None:
+                log.warning(
+                    "BOOTSTRAP_SUPERADMIN_EMAIL=%s has no account yet — sign up first, "
+                    "then restart the backend to grant it.",
+                    email,
+                )
+                return
+            existing = await db.scalar(
+                select(UserRole).where(
+                    UserRole.user_id == user.id, UserRole.role == AppRole.superadmin.value
+                )
+            )
+            if existing is None:
+                db.add(UserRole(user_id=user.id, role=AppRole.superadmin.value))
+                await db.commit()
+                log.info("Granted superadmin to %s", email)
+    except Exception:  # noqa: BLE001
+        # Never let bootstrap failure stop the API from serving traffic.
+        log.exception("superadmin bootstrap failed")
 
 
 @app.on_event("startup")

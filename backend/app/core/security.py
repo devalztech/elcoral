@@ -28,8 +28,18 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(subject: str, extra_claims: dict | None = None) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+def create_access_token(
+    subject: str,
+    extra_claims: dict | None = None,
+    expires_minutes: int | None = None,
+) -> str:
+    """
+    `expires_minutes` overrides the default lifetime. Used by the admin
+    login, which runs on its own (shorter, separately-tunable) clock —
+    see settings.admin_access_token_expire_minutes.
+    """
+    minutes = expires_minutes or settings.access_token_expire_minutes
+    expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
     payload = {"sub": subject, "type": "access", "exp": expire}
     if extra_claims:
         payload.update(extra_claims)

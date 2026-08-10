@@ -10,6 +10,31 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     environment: str = "development"
 
+    # ----------------------------------------------------------------- admin
+    # The management app (see management/) is a THIRD deployment, hosted
+    # separately from the frontend and this API, and talks to this same
+    # backend at /api/admin. Its origin therefore has to be allowed
+    # explicitly — it is kept in its own variable rather than being
+    # appended to CORS_ORIGINS so the admin origin can be changed,
+    # audited, or removed without touching the public site's config.
+    admin_cors_origins: str = "http://localhost:5174"
+
+    # The management app's public URL (no trailing slash). Used for links
+    # in admin-facing emails/logs.
+    admin_url: str = ""
+
+    # Admin sessions are short by design: the panel can delete accounts.
+    admin_access_token_expire_minutes: int = 60
+
+    # First-run bootstrap. Set to the email of an EXISTING account (sign
+    # up normally on the frontend first) and that account is granted the
+    # superadmin role on the next backend start, which is how the very
+    # first admin comes into existence without an SQL console. Once the
+    # first superadmin exists, unset it — leaving it set is harmless
+    # (grant is idempotent) but it's one fewer thing that can be abused
+    # if the env leaks.
+    bootstrap_superadmin_email: str = ""
+
     # Telegram storage (MTProto via Telethon) — used for profile photos and
     # post media. See app/core/telegram_storage.py.
     telegram_api_id: int = 0
@@ -64,7 +89,14 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        """Public site + management app. Never a wildcard: the API is
+        called with credentials, which browsers refuse against "*"."""
+        raw = f"{self.cors_origins},{self.admin_cors_origins}"
+        seen: list[str] = []
+        for origin in (o.strip() for o in raw.split(",")):
+            if origin and origin not in seen:
+                seen.append(origin)
+        return seen
 
     @property
     def is_production(self) -> bool:
