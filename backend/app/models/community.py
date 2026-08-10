@@ -110,6 +110,12 @@ class Community(Base):
     is_private: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    # Staff-curated spotlight (management app). `featured_rank` orders the
+    # spotlight rail; NULL sorts last.
+    is_featured: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false", index=True
+    )
+    featured_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Nullable: a seeded/official community may outlive the account that
     # created it without taking the community down with it.

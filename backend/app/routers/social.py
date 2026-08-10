@@ -25,7 +25,7 @@ from app.models.settings import BlockedUser
 from app.models.social import Follow
 from app.models.user import User
 from app.routers.settings import is_blocked_between
-from app.schemas.social import FollowStateOut, PersonListOut, PersonOut
+from app.schemas.social import OFFICIAL_USERNAMES, FollowStateOut, PersonListOut, PersonOut
 
 router = APIRouter(prefix="/api/social", tags=["social"])
 
@@ -87,6 +87,18 @@ async def _blocked_ids(db: AsyncSession, viewer_id) -> set[uuid.UUID]:
     for blocker, blocked in rows:
         out.add(blocked if blocker == viewer_id else blocker)
     return out
+
+
+async def _followers_counts(db: AsyncSession, candidate_ids) -> dict:
+    """followers-per-user for a batch of people, in one query."""
+    if not candidate_ids:
+        return {}
+    rows = await db.execute(
+        select(Follow.following_id, func.count(Follow.follower_id))
+        .where(Follow.following_id.in_(candidate_ids))
+        .group_by(Follow.following_id)
+    )
+    return {r[0]: r[1] for r in rows.all()}
 
 
 async def _viewer_following_ids(db: AsyncSession, viewer_id, candidate_ids) -> set[uuid.UUID]:
@@ -339,31 +351,43 @@ async def search_people(
     handle or name starts with what has been typed so far.
     """
     term = q.strip().lstrip("@").lower()
-    if not term:
-        return PersonListOut(items=[], total=0)
 
     hidden = await _blocked_ids(db, viewer.id)
-    prefix = f"{term}%"
-    query = (
+    base = (
         select(User, Profile)
         .join(Profile, Profile.user_id == User.id)
         .where(
             User.is_active.is_(True),
             Profile.username.is_not(None),
             Profile.is_public.is_(True),
+        )
+    )
+
+    if term:
+        prefix = f"{term}%"
+        query = base.where(
             or_(
                 func.lower(Profile.username).like(prefix),
                 func.lower(User.full_name).like(prefix),
                 func.lower(User.full_name).like(f"% {term}%"),
-            ),
+            )
+        ).order_by(func.lower(Profile.username))
+    else:
+        # No term yet: the menu still opens, so show a useful starting
+        # set — the official account first, then people the viewer
+        # already follows, then everyone else by recency.
+        followed = select(Follow.following_id).where(Follow.follower_id == viewer.id)
+        query = base.order_by(
+            func.lower(func.coalesce(Profile.username, "")).in_(sorted(OFFICIAL_USERNAMES)).desc(),
+            User.id.in_(followed).desc(),
+            User.created_at.desc(),
         )
-        .order_by(func.lower(Profile.username))
-        .limit(limit + len(hidden))
-    )
-    rows = [r for r in (await db.execute(query)).all() if r[0].id not in hidden][:limit]
+
+    rows = [r for r in (await db.execute(query.limit(limit + len(hidden)))).all() if r[0].id not in hidden][:limit]
     ids = [r[0].id for r in rows]
     following_ids = await _viewer_following_ids(db, viewer.id, ids)
     followed_by_ids = await _viewer_followed_by_ids(db, viewer.id, ids)
+    counts = await _followers_counts(db, ids)
     items = [
         PersonOut.from_user(
             user,
@@ -371,7 +395,10 @@ async def search_people(
             is_following=user.id in following_ids,
             follows_you=user.id in followed_by_ids,
             is_self=user.id == viewer.id,
+            followers_count=counts.get(user.id, 0),
         )
         for user, profile in rows
     ]
+    # The official account always leads the menu.
+    items.sort(key=lambda p: (not p.is_official,))
     return PersonListOut(items=items, total=len(items))

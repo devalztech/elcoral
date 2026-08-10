@@ -441,7 +441,7 @@ async def list_all_discussions(
 
 @router.get("", response_model=CommunityListOut)
 async def list_communities(
-    scope: str = Query(default="all", pattern="^(all|mine|trending|for_you|discover)$"),
+    scope: str = Query(default="all", pattern="^(all|mine|trending|for_you|discover|featured)$"),
     topic: str | None = Query(default=None),
     q: str | None = Query(default=None, max_length=80),
     limit: int = Query(default=PAGE_SIZE, ge=1, le=50),
@@ -486,7 +486,13 @@ async def list_communities(
         query = query.where(cond)
         count_query = count_query.where(cond)
 
-    if scope in ("trending", "for_you", "discover"):
+    if scope == "featured":
+        query = query.where(Community.is_featured.is_(True))
+        count_query = count_query.where(Community.is_featured.is_(True))
+        query = query.order_by(
+            Community.featured_rank.is_(None), Community.featured_rank, Community.created_at.desc()
+        )
+    elif scope in ("trending", "for_you", "discover"):
         member_count = (
             select(func.count(CommunityMember.id))
             .where(CommunityMember.community_id == Community.id)

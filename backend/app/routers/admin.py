@@ -37,10 +37,13 @@ from app.models.admin import (
     AppRole,
     UserRole,
 )
+from app.models.community import Community
 from app.models.profile import Profile
 from app.models.user import RefreshToken, User
 from app.schemas.admin import (
     AdminBadgeRequest,
+    AdminCommunityFeatureRequest,
+    AdminCommunityOut,
     AdminCreateUserRequest,
     AdminLoginRequest,
     AdminOut,
@@ -645,3 +648,89 @@ async def list_audit_logs(
         .all()
     )
     return [AuditLogOut.model_validate(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# featured communities
+#
+# The member-facing app reads these through
+# GET /api/communities?scope=featured; curation happens here so a staff
+# member can spotlight a space without touching the database.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/communities", response_model=list[AdminCommunityOut])
+async def admin_list_communities(
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+    q: str | None = Query(default=None, max_length=80),
+    featured_only: bool = Query(default=False),
+    limit: int = Query(default=50, ge=1, le=200),
+):
+    query = select(Community)
+    if featured_only:
+        query = query.where(Community.is_featured.is_(True))
+    if q:
+        query = query.where(func.lower(Community.name).like(f"%{q.strip().lower()}%"))
+    rows = (
+        (
+            await db.execute(
+                query.order_by(
+                    Community.is_featured.desc(),
+                    Community.featured_rank.is_(None),
+                    Community.featured_rank,
+                    Community.created_at.desc(),
+                ).limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        AdminCommunityOut(
+            id=c.id,
+            slug=c.slug,
+            name=c.name,
+            topic=c.topic,
+            is_official=c.is_official,
+            is_private=c.is_private,
+            is_featured=c.is_featured,
+            featured_rank=c.featured_rank,
+        )
+        for c in rows
+    ]
+
+
+@router.patch("/communities/{slug}/featured", response_model=AdminCommunityOut)
+async def admin_set_community_featured(
+    slug: str,
+    payload: AdminCommunityFeatureRequest,
+    request: Request,
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    community = await db.scalar(select(Community).where(Community.slug == slug))
+    if community is None:
+        raise HTTPException(status_code=404, detail="Community not found")
+
+    community.is_featured = payload.is_featured
+    community.featured_rank = payload.featured_rank if payload.is_featured else None
+    await _audit(
+        db,
+        request,
+        admin,
+        "community.featured",
+        detail={"slug": slug, "is_featured": payload.is_featured, "rank": community.featured_rank},
+    )
+    await db.commit()
+    await db.refresh(community)
+    return AdminCommunityOut(
+        id=community.id,
+        slug=community.slug,
+        name=community.name,
+        topic=community.topic,
+        is_official=community.is_official,
+        is_private=community.is_private,
+        is_featured=community.is_featured,
+        featured_rank=community.featured_rank,
+    )

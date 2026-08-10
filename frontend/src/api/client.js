@@ -216,7 +216,10 @@ export const api = {
     request(`/social/search/people?q=${encodeURIComponent(q)}&limit=${limit}`, { token }),
 
   // --------------------------------------------------------- notifications
-  listNotifications: (token, limit = 50) => request(`/notifications?limit=${limit}`, { token }),
+  // `kind` mirrors the tab strip on the Notifications screen: omit it for
+  // "All", or pass one/many kinds ("post_like,comment_like").
+  listNotifications: (token, limit = 50, kind) =>
+    request(`/notifications?limit=${limit}${kind ? `&kind=${encodeURIComponent(kind)}` : ''}`, { token }),
   unreadNotificationCount: (token) => request('/notifications/unread-count', { token }),
   markNotificationRead: (id, token) =>
     request(`/notifications/${id}/read`, { method: 'POST', token }),

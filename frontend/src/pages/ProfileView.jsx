@@ -88,11 +88,35 @@ export default function ProfileView() {
       setResolving(false)
       return
     }
-    api
-      .myProfile(accessToken)
-      .then((p) => setResolvedUsername(p?.username ?? null))
-      .finally(() => setResolving(false))
-  }, [params.username, accessToken, authLoading])
+    // /home/profile has no :username, so resolve the viewer's own handle.
+    // `myProfile` (onboarding) returns null until onboarding is finished,
+    // which used to leave this screen permanently blank — fall back to the
+    // always-present profile row, then to whatever the session already
+    // knows, before giving up.
+    let cancelled = false
+    const pick = (...candidates) =>
+      candidates.map((c) => (typeof c === 'string' ? c.trim() : '')).find(Boolean) ?? null
+
+    ;(async () => {
+      let username = pick(user?.username)
+      if (!username) {
+        try {
+          const onboarding = await api.myProfile(accessToken)
+          username = pick(onboarding?.username)
+        } catch { /* not onboarded yet — try the profile row below */ }
+      }
+      if (!username) {
+        try {
+          const profileRow = await api.getMyProfile(accessToken)
+          username = pick(profileRow?.username, profileRow?.handle)
+        } catch { /* fall through to the onboarding prompt */ }
+      }
+      if (cancelled) return
+      setResolvedUsername(username)
+      setResolving(false)
+    })()
+    return () => { cancelled = true }
+  }, [params.username, accessToken, authLoading, user?.username])
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

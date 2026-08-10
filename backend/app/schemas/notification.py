@@ -16,9 +16,15 @@ class NotificationOut(BaseModel):
     is_read: bool = False
     created_at: datetime
     actor: PostAuthorOut | None = None
+    # Thumbnail of the post the notification is about (first image), so the
+    # row can render the same preview tile the design calls for.
+    media_url: str | None = None
+    # Viewer-relative follow state for the actor, used by the inline
+    # "Follow back" action on follow notifications.
+    actor_is_following: bool = False
 
     @staticmethod
-    def from_model(row) -> "NotificationOut":
+    def from_model(row, *, media_url: str | None = None, actor_is_following: bool = False) -> "NotificationOut":
         return NotificationOut(
             id=row.id,
             kind=row.kind,
@@ -28,6 +34,8 @@ class NotificationOut(BaseModel):
             is_read=row.is_read,
             created_at=row.created_at,
             actor=PostAuthorOut.from_user(row.actor) if row.actor is not None else None,
+            media_url=media_url,
+            actor_is_following=actor_is_following,
         )
 
 

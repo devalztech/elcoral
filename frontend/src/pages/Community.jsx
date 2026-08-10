@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import {
   Search, Bell, UserPlus, X, Crown, ArrowRight, ThumbsUp,
   MessageSquare, Eye, Bookmark, MoreHorizontal, Users, Rocket, Gamepad2,
-  BarChart3, Palette, Leaf,
+  BarChart3, Palette, Leaf, Star,
 } from 'lucide-react'
 import ElcoralMark from '../components/ElcoralMark.jsx'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
@@ -116,6 +116,8 @@ export default function Community() {
 
   const [mine, setMine] = useState({ items: [], loading: true, error: null })
   const [trending, setTrending] = useState({ items: [], loading: true, error: null })
+  // Staff-curated spotlight (admins toggle it from the management app).
+  const [featured, setFeatured] = useState({ items: [], loading: true, error: null })
   const [discussions, setDiscussions] = useState({ items: [], loading: true, error: null })
   // Per-row pending flags so a slow join can't be double-submitted and
   // the tapped row is the only one that shows as busy.
@@ -147,6 +149,14 @@ export default function Community() {
       setMine({ items: [], loading: false, error: null })
     }
 
+    setFeatured((s) => ({ ...s, loading: true, error: null }))
+    api
+      .listCommunities({ scope: 'featured', q, limit: 6 }, token)
+      .then((data) => setFeatured({ items: data.items, loading: false, error: null }))
+      // A missing spotlight is not an error worth showing — the rail just
+      // doesn't render.
+      .catch(() => setFeatured({ items: [], loading: false, error: null }))
+
     setTrending((s) => ({ ...s, loading: true, error: null }))
     api
       .listCommunities({ scope: 'trending', topic: active.topic ?? undefined, q, limit: 6 }, token)
@@ -165,6 +175,7 @@ export default function Community() {
   function replaceCommunity(next) {
     const swap = (list) => list.map((c) => (c.id === next.id ? next : c))
     setTrending((s) => ({ ...s, items: swap(s.items) }))
+    setFeatured((s) => ({ ...s, items: swap(s.items) }))
     setMine((s) => ({
       ...s,
       // Joining from the trending list should make the community appear
@@ -313,6 +324,37 @@ export default function Community() {
         </section>
       )}
 
+      {/* ------------------------------------------------------- featured --- */}
+      {featured.items.length > 0 && (
+        <>
+          <div className="cm-section-head">
+            <h2>Featured</h2>
+          </div>
+          <ul className="cm-featured">
+            {featured.items.map((c) => (
+              <li key={c.id} className="cm-feat">
+                <Link to={`/home/community/${c.slug}`} className={`cm-feat-logo tone-${c.tone}`} aria-label={c.name}>
+                  <Glyph item={c} size={52} />
+                </Link>
+                <p className="cm-feat-name">
+                  {c.name}
+                  {c.is_official && <span className="cm-feat-star"><Star size={11} strokeWidth={2.6} /></span>}
+                </p>
+                <p className="cm-feat-meta">{pluralize(c.members_count, 'member')}</p>
+                <button
+                  type="button"
+                  className={`cm-feat-join ${c.is_member ? 'on' : ''}`}
+                  disabled={!accessToken || !!busy[c.id]}
+                  onClick={() => toggleJoin(c)}
+                >
+                  {c.is_member ? 'Joined' : 'Join'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       {/* ------------------------------------------------------- trending --- */}
       <div className="cm-section-head">
         <h2>Trending communities</h2>
@@ -438,6 +480,36 @@ export default function Community() {
 
 
       <style>{`
+        /* --- featured spotlight rail --- */
+        .cm-featured {
+          list-style: none; margin: 0 0 22px; padding: 2px 16px 6px;
+          display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none;
+        }
+        .cm-featured::-webkit-scrollbar { display: none; }
+        .cm-feat {
+          flex: none; width: 148px; padding: 16px 12px 14px;
+          display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+          background: var(--tile, var(--surface-2)); border-radius: 18px;
+          border: 1px solid color-mix(in srgb, var(--lemon) 22%, transparent);
+        }
+        .cm-feat-logo { display: grid; place-items: center; border-radius: 16px; }
+        .cm-feat-name {
+          display: flex; align-items: center; gap: 4px; justify-content: center;
+          font-size: 14px; font-weight: 700; color: var(--ink);
+          max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .cm-feat-star { color: var(--lemon); display: inline-flex; }
+        .cm-feat-meta { font-size: 12px; color: var(--ink-faint); }
+        .cm-feat-join {
+          margin-top: 6px; width: 100%; padding: 8px 0; border-radius: 999px;
+          font-size: 13px; font-weight: 700; background: var(--lemon); color: var(--on-accent);
+        }
+        .cm-feat-join.on {
+          background: transparent; color: var(--ink-dim);
+          border: 1px solid var(--surface-line);
+        }
+        .cm-feat-join:disabled { opacity: 0.55; }
+
         .cm { --gut: 20px; margin: -24px -20px 0; padding-bottom: 12px; }
         @media (min-width: 860px) { .cm { margin: -32px -40px 0; --gut: 40px; } }
 

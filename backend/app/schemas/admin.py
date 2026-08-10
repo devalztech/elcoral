@@ -173,3 +173,22 @@ class RoleOptionOut(BaseModel):
 
 class RoleCatalogOut(BaseModel):
     roles: list[RoleOptionOut]
+
+
+class AdminCommunityOut(BaseModel):
+    """A community row as the management app lists it."""
+
+    id: uuid.UUID
+    slug: str
+    name: str
+    topic: str
+    is_official: bool = False
+    is_private: bool = False
+    is_featured: bool = False
+    featured_rank: int | None = None
+
+
+class AdminCommunityFeatureRequest(BaseModel):
+    is_featured: bool
+    # Lower sorts first in the spotlight rail; NULL sorts last.
+    featured_rank: int | None = Field(default=None, ge=0, le=999)

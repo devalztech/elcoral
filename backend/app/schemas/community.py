@@ -26,6 +26,7 @@ class CommunityOut(BaseModel):
     cover_url: str | None = None
     is_official: bool = False
     is_private: bool = False
+    is_featured: bool = False
 
     members_count: int = 0
     # Members who joined in the last 24h — drives the "380 new today" line.
@@ -64,6 +65,7 @@ class CommunityOut(BaseModel):
             icon_url=media_ref_to_url(community.icon_ref),
             cover_url=media_ref_to_url(community.cover_ref),
             is_official=community.is_official,
+            is_featured=bool(getattr(community, "is_featured", False)),
             is_private=community.is_private,
             post_policy=community.post_policy,
             chat_policy=community.chat_policy,

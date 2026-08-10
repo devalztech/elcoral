@@ -7,6 +7,9 @@ from pydantic import BaseModel
 from app.core.media_url import media_ref_to_url
 
 
+OFFICIAL_USERNAMES = {"elcoral", "elcoral_official"}
+
+
 class PersonOut(BaseModel):
     """
     Compact person card, reused by the followers/following lists, the
@@ -30,6 +33,12 @@ class PersonOut(BaseModel):
     is_following: bool = False
     follows_you: bool = False
     is_self: bool = False
+    # Public follower tally, filled in by endpoints that render people
+    # cards with social proof (the "@" mention menu, suggestions).
+    followers_count: int = 0
+    # The platform's own account, rendered with an "Official" pill instead
+    # of a follow button.
+    is_official: bool = False
 
     @staticmethod
     def from_user(user, profile=None, **flags) -> "PersonOut":
@@ -44,6 +53,7 @@ class PersonOut(BaseModel):
             photo_url=media_ref_to_url(getattr(profile, "photo_ref", None)) if profile else None,
             is_verified=bool(getattr(user, "is_badge_verified", False)),
             is_badge_verified=bool(getattr(user, "is_badge_verified", False)),
+            is_official=(getattr(profile, "username", "") or "").lower() in OFFICIAL_USERNAMES,
             **flags,
         )
 
