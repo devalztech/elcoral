@@ -12,6 +12,7 @@ import { RECOMMENDED as JOBS } from '../features/jobs/jobs.js'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
 import BellBadge from '../components/BellBadge.jsx'
 import Spinner from '../components/Spinner.jsx'
+import PeopleDiscover from '../features/social/PeopleDiscover.jsx'
 
 /**
  * Home feed.
@@ -22,13 +23,14 @@ import Spinner from '../components/Spinner.jsx'
 
 const TABS = [
   { id: 'for-you', label: 'For you' },
-  { id: 'following', label: 'Following' },
+  { id: 'people', label: 'People' },
   { id: 'community', label: 'Community' },
   { id: 'jobs', label: 'Jobs' },
 ]
 
-// Which tabs are backed by the posts feed endpoint.
-const FEED_TABS = new Set(['for-you', 'following'])
+// Which tabs are backed by the posts feed endpoint. "People" is a
+// discovery surface, not a feed, so it isn't one of them.
+const FEED_TABS = new Set(['for-you'])
 
 export default function Dashboard() {
   const { user, accessToken, authLoading } = useAuth()
@@ -97,6 +99,11 @@ export default function Dashboard() {
     if (tab === 'jobs') setLoading(false)
   }, [tab])
 
+  // People runs its own loading state inside PeopleDiscover.
+  useEffect(() => {
+    if (tab === 'people') setLoading(false)
+  }, [tab])
+
   const loadMore = async () => {
     if (!posts?.length || loadingMore || exhausted) return
     setLoadingMore(true)
@@ -151,7 +158,7 @@ export default function Dashboard() {
         ))}
       </nav>
 
-      {user && (
+      {user && tab !== 'people' && (
         <Link to="/home/create/post" className="hm-composer">
           <span className="hm-composer-av">
             {profile?.photo_url
@@ -179,9 +186,7 @@ export default function Dashboard() {
         {!loading && FEED_TABS.has(tab) && posts?.length === 0 && !error && (
           <div className="hm-empty">
             <p>
-              {tab === 'following'
-                ? 'Nothing here yet — follow a few people and their posts will show up.'
-                : 'The feed is empty. Be the first to post something.'}
+              The feed is empty. Be the first to post something.
             </p>
             {user && (
               <Link to="/home/create/post" className="hm-retry">
@@ -209,6 +214,9 @@ export default function Dashboard() {
         {!loading && FEED_TABS.has(tab) && posts?.length > 0 && exhausted && (
           <p className="hm-end">{formatCount(posts.length)} posts · you're all caught up</p>
         )}
+
+        {/* ---------------------------------------------------- people --- */}
+        {tab === 'people' && <PeopleDiscover />}
 
         {/* ------------------------------------------------- community --- */}
         {!loading && tab === 'community' && discussions.length === 0 && (

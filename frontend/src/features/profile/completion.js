@@ -20,7 +20,6 @@ export const COMPLETION_WEIGHTS = {
   headline: 10,
   city: 10,
   work_experience: 10,
-  cover: 5,
   socials: 10,
   github: 5,
   linkedin: 5,
@@ -36,8 +35,9 @@ export function hasSocials(profile) {
 /**
  * The actionable checklist. Every item maps to a real weighted field, so
  * ticking them all reaches 100% — no item that the server doesn't score.
- * The profile payload exposes photo/cover as URLs to viewers and as refs
- * to the owner, so both spellings are accepted.
+ * The profile payload exposes the photo as a URL to viewers and as a ref
+ * to the owner, so both spellings are accepted. Cover images were removed
+ * from profiles, so they are no longer part of the checklist.
  */
 export function completionChecklist(profile) {
   if (!profile) return []
@@ -49,7 +49,6 @@ export function completionChecklist(profile) {
     { key: 'city', label: 'Add your location', worth: COMPLETION_WEIGHTS.city, done: Boolean(profile.city) },
     { key: 'work_experience', label: 'Add work experience', worth: COMPLETION_WEIGHTS.work_experience, done: Boolean(profile.work_experience?.length) },
     { key: 'socials', label: 'Add your links', worth: COMPLETION_WEIGHTS.socials, done: hasSocials(profile) },
-    { key: 'cover', label: 'Add a cover image', worth: COMPLETION_WEIGHTS.cover, done: Boolean(profile.cover_url || profile.cover_ref) },
   ]
 }
 

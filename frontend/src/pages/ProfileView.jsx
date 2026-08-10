@@ -394,16 +394,11 @@ function OwnerProfile({ profile, posts }) {
 
   return (
     <>
-      <div className="pv-cover pv-cover-owner">
-        {profile.cover_url && <img src={profile.cover_url} alt="" />}
-
-        <div className="pv-cover-toolbar pv-cover-toolbar-left">
-          <Link to="/home/more" className="pv-round-btn" aria-label="More options">
-            <MoreHorizontal size={20} />
-          </Link>
-        </div>
-
-        <div className="pv-cover-toolbar pv-cover-toolbar-right">
+      <div className="pv-toprow">
+        <Link to="/home/more" className="pv-round-btn" aria-label="More options">
+          <MoreHorizontal size={20} />
+        </Link>
+        <div className="pv-toprow-group">
           <MessagesButton />
           <Link to="/home/notifications" className="pv-round-btn" aria-label="Notifications">
             <Bell size={19} />
@@ -413,18 +408,14 @@ function OwnerProfile({ profile, posts }) {
             <Settings size={19} />
           </Link>
         </div>
+      </div>
 
-        <Link to="/home/profile/edit" className="pv-cover-edit">
-          <ImagePlus size={17} aria-hidden="true" /> Edit cover
-        </Link>
-
-        <div className="pv-avatar-slot pv-avatar-slot-center">
-          <Avatar profile={profile} size={104}>
-            <Link to="/home/profile/edit" className="pv-avatar-add" aria-label="Change profile photo">
-              <Plus size={18} strokeWidth={3} />
-            </Link>
-          </Avatar>
-        </div>
+      <div className="pv-hero">
+        <Avatar profile={profile} size={112}>
+          <Link to="/home/profile/edit" className="pv-avatar-add" aria-label="Change profile photo">
+            <Plus size={17} strokeWidth={3} />
+          </Link>
+        </Avatar>
       </div>
 
       <div className="pv-head pv-head-center">
@@ -636,23 +627,18 @@ function VisitorProfile({ profile, posts }) {
         />
       )}
 
-      <div className="pv-cover">
-        {profile.cover_url && <img src={profile.cover_url} alt="" />}
-        <div className="pv-avatar-slot pv-avatar-slot-left">
-          <Avatar profile={profile} size={104} verified={!!(profile.is_badge_verified ?? profile.is_verified)} />
-        </div>
+      <div className="pv-hero">
+        <Avatar profile={profile} size={112} verified={!!(profile.is_badge_verified ?? profile.is_verified)} />
+      </div>
+
+      <div className="pv-head pv-head-center">
+        <NameBlock profile={profile} align="center" />
+        {profile.bio && <p className="pv-bio pv-bio-center">{profile.bio}</p>}
+        <MetaRow profile={profile} align="center" />
+        <StatsRow profile={profile} postCount={posts.length} follow={follow} />
       </div>
 
       <div className="pv-actionrow">
-        <button
-          type="button"
-          className="pv-round-btn pv-round-btn-lg"
-          aria-label={`Message ${profile.full_name || profile.username}`}
-          disabled={opening}
-          onClick={openConversation}
-        >
-          <MessageCircle size={20} />
-        </button>
         <button
           type="button"
           className={`pv-btn pv-follow ${follow.is_following ? 'pv-follow-on' : 'pv-btn-primary'}`}
@@ -665,18 +651,20 @@ function VisitorProfile({ profile, posts }) {
             : <UserPlus size={18} aria-hidden="true" />}
           {followLabel(follow.is_following, follow.follows_you)}
         </button>
+        <button
+          type="button"
+          className="pv-btn"
+          aria-label={`Message ${profile.full_name || profile.username}`}
+          disabled={opening}
+          onClick={openConversation}
+        >
+          <MessageCircle size={18} aria-hidden="true" /> Message
+        </button>
       </div>
 
       {(messageError || follow.error) && (
         <p className="pv-inline-error" role="alert">{messageError || follow.error}</p>
       )}
-
-      <div className="pv-head pv-head-left">
-        <NameBlock profile={profile} align="left" />
-        {profile.bio && <p className="pv-bio pv-bio-left">{profile.bio}</p>}
-        <MetaRow profile={profile} align="left" />
-        <StatsRow profile={profile} postCount={posts.length} follow={follow} />
-      </div>
 
       <TopSkills profile={profile} />
       <ProfileTabs profile={profile} posts={posts} />
@@ -692,17 +680,14 @@ function GuestProfile({ profile, posts }) {
 
   return (
     <>
-      <div className="pv-cover pv-cover-guest">
-        {profile.cover_url && <img src={profile.cover_url} alt="" />}
-        <div className="pv-avatar-slot pv-avatar-slot-left">
-          <Avatar profile={profile} size={104} verified={!!(profile.is_badge_verified ?? profile.is_verified)} />
-        </div>
+      <div className="pv-hero">
+        <Avatar profile={profile} size={112} verified={!!(profile.is_badge_verified ?? profile.is_verified)} />
       </div>
 
-      <div className="pv-head pv-head-left pv-head-guest">
-        <NameBlock profile={profile} align="left" />
-        {profile.bio && <p className="pv-bio pv-bio-left">{profile.bio}</p>}
-        <MetaRow profile={profile} align="left" />
+      <div className="pv-head pv-head-center">
+        <NameBlock profile={profile} align="center" />
+        {profile.bio && <p className="pv-bio pv-bio-center">{profile.bio}</p>}
+        <MetaRow profile={profile} align="center" />
         <StatsRow profile={profile} postCount={posts.length} follow={follow} />
       </div>
 
@@ -1038,33 +1023,27 @@ function ProfileStyles() {
       .pv h1, .pv h2, .pv p, .pv ul { margin: 0; }
       .pv ul { padding: 0; list-style: none; }
 
-      /* ------------------------------ cover ------------------------------ */
+      /* ------------------------------- hero ------------------------------ */
+      /* No cover art anywhere: the profile photo is the single subject,
+         lifted off the page by a soft accent aura instead of a banner. */
       .pv-toprow {
         display: flex; align-items: center; justify-content: space-between;
-        margin-bottom: 14px;
+        gap: 10px; margin-bottom: 6px;
       }
-      .pv-cover {
-        position: relative;
-        border-radius: 18px;
-        aspect-ratio: 16 / 5;
-        background:
-          radial-gradient(120% 160% at 78% 22%, rgba(196, 241, 53, 0.16), transparent 60%),
-          var(--cover);
-        border: 1px solid var(--pv-line-soft);
-      }
-      .pv-cover > img {
-        position: absolute; inset: 0;
-        width: 100%; height: 100%; object-fit: cover;
-        border-radius: inherit;
-      }
-      .pv-cover-owner { aspect-ratio: 16 / 5.6; }
+      .pv-toprow-group { display: flex; align-items: center; gap: 10px; }
 
-      .pv-cover-toolbar {
-        position: absolute; top: 12px; z-index: 3;
-        display: flex; align-items: center; gap: 10px;
+      .pv-hero {
+        position: relative; display: flex; justify-content: center;
+        padding: 34px 0 4px;
       }
-      .pv-cover-toolbar-left { left: 12px; }
-      .pv-cover-toolbar-right { right: 12px; }
+      .pv-hero::before {
+        content: ''; position: absolute; left: 50%; top: 0;
+        width: 320px; height: 320px; transform: translate(-50%, -34%);
+        border-radius: 50%; pointer-events: none;
+        background: radial-gradient(closest-side, color-mix(in srgb, var(--lemon) 22%, transparent), transparent 72%);
+        filter: blur(6px);
+      }
+      .pv-hero .pv-avatar-wrap { position: relative; z-index: 1; }
 
       .pv-round-btn {
         display: inline-flex; align-items: center; justify-content: center;
@@ -1079,34 +1058,23 @@ function ProfileStyles() {
       .pv-round-btn-lg { width: 48px; height: 48px; background: var(--pv-surface); }
       .pv-round-btn-on { color: var(--accent-ink); border-color: var(--accent-ink); }
 
-      .pv-cover-edit {
-        position: absolute; right: 14px; bottom: 14px; z-index: 3;
-        display: inline-flex; align-items: center; gap: 9px;
-        font-size: 14px; font-weight: 600; color: var(--ink);
-        background: color-mix(in srgb, var(--surface) 84%, transparent);
-        border: 1px solid var(--pv-line);
-        border-radius: 999px; padding: 10px 18px;
-        backdrop-filter: blur(8px);
-      }
-      @media (hover: hover) and (pointer: fine) { .pv-cover-edit:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
-
-      .pv-avatar-slot { position: absolute; z-index: 4; }
-      .pv-avatar-slot-center { left: 50%; bottom: -30px; transform: translateX(-50%); }
-      .pv-avatar-slot-left { left: 16px; bottom: -42px; }
-
       .pv-avatar-wrap { position: relative; }
       .pv-avatar {
         width: 100%; height: 100%;
         border-radius: 50%; overflow: hidden;
         background: var(--pv-surface-2);
         display: flex; align-items: center; justify-content: center;
-        font-family: var(--font-display); font-weight: 800; font-size: 32px; color: var(--accent-ink);
+        font-family: var(--font-display); font-weight: 800; font-size: 34px; color: var(--accent-ink);
+        box-shadow: 0 18px 40px -18px rgba(0,0,0,.65);
       }
-      .pv-avatar-ring { border: 3px solid var(--lemon); }
+      .pv-avatar-ring {
+        border: 2px solid color-mix(in srgb, var(--lemon) 70%, transparent);
+        outline: 6px solid color-mix(in srgb, var(--lemon) 9%, transparent);
+      }
       .pv-avatar img { width: 100%; height: 100%; object-fit: cover; }
       .pv-avatar-add {
-        position: absolute; right: -2px; bottom: 2px;
-        width: 34px; height: 34px; border-radius: 50%;
+        position: absolute; right: 0; bottom: 2px;
+        width: 32px; height: 32px; border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
         background: var(--lemon); color: var(--on-accent);
         border: 3px solid var(--bg);
@@ -1121,26 +1089,25 @@ function ProfileStyles() {
 
       /* ---------------------------- action row --------------------------- */
       .pv-actionrow {
-        display: flex; align-items: center; justify-content: flex-end; gap: 12px;
-        margin-top: 14px;
+        display: flex; align-items: center; gap: 10px;
+        margin-top: 20px;
       }
 
       /* ------------------------------ header ----------------------------- */
       .pv-head { display: flex; flex-direction: column; }
-      .pv-head-center { align-items: center; text-align: center; margin-top: 40px; }
+      .pv-head-center { align-items: center; text-align: center; margin-top: 18px; }
       .pv-head-left { align-items: flex-start; text-align: left; margin-top: 18px; }
-      .pv-head-guest { margin-top: 56px; }
 
       .pv-name {
         display: inline-flex; align-items: center; gap: 9px;
         font-family: var(--font-display); font-weight: 800;
-        font-size: 27px; line-height: 1.2; color: var(--ink);
+        font-size: 26px; line-height: 1.15; letter-spacing: -0.4px; color: var(--ink);
       }
       .pv-verified { color: var(--verified, #1D9BF0); flex-shrink: 0; }
-      .pv-username { color: var(--ink-faint); font-size: 15px; margin-top: 4px; }
+      .pv-username { color: var(--ink-faint); font-size: 14.5px; margin-top: 5px; }
 
       .pv-bio {
-        color: var(--ink-dim); font-size: 15px; line-height: 1.5;
+        color: var(--ink-dim); font-size: 14.5px; line-height: 1.55;
         margin-top: 14px; max-width: 420px; white-space: pre-wrap;
       }
       .pv-bio-center { text-align: center; }
@@ -1162,43 +1129,47 @@ function ProfileStyles() {
       /* ------------------------------- stats ----------------------------- */
       .pv-stats {
         display: grid; grid-template-columns: repeat(5, 1fr);
-        width: 100%; margin-top: 22px;
+        width: 100%; margin-top: 24px; padding: 14px 0;
+        border-top: 1px solid var(--pv-line-soft);
+        border-bottom: 1px solid var(--pv-line-soft);
       }
       .pv-stat {
-        display: flex; flex-direction: column; align-items: center; gap: 4px;
-        padding: 4px 0;
+        display: flex; flex-direction: column; align-items: center; gap: 3px;
+        min-width: 0; padding: 0 2px;
       }
-      .pv-stat + .pv-stat { border-left: 1px solid var(--pv-line-soft); }
-      .pv-stat-value { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--ink); }
-      .pv-stat-label { font-size: 13px; color: var(--ink-faint); }
+      .pv-stat-value { font-family: var(--font-head); font-size: 19px; font-weight: 700; color: var(--ink); }
+      .pv-stat-label {
+        font-size: 12px; color: var(--ink-faint); max-width: 100%;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
 
       /* ------------------------------ buttons ---------------------------- */
-      .pv-actions { display: flex; gap: 12px; width: 100%; margin-top: 22px; }
+      .pv-actions { display: flex; gap: 10px; width: 100%; margin-top: 20px; }
       .pv-btn {
         display: inline-flex; align-items: center; justify-content: center; gap: 9px;
         flex: 1;
-        font-size: 15px; font-weight: 600; color: var(--ink);
-        background: var(--pv-surface); border: 1px solid var(--pv-line);
-        border-radius: 999px; padding: 14px 18px;
+        font-size: 14.5px; font-weight: 600; color: var(--ink);
+        background: color-mix(in srgb, var(--ink) 7%, transparent); border: 0;
+        border-radius: 999px; padding: 13px 18px;
         transition: border-color 0.15s ease, background 0.15s ease;
         white-space: nowrap;
       }
-      @media (hover: hover) and (pointer: fine) { .pv-btn:hover { border-color: var(--accent-ink); } }
+      @media (hover: hover) and (pointer: fine) { .pv-btn:hover { background: color-mix(in srgb, var(--ink) 12%, transparent); } }
       .pv-btn-primary {
-        background: var(--lemon); color: var(--on-accent); border-color: var(--accent-ink); font-weight: 700;
+        background: var(--lemon); color: var(--on-accent); font-weight: 700;
       }
-      @media (hover: hover) and (pointer: fine) { .pv-btn-primary:hover { background: var(--lemon-dim); border-color: var(--lemon-dim); } }
-      .pv-btn-square { flex: 0 0 62px; padding: 14px 0; }
-      .pv-actionrow .pv-follow { flex: 0 0 auto; padding: 14px 28px; gap: 10px; }
+      @media (hover: hover) and (pointer: fine) { .pv-btn-primary:hover { background: var(--lemon-dim); } }
+      .pv-btn-square { flex: 0 0 56px; padding: 13px 0; }
       .pv-actionrow .pv-follow-on {
-        background: transparent; color: var(--accent-ink); border-color: var(--accent-ink);
+        background: color-mix(in srgb, var(--ink) 7%, transparent); color: var(--accent-ink);
       }
 
       .pv-menu {
         width: 100%; margin-top: 12px;
-        background: var(--pv-surface); border: 1px solid var(--pv-line);
+        background: var(--pv-surface-2, var(--pv-surface));
         border-radius: 14px; overflow: hidden;
         display: flex; flex-direction: column;
+        box-shadow: 0 16px 40px -20px rgba(0,0,0,.7);
       }
       .pv-menu-floating { margin: 0 0 14px; }
       .pv-menu-item {
@@ -1216,7 +1187,7 @@ function ProfileStyles() {
         display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 22px;
       }
       .pv-card {
-        background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
+        background: color-mix(in srgb, var(--ink) 4%, transparent);
         border-radius: 18px; padding: 18px;
       }
       .pv-card-head {
@@ -1250,12 +1221,12 @@ function ProfileStyles() {
 
       .pv-chips { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 10px; }
       .pv-chip {
-        font-size: 13px; color: var(--ink);
-        background: transparent; border: 1px solid var(--pv-line);
+        font-size: 13px; color: var(--ink); border: 0;
+        background: color-mix(in srgb, var(--ink) 7%, transparent);
         border-radius: 999px; padding: 8px 14px;
       }
-      .pv-chip-lemon { color: var(--accent-ink); border-color: var(--lemon-deep); }
-      .pv-chip-more { background: var(--pv-surface); color: var(--ink); }
+      .pv-chip-lemon { color: var(--accent-ink); background: color-mix(in srgb, var(--lemon) 14%, transparent); }
+      .pv-chip-more { color: var(--ink-dim); }
 
       /* ---------------------------- top skills --------------------------- */
       .pv-skills { margin-top: 24px; }
@@ -1265,10 +1236,9 @@ function ProfileStyles() {
       /* --------------------------- availability -------------------------- */
       .pv-availability {
         display: flex; align-items: center; gap: 14px;
-        background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
-        border-radius: 18px; padding: 18px; margin-top: 12px;
+        background: color-mix(in srgb, var(--ink) 4%, transparent);
+        border-radius: 18px; padding: 16px 18px; margin-top: 12px;
       }
-      @media (hover: hover) and (pointer: fine) { .pv-availability:hover { border-color: var(--accent-ink); } }
       .pv-availability-title {
         display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0;
         font-family: var(--font-head); font-size: 15.5px; font-weight: 700; color: var(--ink);
@@ -1285,16 +1255,17 @@ function ProfileStyles() {
       /* ------------------------------- tabs ------------------------------ */
       .pv-tabs {
         display: flex; border-bottom: 1px solid var(--pv-line-soft);
-        margin-top: 26px; overflow-x: auto; scrollbar-width: none;
+        margin-top: 24px; overflow-x: auto; scrollbar-width: none;
       }
       .pv-tabs::-webkit-scrollbar { display: none; }
       .pv-tab {
         flex: 1; padding: 14px 8px; text-align: center;
-        font-size: 15px; font-weight: 600; color: var(--ink-faint);
+        font-family: var(--font-head);
+        font-size: 14px; font-weight: 600; color: var(--ink-faint);
         border-bottom: 2px solid transparent; white-space: nowrap;
         transition: color 0.15s ease;
       }
-      .pv-tab-active { color: var(--accent-ink); border-bottom-color: var(--accent-ink); }
+      .pv-tab-active { color: var(--accent-ink); border-bottom-color: var(--lemon); }
       .pv-tabpanel { padding: 18px 0 0; min-height: 140px; }
 
       /* ------------------------------- feed ------------------------------ */
@@ -1342,13 +1313,13 @@ function ProfileStyles() {
       /* ------------------------------- gate ------------------------------ */
       .pv-gate {
         display: flex; flex-direction: column; align-items: center; text-align: center;
-        background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
+        background: color-mix(in srgb, var(--ink) 4%, transparent);
         border-radius: 18px; padding: 28px 20px; margin-top: 24px;
       }
       .pv-gate-icon {
         width: 58px; height: 58px; border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
-        border: 1px solid var(--lemon-deep); color: var(--ink);
+        background: color-mix(in srgb, var(--lemon) 14%, transparent); color: var(--accent-ink);
       }
       .pv-gate h2 {
         font-family: var(--font-display); font-weight: 800; font-size: 21px;
@@ -1381,14 +1352,14 @@ function ProfileStyles() {
       .pv-portfolio { display: flex; flex-direction: column; gap: 10px; }
       .pv-portfolio-link {
         display: flex; align-items: center; gap: 10px;
-        background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
+        background: color-mix(in srgb, var(--ink) 4%, transparent);
         border-radius: 14px; padding: 14px 16px;
         font-size: 14px; color: var(--ink);
       }
       .pv-portfolio-link span { flex: 1; min-width: 0; word-break: break-all; }
       .pv-portfolio-link svg:first-child { color: var(--accent-ink); flex-shrink: 0; }
       .pv-portfolio-chevron { color: var(--ink-faint); flex-shrink: 0; }
-      @media (hover: hover) and (pointer: fine) { .pv-portfolio-link:hover { border-color: var(--accent-ink); } }
+      @media (hover: hover) and (pointer: fine) { .pv-portfolio-link:hover { color: var(--accent-ink); } }
 
       .pv-about-section { padding: 18px 0; border-top: 1px solid var(--pv-line-soft); }
       .pv-about-section:first-child { border-top: none; padding-top: 0; }
@@ -1411,10 +1382,10 @@ function ProfileStyles() {
       .pv-social a {
         width: 42px; height: 42px; border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
-        background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
+        background: color-mix(in srgb, var(--ink) 7%, transparent);
         color: var(--ink-dim);
       }
-      @media (hover: hover) and (pointer: fine) { .pv-social a:hover { color: var(--accent-ink); border-color: var(--accent-ink); } }
+      @media (hover: hover) and (pointer: fine) { .pv-social a:hover { color: var(--accent-ink); } }
       .pv-social + .pv-portfolio { margin-top: 14px; }
 
       .pv-about-empty-link {
@@ -1425,7 +1396,7 @@ function ProfileStyles() {
 
       .pv-emptytab {
         display: flex; flex-direction: column; align-items: center; text-align: center;
-        background: var(--pv-surface); border: 1px solid var(--pv-line-soft);
+        background: color-mix(in srgb, var(--ink) 4%, transparent);
         border-radius: 18px; padding: 34px 20px;
       }
       .pv-emptytab-icon { color: var(--accent-ink); }

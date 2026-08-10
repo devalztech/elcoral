@@ -251,22 +251,10 @@ function ProfileEditorBody() {
       <div className="pe-body">
         {error && <p className="pe-error">{error}</p>}
 
-        {/* ── Media card ─────────────────────────────── */}
+        {/* ── Media card ─────────────────────────────────
+            Cover photos were removed from Elcoral profiles: the profile
+            photo is the only image a member sets. */}
         <section className="pe-card pe-media">
-          <button
-            type="button"
-            className="pe-cover"
-            onClick={() => coverRef.current?.click()}
-            style={data.cover_preview ? { backgroundImage: `url(${data.cover_preview})` } : undefined}
-          >
-            <span className="pe-cover-inner">
-              {uploading === 'cover' ? <Loader2 size={26} className="pe-spin" /> : <Camera size={26} />}
-              <span className="pe-cover-title">Change cover photo</span>
-              <span className="pe-cover-hint">Recommended 1500 x 500px</span>
-            </span>
-          </button>
-          <input ref={coverRef} type="file" accept="image/*" hidden onChange={(e) => onFile('cover', e)} />
-
           <div className="pe-avatar-row">
             <div className="pe-avatar-wrap">
               <div className="pe-avatar">
