@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Bookmark, Globe, Heart, ImagePlus, Link2, MessageSquare, MoreHorizontal,
-  Repeat2, Send, Trash2, Users2, X,
+  Repeat2, Send, Trash2, Users2, X, CornerDownRight,
 } from 'lucide-react'
 import { api } from '../../api/client.js'
 import { useAuth } from '../auth/hooks/useAuth.jsx'
@@ -239,6 +239,8 @@ function Comments({ post, onCountChange, docked = false }) {
   const roots = (items ?? []).filter((c) => !c.parent_id)
   const repliesOf = (id) => (items ?? []).filter((c) => c.parent_id === id)
 
+  const byId = (id) => (items ?? []).find((c) => c.id === id)
+
   const row = (comment, depth = 0) => {
     const replies = repliesOf(comment.id)
     const expanded = !!open[comment.id]
@@ -246,6 +248,10 @@ function Comments({ post, onCountChange, docked = false }) {
     // Latest REPLY_PEEK first-class; the rest stay behind "View all".
     const visible = all ? replies : replies.slice(-REPLY_PEEK)
     const hidden = replies.length - visible.length
+    // Depth 1 (a reply to a comment) keeps its indent. Depth 2+ (a
+    // reply to a reply) is NOT indented further — it is flattened into
+    // the same column and simply says who it answers.
+    const answering = depth > 1 ? byId(comment.parent_id)?.author : null
 
     return (
       <li key={comment.id} className={`pc-comment ${depth > 0 ? 'reply' : ''}`}>
@@ -253,6 +259,12 @@ function Comments({ post, onCountChange, docked = false }) {
           <Avatar person={comment.author} size={32} />
         </Link>
         <div className="pc-comment-body">
+          {answering && (
+            <p className="pc-answering">
+              <CornerDownRight size={12} strokeWidth={2} aria-hidden="true" />
+              {answering.username ? `@${answering.username}` : answering.full_name}
+            </p>
+          )}
           <p className="pc-comment-meta">
             <b>{comment.author.full_name}</b>
             {comment.author?.is_verified && <VerifiedBadge size={15} className="pc-verified" />}
@@ -314,7 +326,9 @@ function Comments({ post, onCountChange, docked = false }) {
                   View {hidden} earlier {hidden === 1 ? 'reply' : 'replies'}
                 </button>
               )}
-              <ul className="pc-replies">{visible.map((r) => row(r, depth + 1))}</ul>
+              <ul className={`pc-replies ${depth >= 1 ? 'pc-replies-flat' : ''}`}>
+                {visible.map((r) => row(r, depth + 1))}
+              </ul>
             </>
           )}
         </div>
@@ -715,9 +729,12 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
           overflow: hidden; text-overflow: ellipsis; max-width: 60%;
         }
         @media (hover: hover) and (pointer: fine) { .pc-name:hover { text-decoration: underline; } }
+        /* The @handle is deliberately much smaller than the name. */
         .pc-handle {
-          color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; min-width: 0;
+          color: var(--ink-faint); font-size: 12px; line-height: 20px;
+          overflow: hidden; text-overflow: ellipsis; min-width: 0;
         }
+        .pc-dot, .pc-time { font-size: 12px; }
         .pc-dot, .pc-time { color: var(--ink-faint); flex: none; }
         .pc-scope { color: var(--ink-faint); display: inline-flex; align-items: center; margin-left: 2px; }
 
@@ -837,6 +854,16 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
         .pc-comment-list, .pc-replies { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
         /* Replies indent under their parent comment's 32px avatar + 10px. */
         .pc-replies { margin-top: 10px; padding-left: 12px; border-left: 2px solid var(--border); }
+        /* A reply to a reply is flattened: same column as its sibling,
+           with a quiet "↳ @handle" line saying who it answers. */
+        .pc-replies-flat { margin-top: 12px; padding-left: 0; border-left: 0; }
+        .pc-answering {
+          margin: 0 0 2px; display: inline-flex; align-items: center; gap: 4px;
+          font-size: 12px; line-height: 15px; font-weight: 500;
+          /* Deliberately the lowest-contrast ink we have, so it sits back. */
+          color: color-mix(in srgb, var(--ink-faint) 65%, transparent);
+        }
+        .pc-answering svg { flex: none; }
         .pc-comment { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 10px; }
         .pc-comment-meta { margin: 0; display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: var(--ink-faint); }
         .pc-comment-meta b { color: var(--ink); font-family: var(--font-head); font-size: 14px; }

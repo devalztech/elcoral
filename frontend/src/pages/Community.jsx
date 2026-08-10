@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import BellBadge from '../components/BellBadge.jsx'
 import { Link } from 'react-router-dom'
 import {
   Search, Bell, UserPlus, X, Crown, ArrowRight, ThumbsUp,
@@ -209,6 +210,7 @@ export default function Community() {
         <h1 className="cm-title">Communities</h1>
         <Link to="/home/notifications" className="cm-icon-btn" aria-label="Notifications">
           <Bell size={23} strokeWidth={1.9} />
+          <BellBadge />
         </Link>
         <Link to="/home/community/invite" className="cm-icon-btn" aria-label="Invite people">
           <UserPlus size={23} strokeWidth={1.9} />

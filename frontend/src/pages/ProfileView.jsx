@@ -14,6 +14,7 @@ import { api } from '../api/client.js'
 import FeedPostCard from '../features/feed/PostCard.jsx'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
 import { useFollow } from '../features/social/useFollow.js'
+import { followLabel } from '../features/social/followLabel.js'
 import { formatCount } from '../features/social/format.js'
 import { completionChecklist, completionPct } from '../features/profile/completion.js'
 
@@ -381,6 +382,7 @@ function OwnerProfile({ profile, posts }) {
           <MessagesButton />
           <Link to="/home/notifications" className="pv-round-btn" aria-label="Notifications">
             <Bell size={19} />
+            <BellBadge />
           </Link>
           <Link to="/home/settings" className="pv-round-btn" aria-label="Settings">
             <Settings size={19} />
@@ -636,7 +638,7 @@ function VisitorProfile({ profile, posts }) {
           {follow.is_following
             ? <CircleCheck size={18} aria-hidden="true" />
             : <UserPlus size={18} aria-hidden="true" />}
-          {follow.is_following ? 'Following' : follow.follows_you ? 'Follow back' : 'Follow'}
+          {followLabel(follow.is_following, follow.follows_you)}
         </button>
       </div>
 
@@ -1041,7 +1043,7 @@ function ProfileStyles() {
 
       .pv-round-btn {
         display: inline-flex; align-items: center; justify-content: center;
-        width: 42px; height: 42px; border-radius: 50%;
+        position: relative; width: 42px; height: 42px; border-radius: 50%;
         color: var(--ink);
         background: color-mix(in srgb, var(--surface) 82%, transparent);
         border: 1px solid var(--pv-line);

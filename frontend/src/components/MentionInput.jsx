@@ -140,9 +140,10 @@ export default function MentionInput({
           display: grid; place-items: center; font-size: 12px; font-weight: 700;
           background: var(--panel); color: var(--ink);
         }
-        .mi-text { display: flex; flex-direction: column; min-width: 0; }
-        .mi-name { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .mi-handle { font-size: 12px; color: var(--ink-faint); }
+         /* Name and handle sit on ONE line — never stacked under the avatar. */
+        .mi-text { display: flex; flex-direction: row; align-items: baseline; gap: 6px; min-width: 0; }
+        .mi-name { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; }
+        .mi-handle { font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
       `}</style>
     </div>
   )

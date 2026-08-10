@@ -149,8 +149,8 @@ export default function Settings() {
         .st-profile {
           display: grid; grid-template-columns: auto minmax(0,1fr) auto;
           align-items: center; gap: 14px;
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 16px; padding: 16px 14px; margin-bottom: 26px;
+          padding: 4px 0 20px; margin-bottom: 14px;
+          border-bottom: 1px solid var(--border);
         }
         .st-avatar-wrap { position: relative; width: 62px; height: 62px; flex-shrink: 0; }
         .st-avatar {
@@ -164,7 +164,7 @@ export default function Settings() {
           width: 22px; height: 22px; border-radius: 999px;
           background: var(--lemon); color: var(--on-accent);
           display: flex; align-items: center; justify-content: center;
-          border: 2px solid var(--panel);
+          border: 2px solid var(--bg);
         }
 
         .st-profile-text { min-width: 0; }
@@ -190,23 +190,19 @@ export default function Settings() {
         }
         @media (hover: hover) and (pointer: fine) { .st-view:hover { border-color: var(--accent-ink); color: var(--accent-ink); } }
 
-        .st-group { margin-bottom: 26px; }
+        .st-group { margin-bottom: 22px; }
         .st-group-title {
           margin: 0 0 10px 2px; font-family: var(--font-head);
           font-size: 14px; font-weight: 600; color: var(--ink-faint);
         }
-        .st-card {
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 14px; overflow: hidden;
-        }
+        /* Flat list — no card, matching Home and the rest of the app. */
+        .st-card { background: none; border: 0; border-radius: 0; }
         .st-row {
           display: grid; grid-template-columns: 34px minmax(0,1fr) auto auto;
           align-items: center; gap: 12px;
-          padding: 15px 14px;
-          border-bottom: 1px solid var(--border);
+          padding: 14px 0;
         }
-        .st-row:last-child { border-bottom: none; }
-        .st-row:active { background: var(--panel-raised); }
+        .st-row:active { opacity: .7; }
         .st-row-icon { color: var(--accent-ink); display: inline-flex; align-items: center; justify-content: center; }
         .st-row-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
         .st-row-label { font-size: 15px; font-weight: 600; color: var(--ink); }
@@ -222,10 +218,10 @@ export default function Settings() {
           display: flex; align-items: center; justify-content: center; gap: 10px;
           width: 100%; margin-top: 4px;
           font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--danger);
-          background: transparent; border: 1px solid rgba(255, 107, 74, 0.45);
-          border-radius: 14px; padding: 15px 16px;
+          background: transparent; border: 0; border-top: 1px solid var(--border);
+          border-radius: 0; padding: 18px 0 6px;
         }
-        @media (hover: hover) and (pointer: fine) { .st-logout:hover { border-color: var(--danger); background: rgba(255, 107, 74, 0.07); } }
+        @media (hover: hover) and (pointer: fine) { .st-logout:hover { opacity: .85; } }
         .st-logout:active { transform: scale(0.99); }
 
         @media (max-width: 380px) {

@@ -10,6 +10,7 @@ import { api } from '../api/client.js'
 import { formatCount, initialsOf, pluralize } from '../features/social/format.js'
 import { RECOMMENDED as JOBS } from '../features/jobs/jobs.js'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
+import BellBadge from '../components/BellBadge.jsx'
 import Spinner from '../components/Spinner.jsx'
 
 /**
@@ -131,6 +132,7 @@ export default function Dashboard() {
           </Link>
           <Link to="/home/notifications" className="hm-icon-btn" aria-label="Notifications">
             <Bell size={23} strokeWidth={1.9} />
+            <BellBadge />
           </Link>
         </div>
       </header>

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import BellBadge from '../components/BellBadge.jsx'
 import { Link } from 'react-router-dom'
 import {
   Search, Bell, SlidersHorizontal, X, Briefcase, BadgeCheck, Bookmark,
@@ -71,7 +72,7 @@ export default function Jobs() {
         </label>
         <Link to="/home/notifications" className="jb-icon-btn" aria-label="Notifications">
           <Bell size={22} strokeWidth={1.9} />
-          <span className="jb-badge">3</span>
+          <BellBadge />
         </Link>
         <button type="button" className="jb-icon-btn" aria-label="Filters">
           <SlidersHorizontal size={22} strokeWidth={1.9} />

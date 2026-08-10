@@ -10,6 +10,7 @@ import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { api } from '../api/client.js'
 import { avatarTone, initialsOf } from '../features/social/format.js'
+import { followLabel } from '../features/social/followLabel.js'
 import Spinner from '../components/Spinner.jsx'
 import VerifiedBadge from '../components/VerifiedBadge.jsx'
 
@@ -97,7 +98,7 @@ export default function Discover() {
             </span>
           </Link>
           <button type="button" className="dc-cta" disabled={!!busy[person.id]} onClick={() => follow(person)}>
-            Follow
+            {followLabel(person.is_following, person.follows_you)}
           </button>
         </div>
       ))}

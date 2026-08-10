@@ -12,6 +12,7 @@ import CreatePost from '../pages/CreatePost.jsx'
 import Create from '../pages/Create.jsx'
 import Jobs from '../pages/Jobs.jsx'
 import Discover from '../pages/Discover.jsx'
+import Notifications from '../pages/Notifications.jsx'
 import PostDetail from '../pages/PostDetail.jsx'
 import Community from '../pages/Community.jsx'
 import CommunityDetail from '../pages/CommunityDetail.jsx'
@@ -40,6 +41,7 @@ import HelpSettings from '../pages/settings/HelpSettings.jsx'
 import AboutSettings from '../pages/settings/AboutSettings.jsx'
 import { SettingsProvider } from '../features/settings/hooks/useSettings.jsx'
 import { MessagingProvider } from '../features/messages/useMessaging.jsx'
+import { NotificationsProvider } from '../features/notifications/useNotifications.jsx'
 import AppShell from '../layouts/AppShell.jsx'
 import PublicShell from '../layouts/PublicShell.jsx'
 
@@ -51,6 +53,8 @@ export default function App() {
             surface that shows unread counts, presence or typing reads
             from it, so they can't disagree with each other. */}
         <MessagingProvider>
+        {/* One unread-notification count shared by every bell. */}
+        <NotificationsProvider>
         <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -93,7 +97,7 @@ export default function App() {
             <Route path="/home/community/:slug" element={<CommunityDetail />} />
             <Route path="/home/messages" element={<Messages />} />
             <Route path="/home/messages/:conversationId" element={<MessageThread />} />
-            <Route path="/home/notifications" element={<ComingSoon label="Notifications" />} />
+            <Route path="/home/notifications" element={<Notifications />} />
             <Route path="/home/more" element={<ComingSoon label="More" />} />
             <Route path="/home/profile" element={<ProfileView />} />
             <Route path="/home/profile/edit" element={<ProfileEditor />} />
@@ -117,6 +121,7 @@ export default function App() {
           </Route>
         </Routes>
         </BrowserRouter>
+        </NotificationsProvider>
         </MessagingProvider>
       </SettingsProvider>
     </AuthProvider>

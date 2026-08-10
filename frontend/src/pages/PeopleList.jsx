@@ -13,6 +13,7 @@ import { ChevronLeft, Users } from 'lucide-react'
 import { api } from '../api/client.js'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { avatarTone, displayName, formatCount, initialsOf } from '../features/social/format.js'
+import { followLabel } from '../features/social/followLabel.js'
 import Spinner from '../components/Spinner.jsx'
 import VerifiedBadge from '../components/VerifiedBadge.jsx'
 
@@ -44,11 +45,11 @@ function FollowButton({ person, onChanged }) {
     }
   }
 
-  const label = state.is_following ? 'Following' : state.follows_you ? 'Follow back' : 'Follow'
+  const label = followLabel(state.is_following, state.follows_you)
   return (
     <button
       type="button"
-      className={`pl-follow ${state.is_following ? 'pl-following' : ''}`}
+      className={`pl-follow ${state.is_following ? 'pl-following' : ''} ${state.is_following && state.follows_you ? 'pl-friends' : ''}`}
       onClick={toggle}
       disabled={pending}
       aria-pressed={state.is_following}

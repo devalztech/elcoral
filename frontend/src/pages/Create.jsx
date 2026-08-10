@@ -113,14 +113,14 @@ export default function Create() {
           display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 10px; margin-bottom: 26px;
         }
+        /* Flat tiles — no card chrome, in step with Home and Settings. */
         .cr-card {
           display: flex; flex-direction: column;
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 14px; padding: 14px 12px 12px;
+          background: none; border: 0; border-radius: 0; padding: 2px 0 6px;
         }
         .cr-card-icon {
           width: 42px; height: 42px; border-radius: 12px;
-          background: var(--panel-raised); color: var(--accent-ink);
+          background: color-mix(in srgb, var(--accent-ink) 12%, transparent); color: var(--accent-ink);
           display: inline-flex; align-items: center; justify-content: center;
           margin-bottom: 14px;
         }
@@ -132,33 +132,33 @@ export default function Create() {
           font-size: 13px; line-height: 1.42; color: var(--ink-dim); flex: 1;
         }
         .cr-card-arrow { color: var(--accent-ink); margin-top: 14px; }
-        @media (hover: hover) and (pointer: fine) { .cr-card:hover { border-color: rgba(196, 241, 53, 0.35); } }
-        .cr-card:active { transform: scale(0.99); }
+        @media (hover: hover) and (pointer: fine) { .cr-card:hover .cr-card-label { color: var(--accent-ink); } }
+        .cr-card:active { opacity: .75; }
 
-        .cr-quick { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+        .cr-quick { display: flex; flex-direction: column; margin-bottom: 18px; }
         .cr-row {
           display: grid; grid-template-columns: 44px minmax(0,1fr) auto;
           align-items: center; gap: 14px;
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 14px; padding: 14px 14px;
+          background: none; border: 0; padding: 13px 0;
         }
+        .cr-row + .cr-row { border-top: 1px solid var(--border); }
         .cr-row-icon {
           width: 44px; height: 44px; border-radius: 12px;
-          background: var(--panel-raised); color: var(--accent-ink);
+          background: color-mix(in srgb, var(--accent-ink) 12%, transparent); color: var(--accent-ink);
           display: inline-flex; align-items: center; justify-content: center;
         }
         .cr-row-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
         .cr-row-label { font-family: var(--font-head); font-size: 15.5px; font-weight: 700; color: var(--ink); }
         .cr-row-desc { font-size: 13px; line-height: 1.35; color: var(--ink-dim); }
         .cr-row-chevron { color: var(--ink-faint); }
-        @media (hover: hover) and (pointer: fine) { .cr-row:hover { border-color: rgba(196, 241, 53, 0.35); } }
-        .cr-row:active { background: var(--panel-raised); }
+        @media (hover: hover) and (pointer: fine) { .cr-row:hover .cr-row-label { color: var(--accent-ink); } }
+        .cr-row:active { opacity: .75; }
 
         .cr-promo {
           display: grid; grid-template-columns: auto minmax(0,1fr) auto;
           align-items: center; gap: 14px;
-          background: var(--panel); border: 1px solid var(--border);
-          border-radius: 14px; padding: 14px;
+          background: none; border: 0; border-top: 1px solid var(--border);
+          border-radius: 0; padding: 18px 0 4px;
         }
         .cr-promo-art {
           width: 82px; height: 82px; border-radius: 12px; flex-shrink: 0;
@@ -186,7 +186,7 @@ export default function Create() {
           .cr-sub { font-size: 12.5px; }
           .cr-templates { padding: 9px 12px; font-size: 13px; }
           .cr-grid { gap: 8px; }
-          .cr-card { padding: 12px 10px 10px; }
+          .cr-card { padding: 2px 0 6px; }
           .cr-card-desc { font-size: 12.5px; }
           .cr-promo { grid-template-columns: auto minmax(0,1fr); row-gap: 12px; }
           .cr-promo-cta { grid-column: 1 / -1; justify-content: center; }

@@ -19,6 +19,7 @@ import { OnlineDot, TypingDots, presenceLabel } from '../features/messages/Prese
 import Attachment from '../features/messages/Attachment.jsx'
 import Composer from '../features/messages/Composer.jsx'
 import Lightbox from '../components/Lightbox.jsx'
+import RichText from '../components/RichText.jsx'
 import {
   avatarTone, dayLabel, displayName, initialsOf, timeOfDay,
 } from '../features/social/format.js'
@@ -266,7 +267,9 @@ export default function MessageThread() {
                     )}
                     {message.body && (
                       <p className="mt-text">
-                        {message.body}
+                        {/* Same renderer as posts and comments, so a long
+                            DM gets the identical inline "… More" toggle. */}
+                        <RichText as="span" text={message.body} limit={280} />
                         {/* Reserves the exact width of the timestamp so the
                             last line of text never runs underneath it —
                             the same trick WhatsApp uses. */}
