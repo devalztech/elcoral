@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Elcoral — Connect by what you're trying to do</title>
     <meta name="description" content="Elcoral connects people by intent, not job title — find work, hire, build a startup, find collaborators, learn, or mentor." />
-    <!-- Installable as a home-screen app (manifest only — no service
-         worker, since nothing here needs offline caching). -->
+    <!-- Installable as a home-screen app. /sw.js is registered at runtime
+         and exists only to raise system notifications (no offline cache). -->
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#000000">
     <meta name="mobile-web-app-capable" content="yes">
@@ -21,11 +21,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- TEMP DEBUG: mobile console overlay, tap the floating button to see
-         real console errors / network tab without a PC. Remove this script
-         tag once the "something went wrong" bug is found and fixed. -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
     <script type="module" src="/src/app/main.jsx"></script>
   </body>
 </html>

@@ -59,7 +59,7 @@ export default function MediaCarousel({ items, className = '' }) {
 
   return (
     <div
-      className={`mc ${className}`}
+      className={`mcar ${className}`}
       data-stop="true"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
@@ -77,17 +77,17 @@ export default function MediaCarousel({ items, className = '' }) {
           onRequestFullscreen={(at) => open(at, true)}
         />
       ) : (
-        <button type="button" className="mc-img-btn" onClick={() => open()} aria-label="Open preview">
+        <button type="button" className="mcar-img-btn" onClick={() => open()} aria-label="Open preview">
           <img src={item.url} alt={item.alt || ''} loading="lazy" />
         </button>
       )}
 
       {many && (
         <>
-          <span className="mc-count">{index + 1}/{list.length}</span>
+          <span className="mcar-count">{index + 1}/{list.length}</span>
           <button
             type="button"
-            className="mc-nav mc-prev"
+            className="mcar-nav mcar-prev"
             onClick={() => go(index - 1)}
             disabled={index === 0}
             aria-label="Previous item"
@@ -96,14 +96,14 @@ export default function MediaCarousel({ items, className = '' }) {
           </button>
           <button
             type="button"
-            className="mc-nav mc-next"
+            className="mcar-nav mcar-next"
             onClick={() => go(index + 1)}
             disabled={index === list.length - 1}
             aria-label="Next item"
           >
             <ChevronRight size={16} />
           </button>
-          <span className="mc-dots" aria-hidden="true">
+          <span className="mcar-dots" aria-hidden="true">
             {list.map((m, i) => (
               <i key={i} className={i === index ? 'on' : ''}>
                 {isVideo(m) ? <Play size={5} fill="currentColor" strokeWidth={0} /> : null}
@@ -125,45 +125,45 @@ export default function MediaCarousel({ items, className = '' }) {
       )}
 
       <style>{`
-        .mc { position: relative; width: 100%; height: 100%; overflow: hidden; }
-        .mc-img-btn {
+        .mcar { position: relative; width: 100%; height: 100%; overflow: hidden; }
+        .mcar-img-btn {
           display: block; width: 100%; height: 100%; padding: 0; border: 0;
           background: none; cursor: zoom-in;
         }
-        .mc-img-btn > img {
+        .mcar-img-btn > img {
           display: block; width: 100%; height: 100%; object-fit: cover;
         }
         /* The counter is the whole point: a set reads as one frame that
            says how much more is inside. */
-        .mc-count {
+        .mcar-count {
           position: absolute; top: 8px; right: 8px; z-index: 3;
           padding: 2px 8px; border-radius: 999px;
           font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
           color: #fff; background: rgba(0,0,0,0.55);
           backdrop-filter: blur(4px);
         }
-        .mc-nav {
+        .mcar-nav {
           position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
           display: grid; place-items: center; width: 26px; height: 26px;
           border: 0; border-radius: 999px; cursor: pointer;
           color: #fff; background: rgba(0,0,0,0.45);
           opacity: 0; transition: opacity 120ms ease;
         }
-        .mc:hover .mc-nav { opacity: 1; }
-        .mc-nav:disabled { opacity: 0 !important; }
-        .mc-prev { left: 6px; }
-        .mc-next { right: 6px; }
-        .mc-dots {
+        .mcar:hover .mcar-nav { opacity: 1; }
+        .mcar-nav:disabled { opacity: 0 !important; }
+        .mcar-prev { left: 6px; }
+        .mcar-next { right: 6px; }
+        .mcar-dots {
           position: absolute; left: 0; right: 0; bottom: 8px; z-index: 3;
           display: flex; gap: 4px; justify-content: center; pointer-events: none;
         }
-        .mc-dots i {
+        .mcar-dots i {
           display: grid; place-items: center;
           width: 5px; height: 5px; border-radius: 999px;
           background: rgba(255,255,255,0.55); color: transparent;
         }
-        .mc-dots i.on { background: #fff; }
-        @media (hover: none) { .mc-nav { display: none; } }
+        .mcar-dots i.on { background: #fff; }
+        @media (hover: none) { .mcar-nav { display: none; } }
       `}</style>
     </div>
   )

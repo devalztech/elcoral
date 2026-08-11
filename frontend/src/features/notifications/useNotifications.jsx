@@ -1,33 +1,41 @@
 /**
- * The notification bell's shared brain.
+ * The notification bell's shared brain — plus the system alerts.
  *
  * One provider for the whole session so every bell (home, jobs,
  * communities, profile) shows the SAME unread number, and reading the
  * list on /home/notifications clears all of them at once. Counts refresh
  * on mount, on a slow poll, and whenever the tab regains focus.
  *
- * It also raises a real browser notification for anything that arrives
- * while the app isn't the focused tab. Permission is asked for once, on
- * the first signed-in session, and never again if it's denied. Rows we
- * have already announced are remembered in sessionStorage so a refresh
- * doesn't re-ring the same three likes.
+ * Alerts behave like WhatsApp: a direct message arrives over the live
+ * socket and rings immediately (no 45s wait), everything else rings off
+ * the poll. All of it goes through the service worker so the alert lands
+ * in the phone's notification tray, not just the desktop corner.
+ * Permission is NEVER asked for on page load — the user turns it on from
+ * Settings › Notifications.
  */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { api } from '../../api/client.js'
 import { useAuth } from '../auth/hooks/useAuth.jsx'
+import { useMessaging } from '../messages/useMessaging.jsx'
 import { notificationSentence } from './notificationCopy.js'
+import {
+  permissionState, readPrefs, registerServiceWorker, requestPermission, showAlert, supportsNotifications, writePrefs,
+} from './browserNotify.js'
 
-const POLL_MS = 45_000
+const POLL_MS = 30_000
 const ANNOUNCED_KEY = 'elcoral:notified-ids'
 const ANNOUNCED_MAX = 120
 
 const Ctx = createContext({
-  unread: 0, refresh: () => {}, setUnread: () => {}, desktopPermission: 'default', enableDesktop: async () => {},
+  unread: 0,
+  refresh: () => {},
+  setUnread: () => {},
+  desktopPermission: 'default',
+  enableDesktop: async () => {},
+  alertPrefs: readPrefs(),
+  setAlertPrefs: () => {},
+  sendTestAlert: async () => false,
 })
-
-function supported() {
-  return typeof window !== 'undefined' && 'Notification' in window
-}
 
 function readAnnounced() {
   try {
@@ -45,10 +53,26 @@ function writeAnnounced(set) {
   }
 }
 
+function messagePreview(message) {
+  if (message?.deleted) return 'Message deleted'
+  if (message?.body) return message.body.length > 140 ? `${message.body.slice(0, 139)}…` : message.body
+  const first = message?.attachments?.[0]
+  const count = message?.attachments?.length ?? 0
+  if (!first) return 'Sent you a message'
+  const kind = first.kind || (first.mime_type || '').split('/')[0]
+  if (count > 1) return `Sent ${count} attachments`
+  if (kind === 'video') return '🎥 Video'
+  if (kind === 'audio') return '🎤 Voice note'
+  if (kind === 'image') return '📷 Photo'
+  return '📄 Document'
+}
+
 export function NotificationsProvider({ children }) {
-  const { accessToken, authLoading } = useAuth()
+  const { accessToken, authLoading, user } = useAuth()
+  const { subscribe } = useMessaging()
   const [unread, setUnread] = useState(0)
-  const [permission, setPermission] = useState(supported() ? Notification.permission : 'unsupported')
+  const [permission, setPermission] = useState(permissionState())
+  const [alertPrefs, setPrefs] = useState(readPrefs())
 
   const announced = useRef(readAnnounced())
   const lastCount = useRef(0)
@@ -57,18 +81,34 @@ export function NotificationsProvider({ children }) {
   const primed = useRef(false)
 
   const enableDesktop = useCallback(async () => {
-    if (!supported()) return 'unsupported'
-    if (Notification.permission !== 'default') {
-      setPermission(Notification.permission)
-      return Notification.permission
-    }
-    const result = await Notification.requestPermission()
-    setPermission(result)
+    const result = await requestPermission()
+    setPermission(result === 'unsupported' ? 'unsupported' : permissionState())
     return result
   }, [])
 
+  const setAlertPrefs = useCallback((patch) => {
+    setPrefs(writePrefs(patch))
+  }, [])
+
+  const sendTestAlert = useCallback(
+    () => showAlert({
+      title: 'Elcoral',
+      body: 'Notifications are on — this is what an alert looks like.',
+      url: '/home/notifications',
+      tag: 'elcoral-test',
+      force: true,
+    }),
+    [],
+  )
+
+  // Keep the worker warm whenever permission is already granted, so the
+  // first real alert of a session doesn't wait on registration.
+  useEffect(() => {
+    if (permissionState() === 'granted') registerServiceWorker()
+  }, [])
+
   const announce = useCallback(async () => {
-    if (!supported() || Notification.permission !== 'granted' || !accessToken) return
+    if (!supportsNotifications() || permissionState() !== 'granted' || !accessToken) return
     let items = []
     try {
       const data = await api.listNotifications(accessToken, 10)
@@ -81,26 +121,17 @@ export function NotificationsProvider({ children }) {
     writeAnnounced(announced.current)
 
     if (!primed.current) { primed.current = true; return }
-    // Don't interrupt someone who is already looking at the app.
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') return
+    // Don't interrupt someone who is actively looking at the app.
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible' && document.hasFocus()) return
 
     for (const n of fresh.slice(0, 3)) {
-      try {
-        const note = new Notification('Elcoral', {
-          body: notificationSentence(n),
-          icon: n.actor?.photo_url || '/favicon.ico',
-          tag: `elcoral-${n.id}`,
-        })
-        note.onclick = () => {
-          window.focus()
-          window.location.href = n.post_id
-            ? `/home/posts/${n.post_id}`
-            : '/home/notifications'
-          note.close()
-        }
-      } catch {
-        /* some browsers block constructing Notification outside a SW */
-      }
+      await showAlert({
+        title: 'Elcoral',
+        body: notificationSentence(n),
+        icon: n.actor?.photo_url,
+        tag: `elcoral-${n.id}`,
+        url: n.post_id ? `/home/posts/${n.post_id}` : '/home/notifications',
+      })
     }
   }, [accessToken])
 
@@ -117,12 +148,26 @@ export function NotificationsProvider({ children }) {
     }
   }, [accessToken, announce])
 
-  // Ask once per signed-in session, after the token exists.
+  // Direct messages ring instantly off the live socket — the poll is far
+  // too slow for a chat alert.
   useEffect(() => {
-    if (authLoading || !accessToken || !supported()) return
-    if (Notification.permission === 'default') { enableDesktop().catch(() => {}) }
-    else setPermission(Notification.permission)
-  }, [authLoading, accessToken, enableDesktop])
+    if (!accessToken || !user?.id) return undefined
+    return subscribe((event) => {
+      if (event?.type !== 'message') return
+      const message = event.message
+      if (!message || message.sender_id === user.id) return
+      const onThisThread =
+        typeof window !== 'undefined' &&
+        window.location.pathname.includes(String(event.conversation_id))
+      if (onThisThread && document.visibilityState === 'visible' && document.hasFocus()) return
+      showAlert({
+        title: 'New message',
+        body: messagePreview(message),
+        tag: `elcoral-dm-${event.conversation_id}`,
+        url: `/home/messages/${event.conversation_id}`,
+      })
+    })
+  }, [accessToken, subscribe, user?.id])
 
   useEffect(() => {
     if (authLoading) return undefined
@@ -137,7 +182,18 @@ export function NotificationsProvider({ children }) {
   }, [authLoading, refresh])
 
   return (
-    <Ctx.Provider value={{ unread, refresh, setUnread, desktopPermission: permission, enableDesktop }}>
+    <Ctx.Provider
+      value={{
+        unread,
+        refresh,
+        setUnread,
+        desktopPermission: permission,
+        enableDesktop,
+        alertPrefs,
+        setAlertPrefs,
+        sendTestAlert,
+      }}
+    >
       {children}
     </Ctx.Provider>
   )

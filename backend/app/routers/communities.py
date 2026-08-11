@@ -1582,11 +1582,16 @@ async def send_community_message(
     out = (await _serialize_messages(db, [(message, viewer, profile)], viewer, caps))[0]
 
     # Fan out to everyone with the chat open (see app/core/community_hub.py).
+    # The broadcast copy is serialized for NOBODY in particular: one payload
+    # goes to every listener, so viewer-specific flags (`is_self`,
+    # `can_delete`) must not be baked in — the sender's own "mine" bubble
+    # and "you may delete this" are decided client-side from sender.id.
     from app.core.community_hub import hub
 
+    fanout = (await _serialize_messages(db, [(message, viewer, profile)], None, caps))[0]
     await hub.broadcast(
         str(community.id),
-        {"type": "message", "message": out.model_dump(mode="json")},
+        {"type": "message", "message": fanout.model_dump(mode="json")},
     )
     return out
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, Bell, Bookmark, Crown, Eye, Gamepad2, Globe, Leaf, Lock,
+  ArrowLeft, Bell, Bookmark, ChevronDown, ChevronUp, Crown, Eye, Gamepad2, Globe, Leaf, Lock,
   MessageSquare, MoreHorizontal, Palette, Rocket, Settings, Share2,
   Shield, SquarePen, ThumbsUp, Trash2, Users, X,
 } from 'lucide-react'
@@ -17,7 +17,10 @@ import ChatTab from '../features/community/ChatTab.jsx'
 import SettingsSheet from '../features/community/SettingsSheet.jsx'
 import Spinner from '../components/Spinner.jsx'
 
-const TABS = ['Posts', 'Projects', 'Chat', 'Members']
+// Chat leads for members, the way a WhatsApp community opens on its
+// conversation; a visitor who can't chat yet lands on Posts instead.
+const MEMBER_TABS = ['Chat', 'Posts', 'Projects', 'Members']
+const VISITOR_TABS = ['Posts', 'Projects', 'Members']
 
 /* ------------------------------------------------------------- helpers ---- */
 
@@ -119,7 +122,10 @@ export default function CommunityDetail() {
   const { accessToken, authLoading, user } = useAuth()
 
   const [state, setState] = useState({ community: null, loading: true, error: null, notFound: false })
-  const [tab, setTab] = useState('Posts')
+  const [tab, setTab] = useState(null)
+  // On the Chat tab the full hero collapses to a one-line header you tap
+  // to open community info — the chat itself needs the vertical space.
+  const [infoOpen, setInfoOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [joinBusy, setJoinBusy] = useState(false)
@@ -166,6 +172,10 @@ export default function CommunityDetail() {
   }
 
   const caps = state.community?.capabilities ?? {}
+  const isMember = !!caps.is_member
+  const tabs = isMember ? MEMBER_TABS : VISITOR_TABS
+  const activeTab = tab && tabs.includes(tab) ? tab : tabs[0]
+  const chatting = activeTab === 'Chat'
 
   if (state.notFound) {
     return (
@@ -223,23 +233,37 @@ export default function CommunityDetail() {
 
       {state.community && (
         <>
-          <CommunityHero
-            community={state.community}
-            caps={caps}
-            joinBusy={joinBusy}
-            onToggleJoin={toggleJoin}
-            onOpenSettings={() => setSettingsOpen(true)}
-            loggedIn={!!accessToken}
-          />
+          {chatting && !infoOpen ? (
+            <button type="button" className="cd-peek" onClick={() => setInfoOpen(true)}>
+              <span className={`cd-peek-tile tone-${state.community.tone}`} aria-hidden="true">
+                <Glyph item={state.community} size={40} />
+              </span>
+              <span className="cd-peek-text">
+                <b>{state.community.name}</b>
+                <i>{pluralize(state.community.members_count, 'member')} · tap for community info</i>
+              </span>
+              <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
+            </button>
+          ) : (
+            <CommunityHero
+              community={state.community}
+              caps={caps}
+              joinBusy={joinBusy}
+              onToggleJoin={toggleJoin}
+              onOpenSettings={() => setSettingsOpen(true)}
+              loggedIn={!!accessToken}
+              onCollapse={chatting ? () => setInfoOpen(false) : null}
+            />
+          )}
 
           <div className="cd-tabs" role="tablist" aria-label="Community sections">
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <button
                 key={t}
                 type="button"
                 role="tab"
-                aria-selected={tab === t}
-                className={`cd-tab ${tab === t ? 'cd-tab-active' : ''}`}
+                aria-selected={activeTab === t}
+                className={`cd-tab ${activeTab === t ? 'cd-tab-active' : ''}`}
                 onClick={() => setTab(t)}
               >
                 {t}
@@ -247,8 +271,8 @@ export default function CommunityDetail() {
             ))}
           </div>
 
-          <div className="cd-tabpanel">
-            {tab === 'Posts' && (
+          <div className={`cd-tabpanel ${chatting ? 'cd-tabpanel-chat' : ''}`}>
+            {activeTab === 'Posts' && (
               <PostsTab
                 community={state.community}
                 caps={caps}
@@ -257,7 +281,7 @@ export default function CommunityDetail() {
                 currentUser={user}
               />
             )}
-            {tab === 'Projects' && (
+            {activeTab === 'Projects' && (
               <ProjectsTab
                 community={state.community}
                 caps={caps}
@@ -265,7 +289,7 @@ export default function CommunityDetail() {
                 loggedIn={!!accessToken}
               />
             )}
-            {tab === 'Chat' && (
+            {activeTab === 'Chat' && (
               <ChatTab
                 community={state.community}
                 caps={caps}
@@ -274,7 +298,7 @@ export default function CommunityDetail() {
                 currentUser={user}
               />
             )}
-            {tab === 'Members' && (
+            {activeTab === 'Members' && (
               <MembersTab
                 community={state.community}
                 caps={caps}
@@ -331,9 +355,14 @@ function CommunityMenu({ community, caps, onClose, onSettings, onReport }) {
 
 /* ----------------------------------------------------------------- hero ---- */
 
-function CommunityHero({ community, caps, joinBusy, onToggleJoin, onOpenSettings, loggedIn }) {
+function CommunityHero({ community, caps, joinBusy, onToggleJoin, onOpenSettings, loggedIn, onCollapse }) {
   return (
     <section className="cd-hero">
+      {onCollapse && (
+        <button type="button" className="cd-hero-collapse" onClick={onCollapse} aria-label="Hide community info">
+          <ChevronUp size={18} strokeWidth={2} />
+        </button>
+      )}
       <div className="cd-cover" style={community.cover_url ? { backgroundImage: `url(${community.cover_url})` } : undefined} aria-hidden="true" />
       <div className="cd-hero-body">
         <span className={`cd-tile tone-${community.tone}`} aria-hidden="true">
@@ -789,6 +818,31 @@ function CommunityDetailStyles() {
         color: var(--ink); transition: background .15s ease, color .15s ease;
       }
       @media (hover: hover) and (pointer: fine) { .cd-icon-btn:hover { background: var(--panel); color: var(--accent-ink); } }
+
+      .cd-peek {
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        margin: 0 0 4px; padding: 10px var(--gut) 12px; text-align: left; cursor: pointer;
+        border-bottom: 1px solid var(--border);
+      }
+      .cd-peek-tile {
+        flex: none; display: grid; place-items: center; width: 46px; height: 46px;
+        border-radius: 15px; color: var(--bg);
+      }
+      .cd-peek-text { flex: 1 1 auto; min-width: 0; display: block; }
+      .cd-peek-text b {
+        display: block; font-family: var(--font-head); font-size: 15.5px;
+        color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .cd-peek-text i { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-faint); }
+      .cd-peek svg { flex: none; color: var(--ink-faint); }
+      .cd-hero { position: relative; }
+      .cd-hero-collapse {
+        position: absolute; top: 10px; right: var(--gut); z-index: 2;
+        display: grid; place-items: center; width: 32px; height: 32px;
+        border-radius: 999px; cursor: pointer; color: var(--ink-faint);
+        border: 1px solid var(--border); background: var(--panel-raised);
+      }
+      .cd-tabpanel-chat { padding-top: 0; }
 
       .cd-menu-wrap { position: relative; }
       .cd-menu {
