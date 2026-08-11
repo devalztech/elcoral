@@ -42,24 +42,56 @@ function clock(seconds) {
 
 /* `fill` makes the player fill its parent box instead of taking the
    clip's own aspect ratio — used by message bubbles, where every photo
-   and clip shares one fixed frame size. */
-export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, rounded = true, fill = false }) {
+   and clip shares one fixed frame size.
+
+   `immersive` says the player is ALREADY on a full-screen canvas (the
+   in-app MediaViewer), so the tap gestures, the always-visible bar and
+   the large chrome switch on without waiting for the browser's own
+   fullscreen. That is what makes "open a clip fullscreen" continue from
+   where the small frame left off: the viewer passes `startAt` and reads
+   `onTime`, so the two players hand the playhead back and forth instead
+   of restarting at 0:00.
+
+   `onRequestFullscreen` lets the embedder (feed card / DM bubble) take
+   over the expand button and open the in-app viewer instead of the
+   browser's fullscreen, which on iOS would replace our chrome with
+   Safari's. */
+export default function MediaPlayer({
+  src,
+  poster,
+  ratio: ratioProp,
+  onRatio,
+  rounded = true,
+  fill = false,
+  immersive = false,
+  startAt = 0,
+  autoPlay = false,
+  onTime,
+  onRequestFullscreen,
+}) {
   const wrapRef = useRef(null)
   const videoRef = useRef(null)
   const trackRef = useRef(null)
   const lastTap = useRef({ at: 0, side: null })
+  const reportTime = useRef(onTime)
+  reportTime.current = onTime
 
   const [ratio, setRatio] = useState(ratioProp ?? null)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(false)
-  const [time, setTime] = useState(0)
+  const [time, setTime] = useState(startAt || 0)
   const [duration, setDuration] = useState(0)
   const [buffered, setBuffered] = useState(0)
-  const [started, setStarted] = useState(false)
+  const [started, setStarted] = useState(immersive)
   const [scrubbing, setScrubbing] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [browserFullscreen, setBrowserFullscreen] = useState(false)
   // { side: 'back' | 'forward', amount } — the double-tap ripple.
   const [jump, setJump] = useState(null)
+
+  // Immersive (in-app fullscreen viewer) counts as fullscreen for every
+  // gesture and every piece of chrome.
+  const isFullscreen = immersive || browserFullscreen
+
 
   const toggle = useCallback(() => {
     const el = videoRef.current
@@ -78,7 +110,9 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
     const next = Math.min(Math.max(0, el.currentTime + delta), el.duration)
     el.currentTime = next
     setTime(next)
+    reportTime.current?.(next)
   }, [])
+
 
   // ---------------------------------------------------------- scrubbing
   // Pointer events (not click) so the same code path handles a mouse
@@ -92,6 +126,7 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
     const next = pct * duration
     el.currentTime = next
     setTime(next)
+    reportTime.current?.(next)
   }, [duration])
 
   const onTrackPointerDown = (event) => {
@@ -121,7 +156,15 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
   }
 
   // -------------------------------------------------------- fullscreen
+  // When the embedder hands us `onRequestFullscreen` the expand button
+  // opens the in-app viewer (which resumes at the current playhead)
+  // instead of the browser's own fullscreen — one consistent chrome on
+  // every platform, iOS included.
   const fullscreen = () => {
+    if (onRequestFullscreen) {
+      onRequestFullscreen(videoRef.current?.currentTime ?? time)
+      return
+    }
     const node = wrapRef.current
     if (!node) return
     if (document.fullscreenElement) document.exitFullscreen?.()
@@ -129,10 +172,11 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
   }
 
   useEffect(() => {
-    const onChange = () => setIsFullscreen(document.fullscreenElement === wrapRef.current)
+    const onChange = () => setBrowserFullscreen(document.fullscreenElement === wrapRef.current)
     document.addEventListener('fullscreenchange', onChange)
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
+
 
   // Keyboard shortcuts only while the player is the fullscreen element,
   // so typing elsewhere in the app never seeks a video.
@@ -182,12 +226,14 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
     }, DOUBLE_TAP_MS)
   }
 
+  // A NEW clip resets the playhead; the same clip re-mounted at a handed
+  // over `startAt` (small frame -> fullscreen viewer and back) keeps it.
   useEffect(() => {
-    setStarted(false)
+    setStarted(immersive)
     setPlaying(false)
-    setTime(0)
+    setTime(startAt || 0)
     setBuffered(0)
-  }, [src])
+  }, [src]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pct = duration ? (time / duration) * 100 : 0
   const bufferedPct = duration ? Math.min(100, (buffered / duration) * 100) : 0
@@ -203,6 +249,7 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
         started ? 'mp-started' : '',
         scrubbing ? 'mp-scrubbing' : '',
         isFullscreen ? 'mp-fs' : '',
+        immersive ? 'mp-immersive' : '',
       ].join(' ')}
       style={!fill && ratio ? { aspectRatio: ratio } : undefined}
       data-stop="true"
@@ -217,21 +264,39 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
         onClick={onSurfaceClick}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onTimeUpdate={(e) => { if (!scrubbing) setTime(e.currentTarget.currentTime) }}
+        onTimeUpdate={(e) => {
+          if (scrubbing) return
+          const at = e.currentTarget.currentTime
+          setTime(at)
+          reportTime.current?.(at)
+        }}
         onProgress={(e) => {
           const el = e.currentTarget
           if (el.buffered.length) setBuffered(el.buffered.end(el.buffered.length - 1))
         }}
-        onEnded={() => { setPlaying(false); setStarted(false) }}
+        onEnded={() => { setPlaying(false); setStarted(immersive) }}
         onLoadedMetadata={(e) => {
-          const { videoWidth: w, videoHeight: h, duration: d } = e.currentTarget
+          const el = e.currentTarget
+          const { videoWidth: w, videoHeight: h, duration: d } = el
           if (Number.isFinite(d)) setDuration(d)
           if (w && h) {
             setRatio(w / h)
             onRatio?.(w / h)
           }
+          // THE SYNC: pick up the playhead the small frame was at rather
+          // than starting the clip over, then carry on playing if it was
+          // playing when the viewer opened.
+          if (startAt > 0 && Number.isFinite(d) && startAt < d) {
+            el.currentTime = startAt
+            setTime(startAt)
+          }
+          if (autoPlay) {
+            setStarted(true)
+            el.play().catch(() => {})
+          }
         }}
       />
+
 
       {/* Double-tap ripple. Only ever rendered in fullscreen. */}
       {jump && (
@@ -333,6 +398,11 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
         /* Fullscreen is a black canvas with the clip letterboxed inside —
            never cropped, whatever the frame it came from. */
         .mp-fs { max-height: none; height: 100%; border-radius: 0; background: #000; }
+        /* In-app immersive viewer: same canvas, and never cropped even
+           though the box is fixed to the screen. */
+        .mp-immersive { height: 100%; max-height: none; border-radius: 0; background: #000; }
+        .mp-immersive .mp-video { height: 100%; object-fit: contain; }
+
         .mp-fs .mp-video { object-fit: contain; }
         .mp-video {
           display: block; width: 100%; height: 100%;

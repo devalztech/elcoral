@@ -230,10 +230,13 @@ async def list_conversations(
 
         last_message = await db.scalar(
             select(Message)
+            .options(selectinload(Message.reactions), selectinload(Message.reply_to))
             .where(Message.conversation_id == conversation.id)
             .order_by(Message.created_at.desc())
             .limit(1)
+            .execution_options(populate_existing=True)
         )
+
         # An empty thread (created but never used) shouldn't clutter the inbox.
         if last_message is None:
             continue
@@ -340,10 +343,18 @@ async def list_messages(
 
     query = (
         select(Message)
+        # Eager-load BOTH relationships the serializer reads. Without this
+        # the quoted reply strip and the reaction chips come back empty on
+        # every history load (serialization never lazy-loads: under asyncio
+        # that would raise MissingGreenlet), so a reply looked fine when it
+        # was sent and lost its quote the moment the thread was re-opened.
+        .options(selectinload(Message.reactions), selectinload(Message.reply_to))
         .where(Message.conversation_id == conversation_id)
         .order_by(Message.created_at.desc())
         .limit(PAGE_SIZE + 1)
+        .execution_options(populate_existing=True)
     )
+
     if cursor is not None:
         query = query.where(Message.created_at < cursor)
 

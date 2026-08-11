@@ -17,6 +17,7 @@ import { Link2 } from 'lucide-react'
 import VoiceNote from '../messages/VoiceNote.jsx'
 import MediaPlayer from '../../components/MediaPlayer.jsx'
 import Lightbox from '../../components/Lightbox.jsx'
+import MediaCarousel from '../../components/MediaCarousel.jsx'
 
 // The one media size used by every image and video in a post.
 // Messages use 246 x 328; posts are one step up in the same shape.
@@ -28,6 +29,41 @@ export default function PostMedia({ media, lightbox = false }) {
   if (!media?.length) return null
 
   const open = (url) => (lightbox ? setPreview(url) : undefined)
+
+  // Several photos/clips on one post are ONE swipeable frame with a
+  // counter (Instagram's album model) rather than a grid of frames.
+  const gallery = media.filter((m) => {
+    const t = m.mime_type || ''
+    return t.startsWith('image/') || t.startsWith('video/')
+  })
+  const others = media.filter((m) => !gallery.includes(m))
+  if (gallery.length > 1) {
+    return (
+      <div className="pm count-1">
+        <div className="pm-frame pm-frame-video">
+          <MediaCarousel items={gallery} />
+        </div>
+        {others.map((m, i) =>
+          (m.mime_type || '').startsWith('audio/')
+            ? <VoiceNote key={i} src={m.url} title="Audio clip" />
+            : (
+              <a key={i} href={m.url} target="_blank" rel="noreferrer" className="pm-doc" data-stop="true">
+                <Link2 size={16} /> Open attachment
+              </a>
+            ))}
+        <style>{`
+          .pm { display: grid; gap: 3px; margin-top: 10px; width: ${MEDIA_W}px; max-width: 100%; border-radius: 6px; overflow: hidden; }
+          .pm-frame { position: relative; width: 100%; height: ${MEDIA_H}px; overflow: hidden; background: #000; }
+          @media (max-width: 420px) {
+            .pm { width: 100%; max-width: ${MEDIA_W}px; }
+            .pm-frame { height: auto; aspect-ratio: 3 / 4; }
+          }
+          .pm-doc { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 6px; font-size: 14px; color: var(--accent-ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+        `}</style>
+      </div>
+    )
+  }
+
   const count = Math.min(media.length, 4)
 
   return (

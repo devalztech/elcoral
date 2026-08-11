@@ -19,6 +19,7 @@ import { useAuth } from '../features/auth/hooks/useAuth.jsx'
 import { useMessaging } from '../features/messages/useMessaging.jsx'
 import { OnlineDot, TypingDots, presenceLabel } from '../features/messages/Presence.jsx'
 import Attachment from '../features/messages/Attachment.jsx'
+import MediaCarousel from '../components/MediaCarousel.jsx'
 import Composer from '../features/messages/Composer.jsx'
 import Lightbox from '../components/Lightbox.jsx'
 import RichText from '../components/RichText.jsx'
@@ -414,15 +415,43 @@ export default function MessageThread() {
                     )}
                     {message.attachments?.length > 0 && (
                       <div className="mt-media">
-                        {message.attachments.map((attachment) => (
-                          <Attachment
-                            key={attachment.url}
-                            attachment={attachment}
-                            onOpenImage={(url) => setPreview(url)}
-                          />
-                        ))}
+                        {(() => {
+                          const gallery = message.attachments.filter(
+                            (a) => a.kind === 'image' || a.kind === 'video',
+                          )
+                          const rest = message.attachments.filter(
+                            (a) => a.kind !== 'image' && a.kind !== 'video',
+                          )
+                          return (
+                            <>
+                              {/* Several photos/clips sent at once collapse
+                                  into ONE frame with a counter instead of
+                                  flooding the thread. */}
+                              {gallery.length > 1 ? (
+                                <div
+                                  className="ma-frame"
+                                  style={{ width: 246, maxWidth: '100%', aspectRatio: '3 / 4', borderRadius: 6, overflow: 'hidden', background: '#000' }}
+                                >
+                                  <MediaCarousel items={gallery} />
+                                </div>
+                              ) : (
+                                gallery.map((attachment) => (
+                                  <Attachment
+                                    key={attachment.url}
+                                    attachment={attachment}
+                                    onOpenImage={(url) => setPreview(url)}
+                                  />
+                                ))
+                              )}
+                              {rest.map((attachment) => (
+                                <Attachment key={attachment.url} attachment={attachment} />
+                              ))}
+                            </>
+                          )
+                        })()}
                       </div>
                     )}
+
                     {message.body && (
                       <p className="mt-text">
                         {/* Same renderer as posts and comments, so a long
