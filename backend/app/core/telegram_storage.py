@@ -23,7 +23,10 @@ without changes here.
 """
 
 import io
+import json
 import logging
+import os
+import uuid
 from dataclasses import dataclass
 
 from telethon import TelegramClient
@@ -93,7 +96,53 @@ async def stop():
         _client = None
 
 
+# ---------------------------------------------------------------- local ----
+# Development / self-hosted fallback. When Telegram credentials are absent
+# the app still needs working uploads (otherwise every photo, avatar, post
+# and DM attachment fails), so bytes are written to .bin/media instead and
+# the ref is the file name. Refs are prefixed "l_" so the two backends can
+# coexist: an old Telegram ref stays numeric and still routes to Telegram.
+LOCAL_PREFIX = "l_"
+
+
+def _local_dir() -> str:
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(repo_root, ".bin", "media")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _local_upload(file_bytes: bytes, filename: str, mime_type: str) -> UploadResult:
+    ref = f"{LOCAL_PREFIX}{uuid.uuid4().hex}"
+    folder = _local_dir()
+    with open(os.path.join(folder, ref), "wb") as fh:
+        fh.write(file_bytes)
+    with open(os.path.join(folder, f"{ref}.json"), "w") as fh:
+        json.dump({"mime_type": mime_type, "filename": filename}, fh)
+    return UploadResult(ref=ref, mime_type=mime_type, size_bytes=len(file_bytes))
+
+
+def _local_download(ref: str) -> tuple[bytes, str]:
+    folder = _local_dir()
+    path = os.path.join(folder, os.path.basename(ref))
+    if not os.path.exists(path):
+        raise TelegramStorageError(f"No media found for ref={ref}")
+    meta_path = f"{path}.json"
+    mime_type = "application/octet-stream"
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path) as fh:
+                mime_type = json.load(fh).get("mime_type") or mime_type
+        except Exception:
+            pass
+    with open(path, "rb") as fh:
+        return fh.read(), mime_type
+
+
 async def upload(file_bytes: bytes, filename: str, mime_type: str) -> UploadResult:
+    if not settings.telegram_configured:
+        return _local_upload(file_bytes, filename, mime_type)
+
     client = _require_client()
 
     buf = io.BytesIO(file_bytes)
@@ -119,6 +168,9 @@ async def upload(file_bytes: bytes, filename: str, mime_type: str) -> UploadResu
 
 async def download(ref: str) -> tuple[bytes, str]:
     """Returns (file_bytes, mime_type)."""
+    if ref.startswith(LOCAL_PREFIX):
+        return _local_download(ref)
+
     client = _require_client()
     try:
         message = await client.get_messages(settings.telegram_channel_id, ids=int(ref))

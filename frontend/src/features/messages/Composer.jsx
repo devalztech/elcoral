@@ -11,7 +11,7 @@
  * both and stores the MIME type so playback picks the right decoder.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Mic, Paperclip, Send, Square, X } from 'lucide-react'
+import { CornerUpLeft, FileText, Mic, Paperclip, Play, Send, Square, X } from 'lucide-react'
 import { api } from '../../api/client.js'
 
 const MAX_ATTACHMENTS = 10
@@ -30,7 +30,7 @@ function secondsLabel(total) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export default function Composer({ token, disabled, onSend, onTyping }) {
+export default function Composer({ token, disabled, onSend, onTyping, replyTo, onCancelReply }) {
   const [text, setText] = useState('')
   // [{ id, name, status: 'uploading'|'ready'|'error', ref, mime_type }]
   const [attachments, setAttachments] = useState([])
@@ -49,6 +49,14 @@ export default function Composer({ token, disabled, onSend, onTyping }) {
   const busy = attachments.some((a) => a.status === 'uploading')
   const canSend = !disabled && !sending && !busy && (text.trim() || readyRefs.length)
 
+  const removeAttachment = useCallback((id) => {
+    setAttachments((list) => {
+      const gone = list.find((a) => a.id === id)
+      if (gone?.previewUrl) URL.revokeObjectURL(gone.previewUrl)
+      return list.filter((a) => a.id !== id)
+    })
+  }, [])
+
   useEffect(() => () => {
     if (timerRef.current) clearInterval(timerRef.current)
     recorderRef.current?.stream?.getTracks?.().forEach((t) => t.stop())
@@ -56,7 +64,15 @@ export default function Composer({ token, disabled, onSend, onTyping }) {
 
   const upload = useCallback(async (file) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
-    setAttachments((list) => [...list, { id, name: file.name || 'Attachment', status: 'uploading' }])
+    // Preview from the local File, exactly like the post composer and the
+    // comment box do — never a bare filename chip.
+    const kind = file.type?.startsWith('image/') ? 'image'
+      : file.type?.startsWith('video/') ? 'video'
+        : file.type?.startsWith('audio/') ? 'audio' : 'file'
+    const previewUrl = kind === 'image' || kind === 'video' ? URL.createObjectURL(file) : null
+    setAttachments((list) => [...list, {
+      id, name: file.name || 'Attachment', status: 'uploading', kind, previewUrl, size: file.size,
+    }])
     try {
       const result = await api.uploadMedia(file, token)
       setAttachments((list) => list.map((a) => (
@@ -69,6 +85,10 @@ export default function Composer({ token, disabled, onSend, onTyping }) {
       setError(err.message || 'Upload failed.')
     }
   }, [token])
+
+  useEffect(() => {
+    if (replyTo) textRef.current?.focus()
+  }, [replyTo])
 
   const onPick = (event) => {
     const files = Array.from(event.target.files ?? [])
@@ -120,9 +140,15 @@ export default function Composer({ token, disabled, onSend, onTyping }) {
     setSending(true)
     setError('')
     try {
-      await onSend({ body: text.trim(), attachments: readyRefs.map(({ ref, mime_type }) => ({ ref, mime_type })) })
+      await onSend({
+        body: text.trim(),
+        attachments: readyRefs.map(({ ref, mime_type }) => ({ ref, mime_type })),
+        replyToId: replyTo?.id ?? null,
+      })
       setText('')
+      attachments.forEach((a) => { if (a.previewUrl) URL.revokeObjectURL(a.previewUrl) })
       setAttachments([])
+      onCancelReply?.()
       onTyping?.(false)
       if (textRef.current) textRef.current.style.height = 'auto'
     } catch (err) {
@@ -143,19 +169,38 @@ export default function Composer({ token, disabled, onSend, onTyping }) {
 
   return (
     <form className="mc" onSubmit={submit}>
+      {replyTo && (
+        <div className="mc-reply">
+          <CornerUpLeft size={15} className="mc-reply-icon" />
+          <span className="mc-reply-text">
+            <b>{replyTo.is_mine ? 'You' : (replyTo.author_name || 'Them')}</b>
+            <i>{replyTo.body || (replyTo.attachments?.length ? 'Attachment' : 'Message')}</i>
+          </span>
+          <button type="button" onClick={onCancelReply} aria-label="Cancel reply"><X size={15} /></button>
+        </div>
+      )}
+
       {(attachments.length > 0 || error) && (
         <div className="mc-tray">
           {attachments.map((a) => (
-            <span key={a.id} className={`mc-chip mc-${a.status}`}>
-              <span className="mc-chip-name">{a.name}</span>
-              {a.status === 'uploading' && <span className="mc-chip-state">uploading…</span>}
-              {a.status === 'error' && <span className="mc-chip-state">failed</span>}
-              <button
-                type="button"
-                aria-label={`Remove ${a.name}`}
-                onClick={() => setAttachments((list) => list.filter((x) => x.id !== a.id))}
-              >
-                <X size={13} />
+            <span key={a.id} className={`mc-thumb mc-${a.status}`}>
+              {a.kind === 'image' && a.previewUrl && <img src={a.previewUrl} alt="" />}
+              {a.kind === 'video' && a.previewUrl && (
+                <>
+                  <video src={a.previewUrl} muted playsInline preload="metadata" />
+                  <span className="mc-thumb-play"><Play size={14} fill="currentColor" strokeWidth={0} /></span>
+                </>
+              )}
+              {(a.kind === 'file' || a.kind === 'audio') && (
+                <span className="mc-thumb-doc">
+                  <FileText size={18} />
+                  <em>{a.name}</em>
+                </span>
+              )}
+              {a.status === 'uploading' && <span className="mc-thumb-veil"><i /></span>}
+              {a.status === 'error' && <span className="mc-thumb-veil mc-thumb-bad">Failed</span>}
+              <button type="button" aria-label={`Remove ${a.name}`} onClick={() => removeAttachment(a.id)}>
+                <X size={12} />
               </button>
             </span>
           ))}
@@ -229,18 +274,62 @@ export default function Composer({ token, disabled, onSend, onTyping }) {
           background: var(--panel);
           border-top: 1px solid var(--border);
           padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+          flex: none; z-index: 4;
         }
-        .mc-tray { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 2px 8px; }
-        .mc-chip {
-          display: inline-flex; align-items: center; gap: 6px;
-          max-width: 200px; padding: 5px 6px 5px 10px; border-radius: 999px;
+        /* Reply banner — the quoted line that sits above the pill. */
+        .mc-reply {
+          display: flex; align-items: center; gap: 8px; margin: 2px 2px 8px;
+          padding: 7px 8px 7px 10px; border-radius: 10px;
+          background: color-mix(in srgb, var(--ink) 6%, transparent);
+          border-left: 3px solid var(--lemon);
+        }
+        .mc-reply-icon { color: var(--ink-faint); flex: none; }
+        .mc-reply-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+        .mc-reply-text b { font-size: 12.5px; color: var(--accent-ink); }
+        .mc-reply-text i {
+          font-style: normal; font-size: 12.5px; color: var(--ink-faint);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .mc-reply button { display: grid; place-items: center; color: var(--ink-faint); flex: none; }
+
+        /* Attachment tray: real thumbnails, same language as the post and
+           comment composers. */
+        .mc-tray { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 2px 8px; align-items: center; }
+        .mc-thumb {
+          position: relative; width: 68px; height: 68px; flex: none;
+          border-radius: 12px; overflow: hidden;
           background: color-mix(in srgb, var(--ink) 7%, transparent);
-          font-size: 12px;
+          border: 1px solid var(--border);
         }
-        .mc-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .mc-chip-state { font-size: 11px; color: var(--ink-faint); }
-        .mc-chip.mc-error { background: color-mix(in srgb, crimson 14%, transparent); }
-        .mc-chip button { display: grid; place-items: center; color: var(--ink-faint); }
+        .mc-thumb img, .mc-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .mc-thumb-play {
+          position: absolute; inset: 0; display: grid; place-items: center;
+          color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.6); pointer-events: none;
+        }
+        .mc-thumb-doc {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 4px; width: 100%; height: 100%; padding: 6px; color: var(--ink-dim);
+        }
+        .mc-thumb-doc em {
+          font-style: normal; font-size: 10px; line-height: 1.2; text-align: center;
+          max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .mc-thumb-veil {
+          position: absolute; inset: 0; display: grid; place-items: center;
+          background: rgba(0,0,0,.42); color: #fff; font-size: 11px; font-weight: 600;
+        }
+        .mc-thumb-veil i {
+          width: 20px; height: 20px; border-radius: 999px;
+          border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+          animation: mc-spin .8s linear infinite;
+        }
+        .mc-thumb-bad { background: color-mix(in srgb, crimson 62%, transparent); }
+        @keyframes mc-spin { to { transform: rotate(360deg) } }
+        .mc-thumb button {
+          position: absolute; top: 3px; right: 3px; width: 20px; height: 20px;
+          display: grid; place-items: center; border-radius: 999px;
+          background: rgba(0,0,0,.55); color: #fff;
+        }
         .mc-error { font-size: 12px; color: crimson; align-self: center; }
         .mc-row { display: flex; align-items: flex-end; gap: 6px; }
         .mc-icon {
@@ -270,7 +359,9 @@ export default function Composer({ token, disabled, onSend, onTyping }) {
           border-radius: 999px; background: var(--lemon); color: var(--on-accent);
         }
         .mc-send:disabled { opacity: 0.5; }
-        @media (prefers-reduced-motion: reduce) { .mc-recording i { animation: none } }
+        @media (prefers-reduced-motion: reduce) {
+          .mc-recording i, .mc-thumb-veil i { animation: none }
+        }
       `}</style>
     </form>
   )

@@ -16,7 +16,16 @@ conversation instead of a row per message per reader.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import ARRAY, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import (
+    ARRAY,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -90,8 +99,71 @@ class Message(Base):
     # player or a document row without sniffing the file.
     media_types: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
 
+    # A reply points at the message it answers. SET NULL on delete, so
+    # deleting the parent degrades the reply to a plain message instead
+    # of taking it down with it.
+    reply_to_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("messages.id", ondelete="SET NULL"), nullable=True
+    )
+    # Forwarded copies are real new messages (so each side can delete
+    # their own); this only drives the "Forwarded" label.
+    is_forwarded: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # "Delete for everyone" tombstones the row rather than removing it:
+    # ordering, reply targets and paging cursors all stay stable.
+    deleted_for_all: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True
     )
 
     sender: Mapped["User"] = relationship()
+    reply_to: Mapped["Message | None"] = relationship(remote_side=[id], lazy="selectin")
+    reactions: Mapped[list["MessageReaction"]] = relationship(
+        back_populates="message", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class MessageReaction(Base):
+    """One emoji per person per message — tapping a second one replaces it."""
+
+    __tablename__ = "message_reactions"
+    __table_args__ = (
+        UniqueConstraint("message_id", "user_id", name="uq_message_reaction_user"),
+        Index("ix_message_reactions_message_id", "message_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("messages.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    emoji: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+
+    message: Mapped["Message"] = relationship(back_populates="reactions")
+
+
+class MessageDeletion(Base):
+    """
+    "Delete for me". The message row is untouched — this only hides it
+    from one participant, so the other side keeps their copy.
+    """
+
+    __tablename__ = "message_deletions"
+    __table_args__ = (
+        UniqueConstraint("message_id", "user_id", name="uq_message_deletion_user"),
+        Index("ix_message_deletions_user_id", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("messages.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )

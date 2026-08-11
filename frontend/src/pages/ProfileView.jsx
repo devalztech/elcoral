@@ -18,6 +18,7 @@ import { useFollow } from '../features/social/useFollow.js'
 import { followLabel } from '../features/social/followLabel.js'
 import { formatCount } from '../features/social/format.js'
 import { completionChecklist, completionPct } from '../features/profile/completion.js'
+import Lightbox from '../components/Lightbox.jsx'
 
 // Elcoral profile page, built to the approved design reference across all
 // three viewing angles:
@@ -274,15 +275,28 @@ function EmptyState({ title, body, actionTo, actionLabel }) {
 
 function Avatar({ profile, size = 108, ring = true, verified = false, children }) {
   const initials = useMemo(() => initialsOf(profile.full_name), [profile.full_name])
+  // Tapping the photo opens it full-screen in-app; it never navigates to
+  // the raw storage URL.
+  const [zoom, setZoom] = useState(false)
   return (
     <div className="pv-avatar-wrap" style={{ width: size, height: size }}>
       <div className={`pv-avatar ${ring ? 'pv-avatar-ring' : ''}`}>
         {profile.photo_url ? (
-          <img src={profile.photo_url} alt={profile.full_name ? `${profile.full_name}'s profile photo` : 'Profile photo'} />
+          <button
+            type="button"
+            className="pv-avatar-zoom"
+            onClick={() => setZoom(true)}
+            aria-label="View profile photo"
+          >
+            <img src={profile.photo_url} alt={profile.full_name ? `${profile.full_name}'s profile photo` : 'Profile photo'} />
+          </button>
         ) : (
           <span>{initials}</span>
         )}
       </div>
+      {zoom && profile.photo_url && (
+        <Lightbox src={profile.photo_url} alt={profile.full_name || 'Profile photo'} onClose={() => setZoom(false)} />
+      )}
       {verified && (
         <span className="pv-avatar-verified" aria-label="Verified account">
           <Check size={13} strokeWidth={4} />
@@ -1072,6 +1086,10 @@ function ProfileStyles() {
         outline: 6px solid color-mix(in srgb, var(--lemon) 9%, transparent);
       }
       .pv-avatar img { width: 100%; height: 100%; object-fit: cover; }
+      .pv-avatar-zoom {
+        display: block; width: 100%; height: 100%; padding: 0; border: 0;
+        background: none; cursor: zoom-in; border-radius: inherit; overflow: hidden;
+      }
       .pv-avatar-add {
         position: absolute; right: 0; bottom: 2px;
         width: 32px; height: 32px; border-radius: 50%;

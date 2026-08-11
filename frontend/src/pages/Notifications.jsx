@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChevronLeft, Bell, Heart, MessageCircle, CornerDownRight, UserPlus, AtSign,
-  SlidersHorizontal,
+  SlidersHorizontal, Repeat2,
 } from 'lucide-react'
 import { api } from '../api/client.js'
 import { useAuth } from '../features/auth/hooks/useAuth.jsx'
@@ -32,6 +32,8 @@ const COPY = {
   reply: { icon: CornerDownRight, text: 'replied to you', tone: 'accent' },
   follow: { icon: UserPlus, text: 'started following you', tone: 'accent' },
   mention: { icon: AtSign, text: 'mentioned you', tone: 'accent' },
+  // A repost is its own event — it must never read as "sent a message".
+  repost: { icon: Repeat2, text: 'reposted your post', tone: 'repost' },
 }
 
 // The filter strip. `kinds` is null for "All"; everything else maps onto
@@ -41,6 +43,7 @@ const FILTERS = [
   { id: 'likes', label: 'Likes', icon: Heart, kinds: 'post_like,comment_like' },
   { id: 'comments', label: 'Comments', icon: MessageCircle, kinds: 'comment,reply' },
   { id: 'follows', label: 'Follows', icon: UserPlus, kinds: 'follow' },
+  { id: 'reposts', label: 'Reposts', icon: Repeat2, kinds: 'repost' },
   { id: 'mentions', label: 'Mentions', icon: AtSign, kinds: 'mention' },
 ]
 
@@ -301,6 +304,7 @@ export default function Notifications() {
         }
         .nt-kind-like { background: #F2385A; color: #fff; }
         .nt-kind-accent { background: var(--lemon); color: var(--on-accent); }
+        .nt-kind-repost { background: #00BA7C; color: #fff; }
 
         .nt-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         .nt-verified { color: var(--verified, #1D9BF0); flex: none; margin-left: 3px; vertical-align: -2px; }

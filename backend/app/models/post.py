@@ -88,6 +88,10 @@ class PostRepost(Base):
     quote: Mapped[str | None] = mapped_column(String(3000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
 
+    # Needed to label a reposted entry in the feed with "X reposted".
+    user: Mapped["User"] = relationship()
+    post: Mapped["Post"] = relationship()
+
 
 class PostSave(Base):
     __tablename__ = "post_saves"

@@ -12,13 +12,21 @@ VISIBILITIES = ("public", "followers")
 class PostCreateRequest(BaseModel):
     kind: str = "text"
     title: str | None = Field(default=None, max_length=200)
-    body: str = Field(min_length=1, max_length=20000)
+    # Optional: a photo or clip is a complete post on its own, so a
+    # media post with no caption is valid. The router still rejects a
+    # post that is empty in every respect (see create_post).
+    body: str = Field(default="", max_length=20000)
     media_refs: list[str] = Field(default_factory=list, max_length=10)
     media_types: list[str] = Field(default_factory=list, max_length=10)
     tags: list[str] = Field(default_factory=list, max_length=10)
     link_url: str | None = Field(default=None, max_length=500)
     visibility: str = "public"
     poll_options: list[str] = Field(default_factory=list, max_length=6)
+
+    @field_validator("body")
+    @classmethod
+    def _body(cls, v: str | None) -> str:
+        return (v or "").strip()
 
     @field_validator("kind")
     @classmethod
@@ -52,7 +60,9 @@ class PostCreateRequest(BaseModel):
 
 class PostUpdateRequest(BaseModel):
     title: str | None = Field(default=None, max_length=200)
-    body: str = Field(min_length=1, max_length=20000)
+    # Same reason as PostCreateRequest: editing a caption down to nothing
+    # on a media post must stay possible.
+    body: str = Field(default="", max_length=20000)
     tags: list[str] = Field(default_factory=list, max_length=10)
     visibility: str = "public"
 

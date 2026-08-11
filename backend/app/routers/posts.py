@@ -173,6 +173,13 @@ async def create_post(
         raise HTTPException(status_code=400, detail="Attach at least one image or video.")
     if payload.kind == "article" and not (payload.title or "").strip():
         raise HTTPException(status_code=400, detail="An article needs a title.")
+    # A post has to BE something. A caption is optional the moment there
+    # is media, a poll or a link attached — that is what makes a
+    # caption-less photo/clip post valid.
+    if not payload.body and not (
+        payload.media_refs or payload.poll_options or (payload.link_url or "").strip()
+    ):
+        raise HTTPException(status_code=400, detail="Write something or attach a photo or clip.")
 
     post = Post(
         author_id=user.id,
@@ -297,8 +304,78 @@ async def list_feed(
                 )
             )
 
-    posts = (await db.execute(query)).scalars().all()
-    return await _serialize(db, list(posts), viewer_id)
+    posts = list((await db.execute(query)).scalars().all())
+
+    # Reposts. A repost is not a new row in `posts` — it is an entry in
+    # `post_reposts` — so it is merged into the timeline here and labelled
+    # with who reposted it ("X reposted"). Only on the first page: the
+    # cursor walks `posts`, and interleaving a second timeline into that
+    # walk would drop or duplicate rows.
+    reposted_by: dict[uuid.UUID, PostAuthorOut] = {}
+    if cursor is None and (username or tab in {"for-you", "following", "media", "articles"}):
+        posts, reposted_by = await _merge_reposts(
+            db, posts, viewer_id, following, username=username, tab=tab
+        )
+
+    return await _serialize(db, posts, viewer_id, reposted_by=reposted_by)
+
+
+async def _merge_reposts(db, posts, viewer_id, following, *, username, tab):
+    """
+    Fold reposts into a page of posts.
+
+    Whose reposts show up:
+      · a profile page (`username`) — that person's, so a repost lands on
+        their profile the way it does on X
+      · the timeline — the people you follow, plus your own
+    """
+    if username:
+        author_id = await db.scalar(
+            select(Profile.user_id).where(func.lower(Profile.username) == username.strip().lower())
+        )
+        if author_id is None:
+            return posts, {}
+        reposter_ids = {author_id}
+    else:
+        reposter_ids = set(following)
+        if viewer_id is not None:
+            reposter_ids.add(viewer_id)
+    if not reposter_ids:
+        return posts, {}
+
+    rows = (
+        await db.execute(
+            select(PostRepost, Post)
+            .join(Post, Post.id == PostRepost.post_id)
+            .options(selectinload(PostRepost.user).selectinload(User.profile))
+            .options(selectinload(PostRepost.post).selectinload(Post.author).selectinload(User.profile))
+            .where(
+                PostRepost.user_id.in_(reposter_ids),
+                _visibility_filter(viewer_id, following),
+            )
+            .order_by(PostRepost.created_at.desc())
+            .limit(PAGE_SIZE)
+        )
+    ).all()
+
+    have = {p.id for p in posts}
+    labels: dict[uuid.UUID, PostAuthorOut] = {}
+    merged = [(p.created_at, p) for p in posts]
+    for repost, post in rows:
+        if tab == "media" and not post.media_refs:
+            continue
+        if tab == "articles" and post.kind != "article":
+            continue
+        # Never label your own post as "you reposted" in your own feed
+        # slot — a self-repost still surfaces, just once.
+        if post.id in have:
+            continue
+        have.add(post.id)
+        labels[post.id] = PostAuthorOut.from_user(repost.user)
+        merged.append((repost.created_at, post))
+
+    merged.sort(key=lambda pair: pair[0], reverse=True)
+    return [p for _, p in merged[:PAGE_SIZE]], labels
 
 
 @router.get("/search", response_model=list[PostOut])
@@ -398,12 +475,20 @@ async def repost(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _load_post(db, post_id)
+    post = await _load_post(db, post_id)
     existing = await db.scalar(
         select(PostRepost).where(PostRepost.post_id == post_id, PostRepost.user_id == user.id)
     )
     if existing is None:
         db.add(PostRepost(post_id=post_id, user_id=user.id, quote=(payload.quote if payload else None)))
+        await notify.push(
+            db,
+            user_id=post.author_id,
+            actor_id=user.id,
+            kind="repost",
+            post_id=post_id,
+            preview=post.body,
+        )
     elif payload and payload.quote:
         existing.quote = payload.quote
     await db.commit()

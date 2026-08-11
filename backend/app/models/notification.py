@@ -37,6 +37,7 @@ NOTIFICATION_KINDS = (
     "reply",
     "follow",
     "mention",
+    "repost",
 )
 
 
