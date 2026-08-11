@@ -261,7 +261,7 @@ export default function MediaPlayer({
         playsInline
         preload="metadata"
         className="mp-video"
-        onClick={onSurfaceClick}
+        onPointerUp={onSurfaceClick}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onTimeUpdate={(e) => {
