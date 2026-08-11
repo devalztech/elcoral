@@ -13,6 +13,48 @@ class ApiError extends Error {
   }
 }
 
+/**
+ * Turn any error body FastAPI can produce into one readable sentence.
+ *
+ * `detail` is a plain string for HTTPException, but a LIST of
+ * {loc, msg, type} objects for a 422 validation failure. Rendering that
+ * list straight into the UI is what produced "[object Object]".
+ */
+function errorMessage(data, status) {
+  const detail = data?.detail
+
+  if (typeof detail === 'string' && detail.trim()) return detail
+
+  if (Array.isArray(detail)) {
+    const lines = detail
+      .map((item) => {
+        if (typeof item === 'string') return item
+        const msg = item?.msg || item?.message
+        if (!msg) return ''
+        // "body -> body" is noise; name the field only when it helps.
+        const field = Array.isArray(item.loc)
+          ? item.loc.filter((p) => p !== 'body' && typeof p === 'string').join(' ')
+          : ''
+        const text = String(msg).replace(/^Value error,\s*/i, '')
+        return field ? `${field}: ${text}` : text
+      })
+      .filter(Boolean)
+    if (lines.length) return lines.join('\n')
+  }
+
+  if (detail && typeof detail === 'object') {
+    const msg = detail.msg || detail.message || detail.detail
+    if (typeof msg === 'string' && msg.trim()) return msg
+  }
+
+  if (status === 401) return 'Please sign in again.'
+  if (status === 403) return "You don't have permission to do that."
+  if (status === 404) return 'Not found.'
+  if (status === 413) return 'That file is too large.'
+  if (status >= 500) return 'The server had a problem. Please try again.'
+  return 'Something went wrong. Please try again.'
+}
+
 async function request(path, { method = 'GET', body, token, isFormData = false } = {}) {
   const headers = {}
   if (!isFormData) headers['Content-Type'] = 'application/json'
@@ -33,8 +75,7 @@ async function request(path, { method = 'GET', body, token, isFormData = false }
   }
 
   if (!res.ok) {
-    const message = data?.detail || 'Something went wrong. Please try again.'
-    throw new ApiError(message, res.status, data?.detail)
+    throw new ApiError(errorMessage(data, res.status), res.status, data?.detail)
   }
 
   return data
@@ -239,14 +280,31 @@ export const api = {
   // `attachments` is the array returned by uploadMedia calls:
   // [{ ref, mime_type }]. Types travel alongside the refs so the thread
   // can render a player/preview without sniffing the file.
-  sendMessage: (conversationId, { body, attachments = [] } = {}, token) =>
+  sendMessage: (conversationId, { body, attachments = [], replyToId } = {}, token) =>
     request(`/messages/conversations/${conversationId}`, {
       method: 'POST',
       body: {
         body: body || null,
         media_refs: attachments.map((a) => a.ref),
         media_types: attachments.map((a) => a.mime_type || ''),
+        reply_to_id: replyToId ?? null,
       },
+      token,
+    }),
+
+  // Message actions. One emoji per person per message: sending the same
+  // one twice clears it, so the client only ever calls reactToMessage.
+  reactToMessage: (messageId, emoji, token) =>
+    request(`/messages/messages/${messageId}/reaction`, { method: 'PUT', body: { emoji }, token }),
+  clearMessageReaction: (messageId, token) =>
+    request(`/messages/messages/${messageId}/reaction`, { method: 'DELETE', token }),
+  // scope: 'self' hides it for you only, 'everyone' tombstones it for both.
+  deleteMessage: (messageId, scope, token) =>
+    request(`/messages/messages/${messageId}?scope=${scope}`, { method: 'DELETE', token }),
+  forwardMessage: (messageId, { conversationIds = [], usernames = [] } = {}, token) =>
+    request(`/messages/messages/${messageId}/forward`, {
+      method: 'POST',
+      body: { conversation_ids: conversationIds, usernames },
       token,
     }),
   markConversationRead: (conversationId, token) =>

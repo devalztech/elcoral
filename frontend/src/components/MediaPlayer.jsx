@@ -1,5 +1,5 @@
 /**
- * Elcoral's own video/audio-less media player.
+ * Elcoral's own video player.
  *
  * The browser's default <video controls> chrome is Chrome's (or Safari's)
  * and looks like an embedded YouTube frame — grey bar, alien play button,
@@ -7,7 +7,14 @@
  * own, so this does too:
  *
  *   · lemon play badge centred on the poster frame
- *   · slim scrubber + elapsed/total time that fades in on hover / while paused
+ *   · a real scrubber: drag it, click anywhere on it, or use the arrow
+ *     keys; a buffered bar sits behind the played portion
+ *   · skip -10s / +10s buttons on the bar
+ *   · IN FULLSCREEN ONLY: double-tap the right half to jump forward 10s
+ *     and the left half to jump back 10s, with a ripple that names the
+ *     jump — the YouTube/TikTok gesture. It is deliberately NOT active in
+ *     the feed, where a double-tap is a scroll or a like, and where a
+ *     stray seek would be infuriating.
  *   · mute and fullscreen on the same row, no download / picture-in-picture
  *   · the frame takes the clip's REAL aspect ratio once metadata loads,
  *     so nothing is letterboxed or cropped into a 16:9 box
@@ -15,12 +22,21 @@
  * Everything is a theme token, so it follows light/dark with the app.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Maximize2, Pause, Play, Volume2, VolumeX } from 'lucide-react'
+import {
+  Maximize2, Minimize2, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX,
+} from 'lucide-react'
+
+const SKIP_SECONDS = 10
+// Two taps closer together than this on the same side are a double-tap.
+const DOUBLE_TAP_MS = 320
 
 function clock(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
+  const total = Math.floor(seconds)
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
@@ -30,12 +46,20 @@ function clock(seconds) {
 export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, rounded = true, fill = false }) {
   const wrapRef = useRef(null)
   const videoRef = useRef(null)
+  const trackRef = useRef(null)
+  const lastTap = useRef({ at: 0, side: null })
+
   const [ratio, setRatio] = useState(ratioProp ?? null)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(false)
   const [time, setTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [buffered, setBuffered] = useState(0)
   const [started, setStarted] = useState(false)
+  const [scrubbing, setScrubbing] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  // { side: 'back' | 'forward', amount } — the double-tap ripple.
+  const [jump, setJump] = useState(null)
 
   const toggle = useCallback(() => {
     const el = videoRef.current
@@ -48,34 +72,138 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
     }
   }, [])
 
-  const seek = (e) => {
+  const skip = useCallback((delta) => {
     const el = videoRef.current
-    if (!el || !duration) return
-    const box = e.currentTarget.getBoundingClientRect()
-    const pct = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width))
-    el.currentTime = pct * duration
-    setTime(el.currentTime)
+    if (!el || !Number.isFinite(el.duration)) return
+    const next = Math.min(Math.max(0, el.currentTime + delta), el.duration)
+    el.currentTime = next
+    setTime(next)
+  }, [])
+
+  // ---------------------------------------------------------- scrubbing
+  // Pointer events (not click) so the same code path handles a mouse
+  // drag, a touch drag and a single tap on the track.
+  const seekToClientX = useCallback((clientX) => {
+    const el = videoRef.current
+    const track = trackRef.current
+    if (!el || !track || !duration) return
+    const box = track.getBoundingClientRect()
+    const pct = Math.min(1, Math.max(0, (clientX - box.left) / box.width))
+    const next = pct * duration
+    el.currentTime = next
+    setTime(next)
+  }, [duration])
+
+  const onTrackPointerDown = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    setScrubbing(true)
+    seekToClientX(event.clientX)
   }
 
+  const onTrackPointerMove = (event) => {
+    if (!scrubbing) return
+    event.preventDefault()
+    seekToClientX(event.clientX)
+  }
+
+  const endScrub = (event) => {
+    if (!scrubbing) return
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    setScrubbing(false)
+  }
+
+  const onTrackKeyDown = (event) => {
+    if (event.key === 'ArrowRight') { event.preventDefault(); skip(5) }
+    else if (event.key === 'ArrowLeft') { event.preventDefault(); skip(-5) }
+    else if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); toggle() }
+  }
+
+  // -------------------------------------------------------- fullscreen
   const fullscreen = () => {
     const node = wrapRef.current
     if (!node) return
     if (document.fullscreenElement) document.exitFullscreen?.()
-    else node.requestFullscreen?.()
+    else (node.requestFullscreen?.() ?? node.webkitRequestFullscreen?.())
+  }
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(document.fullscreenElement === wrapRef.current)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+
+  // Keyboard shortcuts only while the player is the fullscreen element,
+  // so typing elsewhere in the app never seeks a video.
+  useEffect(() => {
+    if (!isFullscreen) return undefined
+    const onKey = (event) => {
+      if (event.key === 'ArrowRight') { event.preventDefault(); skip(SKIP_SECONDS) }
+      else if (event.key === 'ArrowLeft') { event.preventDefault(); skip(-SKIP_SECONDS) }
+      else if (event.key === ' ' || event.key === 'k') { event.preventDefault(); toggle() }
+      else if (event.key === 'm') {
+        const el = videoRef.current
+        if (el) { el.muted = !el.muted; setMuted(el.muted) }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isFullscreen, skip, toggle])
+
+  // --------------------------------------------------------- double-tap
+  // Fullscreen only. Outside fullscreen the surface stays a plain
+  // play/pause tap, which is what the feed and DM bubbles expect.
+  const onSurfaceClick = (event) => {
+    if (!isFullscreen) { toggle(); return }
+    const box = event.currentTarget.getBoundingClientRect()
+    const side = event.clientX - box.left < box.width / 2 ? 'back' : 'forward'
+    const now = Date.now()
+    const previous = lastTap.current
+
+    if (previous.side === side && now - previous.at < DOUBLE_TAP_MS) {
+      lastTap.current = { at: 0, side: null }
+      skip(side === 'forward' ? SKIP_SECONDS : -SKIP_SECONDS)
+      setJump({ side, at: now })
+      window.setTimeout(() => {
+        setJump((current) => (current && current.at === now ? null : current))
+      }, 520)
+      return
+    }
+
+    lastTap.current = { at: now, side }
+    // A single tap still plays/pauses — but only once we know a second
+    // tap isn't coming, otherwise every skip would also pause the clip.
+    window.setTimeout(() => {
+      if (lastTap.current.at === now) {
+        lastTap.current = { at: 0, side: null }
+        toggle()
+      }
+    }, DOUBLE_TAP_MS)
   }
 
   useEffect(() => {
     setStarted(false)
     setPlaying(false)
     setTime(0)
+    setBuffered(0)
   }, [src])
 
   const pct = duration ? (time / duration) * 100 : 0
+  const bufferedPct = duration ? Math.min(100, (buffered / duration) * 100) : 0
 
   return (
     <div
       ref={wrapRef}
-      className={`mp ${rounded ? 'mp-round' : ''} ${fill ? 'mp-fill-box' : ''} ${playing ? 'mp-playing' : ''} ${started ? 'mp-started' : ''}`}
+      className={[
+        'mp',
+        rounded ? 'mp-round' : '',
+        fill ? 'mp-fill-box' : '',
+        playing ? 'mp-playing' : '',
+        started ? 'mp-started' : '',
+        scrubbing ? 'mp-scrubbing' : '',
+        isFullscreen ? 'mp-fs' : '',
+      ].join(' ')}
       style={!fill && ratio ? { aspectRatio: ratio } : undefined}
       data-stop="true"
     >
@@ -86,10 +214,14 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
         playsInline
         preload="metadata"
         className="mp-video"
-        onClick={toggle}
+        onClick={onSurfaceClick}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+        onTimeUpdate={(e) => { if (!scrubbing) setTime(e.currentTarget.currentTime) }}
+        onProgress={(e) => {
+          const el = e.currentTarget
+          if (el.buffered.length) setBuffered(el.buffered.end(el.buffered.length - 1))
+        }}
         onEnded={() => { setPlaying(false); setStarted(false) }}
         onLoadedMetadata={(e) => {
           const { videoWidth: w, videoHeight: h, duration: d } = e.currentTarget
@@ -100,6 +232,16 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
           }
         }}
       />
+
+      {/* Double-tap ripple. Only ever rendered in fullscreen. */}
+      {jump && (
+        <span className={`mp-jump mp-jump-${jump.side}`} aria-live="polite">
+          {jump.side === 'forward'
+            ? <RotateCw size={26} strokeWidth={2} />
+            : <RotateCcw size={26} strokeWidth={2} />}
+          {SKIP_SECONDS}s
+        </span>
+      )}
 
       {/* Elcoral play badge — the only affordance before playback starts. */}
       {!playing && (
@@ -116,12 +258,40 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
         <button type="button" className="mp-btn" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>
           {playing ? <Pause size={16} fill="currentColor" strokeWidth={0} /> : <Play size={16} fill="currentColor" strokeWidth={0} />}
         </button>
+        <button
+          type="button"
+          className="mp-btn mp-skip"
+          onClick={() => skip(-SKIP_SECONDS)}
+          aria-label={`Back ${SKIP_SECONDS} seconds`}
+        >
+          <RotateCcw size={15} strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="mp-btn mp-skip"
+          onClick={() => skip(SKIP_SECONDS)}
+          aria-label={`Forward ${SKIP_SECONDS} seconds`}
+        >
+          <RotateCw size={15} strokeWidth={2} />
+        </button>
         <span className="mp-time">{clock(time)}</span>
         <span
+          ref={trackRef}
           className="mp-track"
-          role="presentation"
-          onClick={seek}
+          role="slider"
+          tabIndex={0}
+          aria-label="Seek"
+          aria-valuemin={0}
+          aria-valuemax={Math.round(duration) || 0}
+          aria-valuenow={Math.round(time)}
+          aria-valuetext={`${clock(time)} of ${clock(duration)}`}
+          onPointerDown={onTrackPointerDown}
+          onPointerMove={onTrackPointerMove}
+          onPointerUp={endScrub}
+          onPointerCancel={endScrub}
+          onKeyDown={onTrackKeyDown}
         >
+          <span className="mp-buffered" style={{ width: `${bufferedPct}%` }} aria-hidden="true" />
           <span className="mp-fill" style={{ width: `${pct}%` }}>
             <i className="mp-knob" />
           </span>
@@ -140,8 +310,13 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
         >
           {muted ? <VolumeX size={16} strokeWidth={2} /> : <Volume2 size={16} strokeWidth={2} />}
         </button>
-        <button type="button" className="mp-btn" onClick={fullscreen} aria-label="Fullscreen">
-          <Maximize2 size={16} strokeWidth={2} />
+        <button
+          type="button"
+          className="mp-btn"
+          onClick={fullscreen}
+          aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        >
+          {isFullscreen ? <Minimize2 size={16} strokeWidth={2} /> : <Maximize2 size={16} strokeWidth={2} />}
         </button>
       </div>
 
@@ -155,6 +330,10 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
         /* Fixed-frame mode (message bubbles): fill the parent exactly. */
         .mp-fill-box { width: 100%; height: 100%; max-height: none; }
         .mp-fill-box .mp-video { object-fit: cover; }
+        /* Fullscreen is a black canvas with the clip letterboxed inside —
+           never cropped, whatever the frame it came from. */
+        .mp-fs { max-height: none; height: 100%; border-radius: 0; background: #000; }
+        .mp-fs .mp-video { object-fit: contain; }
         .mp-video {
           display: block; width: 100%; height: 100%;
           object-fit: contain; background: #000;
@@ -180,15 +359,38 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
           color: #fff; font-size: 11.5px; font-weight: 600;
           font-variant-numeric: tabular-nums; letter-spacing: .2px;
         }
+
+        /* Double-tap ripple: a soft half-disc on the side you tapped,
+           with the jump amount written inside it. */
+        .mp-jump {
+          position: absolute; top: 50%; transform: translateY(-50%);
+          display: grid; place-items: center; gap: 2px;
+          width: 108px; height: 108px; border-radius: 999px;
+          background: rgba(0,0,0,.42); color: #fff;
+          font-size: 13px; font-weight: 700; letter-spacing: .3px;
+          pointer-events: none; animation: mp-pop 520ms ease-out forwards;
+        }
+        .mp-jump-back { left: 8%; }
+        .mp-jump-forward { right: 8%; }
+        @keyframes mp-pop {
+          0% { opacity: 0; transform: translateY(-50%) scale(.7); }
+          25% { opacity: 1; transform: translateY(-50%) scale(1); }
+          100% { opacity: 0; transform: translateY(-50%) scale(1.1); }
+        }
+
         .mp-bar {
           position: absolute; left: 0; right: 0; bottom: 0;
-          display: flex; align-items: center; gap: 8px;
+          display: flex; align-items: center; gap: 6px;
           padding: 10px 10px 9px;
-          background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0));
+          background: linear-gradient(to top, rgba(0,0,0,.66), rgba(0,0,0,0));
           opacity: 0; transition: opacity 160ms ease; pointer-events: none;
         }
-        .mp-started .mp-bar, .mp:hover .mp-bar, .mp:focus-within .mp-bar {
+        .mp-started .mp-bar, .mp:hover .mp-bar, .mp:focus-within .mp-bar, .mp-scrubbing .mp-bar {
           opacity: 1; pointer-events: auto;
+        }
+        .mp-fs .mp-bar {
+          opacity: 1; pointer-events: auto; gap: 10px;
+          padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
         }
         .mp-started .mp-duration { display: none; }
         .mp-btn {
@@ -196,35 +398,56 @@ export default function MediaPlayer({ src, poster, ratio: ratioProp, onRatio, ro
           width: 28px; height: 28px; border: 0; border-radius: 999px;
           background: none; color: #fff; cursor: pointer;
         }
+        .mp-fs .mp-btn { width: 36px; height: 36px; }
         @media (hover: hover) and (pointer: fine) { .mp-btn:hover { background: rgba(255,255,255,.16); } }
+        /* The skip pair is desktop/fullscreen chrome; on a small feed card
+           the double-tap gesture and the scrubber are enough. */
+        .mp-skip { display: none; }
+        .mp-fs .mp-skip { display: grid; }
+        @media (min-width: 700px) { .mp-skip { display: grid; } }
         .mp-time {
           flex: none; font-size: 11.5px; color: #fff; opacity: .9;
           font-variant-numeric: tabular-nums;
         }
+        .mp-fs .mp-time { font-size: 13px; }
+
+        /* Scrubber. The hit area is 18px tall (24px in fullscreen) so it
+           can actually be grabbed with a thumb, while the drawn rail
+           stays a 3px hairline. */
         .mp-track {
-          flex: 1; min-width: 0; height: 14px; display: flex; align-items: center;
-          cursor: pointer;
+          position: relative; flex: 1; min-width: 0; height: 18px;
+          display: flex; align-items: center; cursor: pointer;
+          touch-action: none; -webkit-tap-highlight-color: transparent;
         }
-        .mp-track::before {
-          content: ''; position: absolute; left: 0; right: 0;
-        }
-        .mp-track {
-          position: relative;
-        }
+        .mp-fs .mp-track { height: 24px; }
+        .mp-track:focus-visible { outline: 2px solid var(--lemon); outline-offset: 3px; border-radius: 999px; }
         .mp-track::after {
           content: ''; position: absolute; left: 0; right: 0; height: 3px;
           border-radius: 999px; background: rgba(255,255,255,.28);
         }
+        .mp-fs .mp-track::after { height: 4px; }
+        .mp-buffered {
+          position: absolute; left: 0; z-index: 1; height: 3px; border-radius: 999px;
+          background: rgba(255,255,255,.4);
+        }
+        .mp-fs .mp-buffered { height: 4px; }
         .mp-fill {
-          position: relative; z-index: 1; height: 3px; border-radius: 999px;
+          position: relative; z-index: 2; height: 3px; border-radius: 999px;
           background: var(--lemon); display: block;
         }
+        .mp-fs .mp-fill { height: 4px; }
         .mp-knob {
-          position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
-          width: 10px; height: 10px; border-radius: 999px; background: var(--lemon);
+          position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
+          width: 12px; height: 12px; border-radius: 999px; background: var(--lemon);
+          box-shadow: 0 1px 4px rgba(0,0,0,.45);
+          transition: transform 120ms ease;
         }
+        .mp-fs .mp-knob { width: 15px; height: 15px; right: -7px; }
+        .mp-scrubbing .mp-knob { transform: translateY(-50%) scale(1.25); }
+
         @media (prefers-reduced-motion: reduce) {
-          .mp-play, .mp-bar { transition: none; }
+          .mp-play, .mp-bar, .mp-knob { transition: none; }
+          .mp-jump { animation-duration: 1ms; }
         }
       `}</style>
     </div>
