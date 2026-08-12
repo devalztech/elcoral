@@ -14,3 +14,5 @@ email-validator==2.2.0
 python-dotenv==1.0.1
 telethon==1.36.0
 httpx==0.27.2
+# Real image verification for uploads (app/core/file_validation.py)
+Pillow==10.4.0

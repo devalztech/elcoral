@@ -102,3 +102,40 @@ Spins up Postgres + backend + frontend together so you can sanity-check the
 built Docker images locally first. (This local compose setup builds the
 frontend as a Docker image for convenience — Render itself doesn't use
 Docker for a static site, it just runs the build command directly.)
+
+## 6. Optional: same-registrable-domain deployment (fixes Safari/Firefox private-media loading)
+
+The setup above (steps 1–5) is fully cross-origin: Render and Pterodactyl
+are different domains. That works, but private media (DM attachments,
+community chat media — served through `<img>`/`<video>`/`<audio>` and
+authenticated via the `media_session` cookie) can silently fail to load on
+Safari and Firefox, which block third-party `SameSite=None` cookies by
+default. Public post/profile media is unaffected either way (no cookie
+involved). See `app/core/media_url.py` for the full technical explanation.
+
+The fix is deployment topology, not code — the backend already supports it
+via config:
+
+1. Put the frontend and this API under the **same registrable domain** as
+   sibling subdomains — e.g. `app.elcoral.com` for the Render frontend
+   (Render → Settings → Custom Domains) and `api.elcoral.com` for this API.
+   The API side already has everything needed for a stable subdomain: set
+   up a named Cloudflare Tunnel (Zero Trust → Networks → Tunnels), point
+   its Public Hostname at `api.elcoral.com`, and set `CLOUDFLARE_TUNNEL_TOKEN`
+   + `PUBLIC_API_URL=https://api.elcoral.com` in the backend's env — this
+   replaces the random Quick Tunnel URL with a permanent one either way,
+   same-site or not.
+2. Set these backend env vars (blank by default — nothing changes until
+   set, see `.env.example`):
+   ```
+   COOKIE_DOMAIN=.elcoral.com
+   TRUSTED_HOSTS=elcoral.com,*.elcoral.com
+   CORS_ORIGINS=https://app.elcoral.com
+   ```
+3. Set `VITE_API_URL=https://api.elcoral.com` in Render (same as step 4
+   above, just now a sibling subdomain instead of an unrelated domain).
+
+Nothing else changes: `SameSite=None` and `Secure` stay as they are on
+every cookie (there's no reason to weaken them — see the code comments in
+`app/routers/auth.py`/`app/core/csrf.py`), and the CSRF double-submit and
+audience-bound media authorization are both unaffected by this migration.

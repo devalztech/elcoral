@@ -1,9 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import Response
+from fastapi.security import HTTPAuthorizationCredentials
 
 from app.core import telegram_storage
-from app.core.deps import get_current_user
-from app.core.media_url import verify_media_signature
+from app.core.deps import bearer_scheme, get_current_user
+from app.core.file_validation import (
+    MAX_UPLOAD_BYTES,
+    FileValidationError,
+    validate_upload,
+)
+from app.core.limiter import limiter
+from app.core.media_url import (
+    MEDIA_SESSION_COOKIE,
+    read_media_session,
+    verify_media_signature,
+)
+from app.core.security import decode_token
 from app.core.telegram_storage import TelegramStorageError
 from app.models.user import User
 
@@ -47,16 +59,25 @@ ALLOWED_TYPES = {
     "text/csv",
     "text/markdown",
 }
-MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200MB — well under Telethon's ~2GB ceiling, generous for a first pass
+
+# Read ceiling. Per-category ceilings (much tighter for images/docs) live
+# in app/core/file_validation.py and are applied by validate_upload().
+_READ_CHUNK = 1024 * 1024
 
 
 @router.post("/upload")
+@limiter.limit("60/minute")
 async def upload_media(
+    request: Request,
     file: UploadFile,
     user: User = Depends(get_current_user),
 ):
     # Browsers tack codec parameters onto recorded audio/video
     # ("audio/webm;codecs=opus"); match on the bare type.
+    #
+    # NOTE: this is only the *claimed* type. It is never trusted on its
+    # own — validate_upload() below re-derives the real type from the
+    # bytes and rejects any mismatch, BEFORE anything reaches Telegram.
     content_type = (file.content_type or "").split(";")[0].strip().lower()
     if content_type not in ALLOWED_TYPES:
         raise HTTPException(
@@ -64,42 +85,106 @@ async def upload_media(
             detail=f"Unsupported file type: {content_type or file.content_type}",
         )
 
-    file_bytes = await file.read()
-    if len(file_bytes) > MAX_UPLOAD_BYTES:
+    # Read with a hard cap instead of slurping the whole body: an oversized
+    # upload is refused after one chunk past the limit rather than being
+    # fully buffered first.
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(_READ_CHUNK)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="File too large (max 200MB)",
+            )
+        chunks.append(chunk)
+    file_bytes = b"".join(chunks)
+
+    try:
+        stored_type = validate_upload(file_bytes, content_type, file.filename)
+    except FileValidationError as e:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File too large (max 200MB)",
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(e)
         )
 
     try:
-        result = await telegram_storage.upload(file_bytes, file.filename or "upload", content_type)
+        result = await telegram_storage.upload(file_bytes, file.filename or "upload", stored_type)
     except TelegramStorageError as e:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
 
     return {"ref": result.ref, "mime_type": result.mime_type, "size_bytes": result.size_bytes}
 
 
+def _requester_id(request: Request, credentials: HTTPAuthorizationCredentials | None) -> str | None:
+    """
+    Who is asking, for the purposes of the media route only.
+
+    Prefers a bearer token (native clients, fetch()); falls back to the
+    httponly media_session cookie, which is the only credential a browser
+    can attach to an <img src> / <video src> request.
+    """
+    if credentials is not None:
+        payload = decode_token(credentials.credentials)
+        if payload and payload.get("type") == "access":
+            return str(payload.get("sub"))
+    return read_media_session(request.cookies.get(MEDIA_SESSION_COOKIE))
+
+
 @router.get("/{ref}")
+@limiter.limit("300/minute")
 async def get_media(
+    request: Request,
     ref: str,
     exp: int | None = Query(default=None),
     sig: str | None = Query(default=None),
+    aud: str | None = Query(default=None, max_length=64),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ):
     """
-    Serve a stored file, but only to someone holding a URL this server
-    signed (see app/core/media_url.py).
+    Serve a stored file. Two gates, both applied BEFORE anything is
+    fetched from Telegram:
 
-    A bearer token cannot be used here — browsers request <img src> without
-    custom headers — so the capability lives in the URL itself. Storage refs
-    are short sequential ids, so the signature is what stops an attacker
-    from enumerating /api/media/1..N and pulling other users' private chat
-    photos. Signatures expire, so a leaked link does not last forever.
+    1. Signature. The URL must have been signed by this server for this
+       exact ref (and audience) and must not have expired. A storage ref
+       is never a credential on its own — refs are short sequential
+       Telegram message ids, so without this anyone could enumerate
+       /api/media/1..N.
+    2. Audience. Private material (DM attachments, community chat /
+       discussion / project media) is signed with `aud=<user id>`: the
+       caller must prove they are that user, via bearer token or the
+       httponly media_session cookie. A private link copied out of one
+       account is therefore useless in another. Public post and profile
+       media is signed without an audience and stays openly embeddable,
+       exactly as before.
+
+    The signed URL is only ever minted while serializing an object the
+    caller was already authorized to see, so the endpoint-level checks in
+    posts/messages/communities remain the source of truth for
+    deleted, private and unpublished content.
     """
-    if not verify_media_signature(ref, exp, sig):
+    audience = (aud or "").strip()
+
+    if not verify_media_signature(ref, exp, sig, audience):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This media link is invalid or has expired",
         )
+
+    if audience:
+        requester = _requester_id(request, credentials)
+        if requester is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sign in to view this media",
+            )
+        if requester != audience:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to view this media",
+            )
 
     try:
         file_bytes, mime_type = await telegram_storage.download(ref)
@@ -116,6 +201,7 @@ async def get_media(
             "X-Content-Type-Options": "nosniff",
             # Never let an uploaded file execute in our origin.
             "Content-Security-Policy": "default-src 'none'; sandbox",
+            "Content-Disposition": "inline",
             "Cross-Origin-Resource-Policy": "cross-origin",
         },
     )

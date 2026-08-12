@@ -7,9 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import email as email_service
 from app.core.config import settings
+from app.core.csrf import clear_csrf_cookie, require_csrf, set_csrf_cookie
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.limiter import limiter
+from app.core.media_url import MEDIA_SESSION_COOKIE, MEDIA_SESSION_TTL_SECONDS, issue_media_session
 from app.core.usernames import username_rejection
 from app.core.security import (
     create_access_token,
@@ -46,21 +48,60 @@ PASSWORD_RESET_TOKEN_HOURS = 1
 
 def _set_refresh_cookie(response: Response, raw_refresh_token: str) -> None:
     # httponly + samesite=none: the frontend (Render) and backend (this API)
-    # live on different domains, so samesite=strict/lax would silently stop
-    # the browser from ever sending this cookie back — curl/Postman don't
-    # enforce SameSite at all, which is why this worked in curl but not in
-    # the actual browser. samesite=none requires secure=True (HTTPS only,
-    # which we have), and the cookie is still httponly so JS can never read
-    # it either way.
+    # live on different domains today, so samesite=strict/lax would silently
+    # stop the browser from ever sending this cookie back — curl/Postman
+    # don't enforce SameSite at all, which is why this worked in curl but
+    # not in the actual browser. samesite=none requires secure=True (HTTPS
+    # only, which we have), and the cookie is still httponly so JS can
+    # never read it either way.
+    #
+    # domain=settings.cookie_domain: None (the setting's default) until a
+    # same-registrable-domain deployment is configured, which is exactly
+    # today's "this exact host only" behavior — unchanged unless
+    # COOKIE_DOMAIN is explicitly set. samesite=none is kept even once
+    # same-site, rather than tightened to lax/strict: same-site cookies
+    # are unaffected by the None value (it only changes behavior on an
+    # actually cross-site request), so there is no security cost to
+    # leaving it, and it keeps this cookie working unchanged for any
+    # deployment that stays cross-origin.
     response.set_cookie(
         key="refresh_token",
         value=raw_refresh_token,
         httponly=True,
         secure=True,
         samesite="none",
+        domain=settings.cookie_domain or None,
         max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
         path="/api/auth",
     )
+
+
+def _set_media_session_cookie(response: Response, user_id) -> None:
+    """
+    Lets <img src>/<video src> prove who is asking for viewer-bound media
+    (see app/core/media_url.py and app/routers/media.py). It is httponly,
+    carries only a signed user id, and is accepted nowhere except the
+    media route — it can never be exchanged for an access token.
+
+    See _set_refresh_cookie above for why domain=settings.cookie_domain
+    and samesite=none are both safe to keep unconditionally.
+    """
+    response.set_cookie(
+        key=MEDIA_SESSION_COOKIE,
+        value=issue_media_session(user_id),
+        httponly=True,
+        secure=True,
+        samesite="none",
+        domain=settings.cookie_domain or None,
+        max_age=MEDIA_SESSION_TTL_SECONDS,
+        path="/api/media",
+    )
+
+
+def _issue_session_cookies(response: Response, user_id) -> None:
+    """Everything a freshly-authenticated browser needs besides the access token."""
+    _set_media_session_cookie(response, user_id)
+    set_csrf_cookie(response)
 
 
 @router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -145,6 +186,7 @@ async def signup(request: Request, response: Response, body: SignupRequest, db: 
     await db.commit()
 
     _set_refresh_cookie(response, raw_refresh)
+    _issue_session_cookies(response, user.id)
     return TokenResponse(access_token=access_token, user=UserOut.model_validate(user))
 
 
@@ -318,12 +360,18 @@ async def login(request: Request, response: Response, body: LoginRequest, db: As
     await db.commit()
 
     _set_refresh_cookie(response, raw_refresh)
+    _issue_session_cookies(response, user.id)
     return TokenResponse(access_token=access_token, user=UserOut.model_validate(user))
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=TokenResponse, dependencies=[Depends(require_csrf)])
 @limiter.limit("20/minute")
-async def refresh_access_token(request: Request, db: AsyncSession = Depends(get_db)):
+async def refresh_access_token(
+    request: Request, response: Response, db: AsyncSession = Depends(get_db)
+):
+    # CSRF-protected (see app/core/csrf.py): this endpoint authenticates
+    # from a cookie, so without the double-submit check any site could
+    # silently mint access tokens for a logged-in visitor.
     raw_token = request.cookies.get("refresh_token")
     if not raw_token:
         raise HTTPException(status_code=401, detail="No refresh token provided")
@@ -351,13 +399,23 @@ async def refresh_access_token(request: Request, db: AsyncSession = Depends(get_
         raise HTTPException(status_code=401, detail="Session has been revoked")
 
     access_token = create_access_token(subject=str(user.id))
+    _issue_session_cookies(response, user.id)
     return TokenResponse(access_token=access_token, user=UserOut.model_validate(user))
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_csrf)],
+)
+@limiter.limit("60/minute")
 async def logout(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+    # CSRF-protected: a forced logout is a real (if low-severity) attack,
+    # and it acts purely on the cookie.
     raw_token = request.cookies.get("refresh_token")
-    response.delete_cookie("refresh_token", path="/api/auth")
+    response.delete_cookie("refresh_token", path="/api/auth", domain=settings.cookie_domain or None)
+    response.delete_cookie(MEDIA_SESSION_COOKIE, path="/api/media", domain=settings.cookie_domain or None)
+    clear_csrf_cookie(response)
 
     if raw_token:
         payload = decode_token(raw_token)
@@ -461,7 +519,7 @@ async def change_password(
     await db.execute(update(RefreshToken).where(RefreshToken.user_id == user.id).values(revoked=True))
     await db.commit()
 
-    response.delete_cookie("refresh_token", path="/api/auth")
+    response.delete_cookie("refresh_token", path="/api/auth", domain=settings.cookie_domain or None)
     return None
 
 
@@ -484,5 +542,5 @@ async def delete_account(
 
     await db.delete(user)
     await db.commit()
-    response.delete_cookie("refresh_token", path="/api/auth")
+    response.delete_cookie("refresh_token", path="/api/auth", domain=settings.cookie_domain or None)
     return None

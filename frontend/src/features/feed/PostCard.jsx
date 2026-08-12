@@ -440,6 +440,20 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
     }))
   }, [])
 
+  // Post media URLs are short-lived when private (see
+  // app/core/media_url.py) — a failed thumbnail almost always just needs
+  // a fresh signature, not a different post. Re-fetches the whole post
+  // (there's no per-media endpoint) and swaps in its current media list.
+  const retryMedia = useCallback(async () => {
+    try {
+      const fresh = await api.getPost(post.id, accessToken)
+      setPost((p) => ({ ...p, media: fresh.media, media_urls: fresh.media_urls }))
+      return true
+    } catch {
+      return false
+    }
+  }, [post.id, accessToken])
+
   const guard = () => {
     if (user) return true
     setError('Sign in to interact with posts.')
@@ -591,7 +605,7 @@ export default function PostCard({ post: initial, onDeleted, detail = false }) {
             </a>
           )}
 
-          <PostMedia media={media} lightbox={detail} />
+          <PostMedia media={media} lightbox={detail} onRetry={retryMedia} />
 
           {post.poll?.length > 0 && (
             <div data-stop="true">

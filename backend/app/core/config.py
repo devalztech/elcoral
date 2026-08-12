@@ -57,6 +57,41 @@ class Settings(BaseSettings):
     # instead of the person landing on raw JSON.
     frontend_url: str = ""
 
+    # ------------------------------------------------------- cookie domain
+    # Leave unset for the CURRENT cross-origin deployment (Render +
+    # Pterodactyl-via-tunnel, different registrable domains) — cookies then
+    # default to "this exact host only", which is what every cookie in this
+    # app already does today. Nothing changes until this is set.
+    #
+    # Set this to a shared parent domain (e.g. ".elcoral.com") ONLY once
+    # the frontend and this API are deployed as sibling subdomains of the
+    # SAME registrable domain (e.g. frontend on app.elcoral.com, this API
+    # reachable at api.elcoral.com via the existing named Cloudflare
+    # tunnel — see main.py's _start_cloudflare_tunnel and
+    # PUBLIC_API_URL above). That is a same-site relationship per the
+    # cookie spec (SameSite is computed on the registrable domain, not the
+    # exact host), which is what actually fixes Safari/Firefox blocking
+    # media_session and other cookies as third-party — see the
+    # "Browser/PWA compatibility" note in app/core/media_url.py for the
+    # full reasoning and the residual Safari caveat.
+    #
+    # The leading dot is conventional (RFC 6265 treats a leading dot as
+    # equivalent to none — it's included for clarity/older clients) and
+    # covers api.<domain> and app.<domain> alike; do not set this to a
+    # bare eTLD (e.g. ".com") — browsers refuse public-suffix cookie
+    # domains outright.
+    cookie_domain: str = ""
+
+    # Comma-separated hostnames TrustedHostMiddleware accepts in
+    # production (see main.py). Kept in settings rather than hardcoded so
+    # it can never drift from CORS_ORIGINS/cookie_domain without a config
+    # change being visible in one place. Include both the frontend and API
+    # hosts once they're deployed under the same registrable domain, e.g.
+    # "elcoral.com,*.elcoral.com". Left blank, this falls back to a value
+    # derived from cookie_domain (below) once that's set, and otherwise to
+    # the historical hardcoded default — see trusted_hosts_list.
+    trusted_hosts: str = ""
+
     # Token for the cloudflared tunnel container/sidecar. Not read by the
     # FastAPI app itself — cloudflared reads it directly from its own
     # process env — but declared here so it doesn't crash Settings() if it
@@ -101,6 +136,25 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment.lower() == "production"
+
+    @property
+    def trusted_hosts_list(self) -> list[str]:
+        """
+        Hosts TrustedHostMiddleware accepts in production (see main.py).
+
+        Priority: TRUSTED_HOSTS if set (explicit, always wins) > a value
+        derived from COOKIE_DOMAIN (once same-site deployment is
+        configured, the trusted hosts are exactly "that domain and its
+        subdomains") > the historical hardcoded default ("elcoral.com",
+        "*.elcoral.com"), so leaving both unset keeps today's production
+        behavior byte-for-byte instead of silently loosening to "*".
+        """
+        if self.trusted_hosts.strip():
+            return [h.strip() for h in self.trusted_hosts.split(",") if h.strip()]
+        if self.cookie_domain.strip():
+            bare = self.cookie_domain.strip().lstrip(".")
+            return [bare, f"*.{bare}"]
+        return ["elcoral.com", "*.elcoral.com"]
 
     @property
     def telegram_configured(self) -> bool:

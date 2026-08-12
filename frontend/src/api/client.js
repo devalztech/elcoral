@@ -55,10 +55,26 @@ function errorMessage(data, status) {
   return 'Something went wrong. Please try again.'
 }
 
+/**
+ * Read the double-submit CSRF cookie the API sets on signup / login /
+ * refresh. It is intentionally not httponly so we can echo it back in the
+ * X-CSRF-Token header; the server compares the two (see
+ * backend/app/core/csrf.py). Cookie-authenticated endpoints
+ * (/auth/refresh, /auth/logout) reject a request where they disagree.
+ */
+function csrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 async function request(path, { method = 'GET', body, token, isFormData = false } = {}) {
   const headers = {}
   if (!isFormData) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
+  if (method !== 'GET' && method !== 'HEAD') {
+    const csrf = csrfToken()
+    if (csrf) headers['X-CSRF-Token'] = csrf
+  }
 
   const res = await fetch(`${BASE}${path}`, {
     method,

@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import MediaPlayer from './MediaPlayer.jsx'
+import MediaFallback from './MediaFallback.jsx'
 
 const isVideo = (item) =>
   item?.kind === 'video' || (item?.mime_type || '').startsWith('video/')
@@ -29,9 +30,11 @@ export default function MediaViewer({
   autoPlay = false,
   onClose,
   onTime,
+  onRetry,
 }) {
   const list = Array.isArray(items) ? items : []
   const [current, setCurrent] = useState(index)
+  const [imgFailed, setImgFailed] = useState(() => new Set())
   // Per-item playheads, so swiping away from a clip and back resumes it.
   const times = useRef({ [index]: startAt || 0 })
   const touch = useRef(null)
@@ -69,6 +72,16 @@ export default function MediaViewer({
 
   const item = list[current]
   const video = isVideo(item)
+  const thisImgFailed = imgFailed.has(current)
+
+  const retryImg = onRetry
+    ? async () => {
+        const ok = await onRetry(item)
+        if (ok !== false) {
+          setImgFailed((s) => { const next = new Set(s); next.delete(current); return next })
+        }
+      }
+    : undefined
 
   const onTouchStart = (event) => {
     const t = event.touches[0]
@@ -124,10 +137,20 @@ export default function MediaViewer({
                 if (current === index) onTime?.(at)
               }}
               onRequestFullscreen={() => onClose?.()}
+              onRetry={onRetry ? () => onRetry(item) : undefined}
             />
           </div>
+        ) : thisImgFailed ? (
+          <div className="mv-img-failed">
+            <MediaFallback kind="image" onRetry={retryImg} onDark />
+          </div>
         ) : (
-          <img className="mv-img" src={item.url} alt={item.alt || ''} />
+          <img
+            className="mv-img"
+            src={item.url}
+            alt={item.alt || ''}
+            onError={() => setImgFailed((s) => new Set(s).add(current))}
+          />
         )}
       </div>
 
@@ -184,6 +207,7 @@ export default function MediaViewer({
           min-height: 0; padding: 0 8px 8px;
         }
         .mv-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .mv-img-failed { width: min(90vw, 420px); color: #fff; }
         /* The player owns the whole stage so its bar sits at the bottom
            of the screen, like a native full-screen player. */
         .mv-video { width: 100%; height: 100%; display: grid; }

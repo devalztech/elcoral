@@ -44,11 +44,11 @@ app.add_middleware(
     allow_origins=settings.cors_origin_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-CSRF-Token"],
 )
 
 if settings.is_production:
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["elcoral.com", "*.elcoral.com"])
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts_list)
 
 
 @app.middleware("http")

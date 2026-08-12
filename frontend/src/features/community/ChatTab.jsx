@@ -85,6 +85,23 @@ export default function ChatTab({ community, caps, accessToken, loggedIn, curren
     })
   }, [])
 
+  // Community media URLs are short-lived when private (see
+  // app/core/media_url.py) — a failed thumbnail almost always just needs
+  // a fresh signature. There's no per-message endpoint, so this
+  // re-fetches the latest page and patches in that one message's
+  // current (freshly signed) media.
+  const retryMedia = useCallback(async (messageId) => {
+    try {
+      const data = await api.listCommunityMessages(slug, { limit: PAGE }, accessToken)
+      const fresh = (data.items ?? []).find((m) => m.id === messageId)
+      if (!fresh) return false
+      setItems((list) => list.map((m) => (m.id === messageId ? { ...m, media_urls: fresh.media_urls } : m)))
+      return true
+    } catch {
+      return false
+    }
+  }, [slug, accessToken])
+
   const load = useCallback(async () => {
     if (gated || !accessToken) { setLoading(false); return }
     setLoading(true)
@@ -266,7 +283,7 @@ export default function ChatTab({ community, caps, accessToken, loggedIn, curren
                 ) : (
                   <>
                     {media.length > 0 && (
-                      <div className="ct-media"><MediaCarousel items={media} /></div>
+                      <div className="ct-media"><MediaCarousel items={media} onRetry={() => retryMedia(m.id)} /></div>
                     )}
                     {m.body && <p className="ct-text">{m.body}</p>}
                   </>

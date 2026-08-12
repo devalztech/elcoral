@@ -199,6 +199,25 @@ export default function MessageThread() {
     setMessages((list) => (list ?? []).map((m) => (m.id === id ? { ...m, ...patch } : m)))
   }
 
+  // Private media URLs are short-lived (see app/core/media_url.py) — a
+  // thumbnail that failed to load almost always just needs a freshly
+  // signed URL, not a different message entirely. There's no per-message
+  // endpoint, so this re-fetches the conversation's latest page and
+  // pulls just that one message's (now fresh) attachments back in.
+  // Returning `false` tells the Attachment/MediaPlayer fallback to stay
+  // in its failed state instead of clearing it.
+  const retryAttachments = async (messageId) => {
+    try {
+      const data = await api.listMessages(conversationId, accessToken)
+      const fresh = (data.items ?? []).find((m) => m.id === messageId)
+      if (!fresh) return false
+      patchMessage(messageId, { attachments: fresh.attachments })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const react = async (message, emoji) => {
     setSheetFor(null)
     // Optimistic: one emoji per person, tapping the same one clears it.
@@ -432,7 +451,7 @@ export default function MessageThread() {
                                   className="ma-frame"
                                   style={{ width: 246, maxWidth: '100%', aspectRatio: '3 / 4', borderRadius: 6, overflow: 'hidden', background: '#000' }}
                                 >
-                                  <MediaCarousel items={gallery} />
+                                  <MediaCarousel items={gallery} onRetry={() => retryAttachments(message.id)} onDark />
                                 </div>
                               ) : (
                                 gallery.map((attachment) => (
@@ -440,11 +459,16 @@ export default function MessageThread() {
                                     key={attachment.url}
                                     attachment={attachment}
                                     onOpenImage={(url) => setPreview(url)}
+                                    onRetry={() => retryAttachments(message.id)}
                                   />
                                 ))
                               )}
                               {rest.map((attachment) => (
-                                <Attachment key={attachment.url} attachment={attachment} />
+                                <Attachment
+                                  key={attachment.url}
+                                  attachment={attachment}
+                                  onRetry={() => retryAttachments(message.id)}
+                                />
                               ))}
                             </>
                           )

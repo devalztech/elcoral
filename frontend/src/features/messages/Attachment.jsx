@@ -15,8 +15,10 @@
  * and every image/video bubble in messages follows.
  */
 import { Download, FileText } from 'lucide-react'
+import { useState } from 'react'
 import VoiceNote from './VoiceNote.jsx'
 import MediaPlayer from '../../components/MediaPlayer.jsx'
+import MediaFallback from '../../components/MediaFallback.jsx'
 
 function fileName(url) {
   try {
@@ -51,34 +53,51 @@ const frameCss = `
 `
 
 
-export default function Attachment({ attachment, onOpenImage }) {
+export default function Attachment({ attachment, onOpenImage, onRetry }) {
   const { url, kind, mime_type: mime } = attachment
+  const [failed, setFailed] = useState(false)
+
+  const retry = onRetry
+    ? async () => {
+        const ok = await onRetry()
+        if (ok !== false) setFailed(false)
+      }
+    : undefined
 
   if (kind === 'image') {
     return (
-      <button
-        type="button"
-        className="ma-frame ma-image"
-        onClick={() => onOpenImage?.(url)}
-        aria-label="Open image preview"
-      >
-        <img src={url} alt="" loading="lazy" />
+      <div className="ma-frame ma-image">
+        {failed ? (
+          <MediaFallback kind="image" onRetry={retry} compact />
+        ) : (
+          <button
+            type="button"
+            className="ma-image-btn"
+            onClick={() => onOpenImage?.(url)}
+            aria-label="Open image preview"
+          >
+            <img src={url} alt="" loading="lazy" onError={() => setFailed(true)} />
+          </button>
+        )}
         <style>{`
           ${frameCss}
-          .ma-image { cursor: zoom-in; }
-          .ma-image:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+          .ma-image-btn { display: block; width: 100%; height: 100%; cursor: zoom-in; }
+          .ma-image-btn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
         `}</style>
-      </button>
+      </div>
     )
   }
 
   if (kind === 'video') {
     // Elcoral's own player rather than the browser's default chrome, so
     // a clip in a DM looks the same as a clip in the feed — and it sits
-    // in the exact same fixed frame a photo would.
+    // in the exact same fixed frame a photo would. MediaPlayer manages
+    // its own failed/retry state internally (see MediaPlayer.jsx), so
+    // this doesn't need a second failed-state wrapper the way image/audio
+    // do below.
     return (
       <div className="ma-frame ma-video">
-        <MediaPlayer src={url} fill rounded={false} />
+        <MediaPlayer src={url} fill rounded={false} onRetry={onRetry} forceDarkFallback />
         <style>{`
           ${frameCss}
           .ma-video { background: #000; }
@@ -91,7 +110,8 @@ export default function Attachment({ attachment, onOpenImage }) {
   if (kind === 'audio') {
     // Voice notes get the themed player: play button, scrubbable
     // progress bar and elapsed/total duration.
-    return <VoiceNote src={url} />
+    if (failed) return <MediaFallback kind="audio" onRetry={retry} compact />
+    return <VoiceNote src={url} onError={() => setFailed(true)} />
   }
 
   return (

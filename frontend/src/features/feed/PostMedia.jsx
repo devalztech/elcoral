@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { Link2 } from 'lucide-react'
 import VoiceNote from '../messages/VoiceNote.jsx'
 import MediaPlayer from '../../components/MediaPlayer.jsx'
+import MediaFallback from '../../components/MediaFallback.jsx'
 import Lightbox from '../../components/Lightbox.jsx'
 import MediaCarousel from '../../components/MediaCarousel.jsx'
 
@@ -24,11 +25,19 @@ import MediaCarousel from '../../components/MediaCarousel.jsx'
 const MEDIA_W = 300
 const MEDIA_H = Math.round((MEDIA_W * 4) / 3) // 400
 
-export default function PostMedia({ media, lightbox = false }) {
+export default function PostMedia({ media, lightbox = false, onRetry }) {
   const [preview, setPreview] = useState(null)
+  const [imgFailed, setImgFailed] = useState(() => new Set())
   if (!media?.length) return null
 
   const open = (url) => (lightbox ? setPreview(url) : undefined)
+
+  const retryImg = (i) => (onRetry
+    ? async () => {
+        const ok = await onRetry()
+        if (ok !== false) setImgFailed((s) => { const next = new Set(s); next.delete(i); return next })
+      }
+    : undefined)
 
   // Several photos/clips on one post are ONE swipeable frame with a
   // counter (Instagram's album model) rather than a grid of frames.
@@ -41,7 +50,7 @@ export default function PostMedia({ media, lightbox = false }) {
     return (
       <div className="pm count-1">
         <div className="pm-frame pm-frame-video">
-          <MediaCarousel items={gallery} />
+          <MediaCarousel items={gallery} onRetry={onRetry ? () => onRetry() : undefined} onDark />
         </div>
         {others.map((m, i) =>
           (m.mime_type || '').startsWith('audio/')
@@ -74,7 +83,7 @@ export default function PostMedia({ media, lightbox = false }) {
         if (type.startsWith('video/')) {
           return (
             <div key={i} className="pm-frame pm-frame-video">
-              <MediaPlayer src={m.url} fill rounded={false} />
+              <MediaPlayer src={m.url} fill rounded={false} onRetry={onRetry} forceDarkFallback />
             </div>
           )
         }
@@ -91,7 +100,18 @@ export default function PostMedia({ media, lightbox = false }) {
 
         return (
           <div key={i} className="pm-frame">
-            <img src={m.url} alt="" loading="lazy" className="pm-item" onClick={() => open(m.url)} />
+            {imgFailed.has(i) ? (
+              <MediaFallback kind="image" onRetry={retryImg(i)} compact />
+            ) : (
+              <img
+                src={m.url}
+                alt=""
+                loading="lazy"
+                className="pm-item"
+                onClick={() => open(m.url)}
+                onError={() => setImgFailed((s) => new Set(s).add(i))}
+              />
+            )}
           </div>
         )
       })}

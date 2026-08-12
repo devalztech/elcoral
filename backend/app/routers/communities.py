@@ -309,7 +309,17 @@ async def _serialize_discussions(
             body=d.body,
             created_at=d.created_at,
             edited_at=d.edited_at,
-            media_urls=[u for u in (media_ref_to_url(r) for r in (d.media_refs or [])) if u],
+            # Community discussion media is bound to the viewer: a private
+            # community's attachments must not be readable by anyone who
+            # merely gets hold of the URL.
+            media_urls=[
+                u
+                for u in (
+                    media_ref_to_url(r, viewer_id=viewer.id if viewer else None)
+                    for r in (d.media_refs or [])
+                )
+                if u
+            ],
             view_count=d.view_count,
             author=PersonOut.from_user(author, profile),
             community=_community_ref(community),
@@ -1230,7 +1240,14 @@ async def _serialize_projects(
                 owner=PersonOut.from_user(owner, profile),
                 name=project.name,
                 description=project.description,
-                media_urls=[u for u in (media_ref_to_url(r) for r in (project.media_refs or [])) if u],
+                media_urls=[
+                    u
+                    for u in (
+                        media_ref_to_url(r, viewer_id=viewer.id if viewer else None)
+                        for r in (project.media_refs or [])
+                    )
+                    if u
+                ],
                 skills=project.skills or [],
                 roles_needed=project.roles_needed or [],
                 status=project.status,
@@ -1502,7 +1519,14 @@ async def _serialize_messages(
             body=None if m.deleted_at else m.body,
             media_urls=[]
             if m.deleted_at
-            else [u for u in (media_ref_to_url(r) for r in (m.media_refs or [])) if u],
+            else [
+                u
+                for u in (
+                    media_ref_to_url(r, viewer_id=viewer.id if viewer else None)
+                    for r in (m.media_refs or [])
+                )
+                if u
+            ],
             created_at=m.created_at,
             sender=PersonOut.from_user(
                 user, profile, is_self=viewer is not None and user.id == viewer.id
@@ -1589,9 +1613,19 @@ async def send_community_message(
     from app.core.community_hub import hub
 
     fanout = (await _serialize_messages(db, [(message, viewer, profile)], None, caps))[0]
+    fanout_payload = fanout.model_dump(mode="json")
+    # Media URLs are stripped from the shared payload and re-signed per
+    # socket in app/routers/community_ws.py: one broadcast reaches many
+    # members, so a single URL here would have to be unbound to any
+    # viewer — exactly what we don't want for a private community.
+    fanout_payload["media_urls"] = []
     await hub.broadcast(
         str(community.id),
-        {"type": "message", "message": fanout.model_dump(mode="json")},
+        {
+            "type": "message",
+            "message": fanout_payload,
+            "media_refs": [str(r) for r in (message.media_refs or [])],
+        },
     )
     return out
 

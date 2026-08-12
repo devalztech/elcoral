@@ -20,7 +20,7 @@ function clock(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export default function VoiceNote({ src, title = 'Voice note' }) {
+export default function VoiceNote({ src, title = 'Voice note', onError }) {
   const audioRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
@@ -64,7 +64,7 @@ export default function VoiceNote({ src, title = 'Voice note' }) {
 
   return (
     <div className="vn">
-      <audio ref={audioRef} src={src} preload="metadata" />
+      <audio ref={audioRef} src={src} preload="metadata" onError={onError} />
       <button
         type="button"
         className="vn-play"

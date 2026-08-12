@@ -19,6 +19,7 @@ from sqlalchemy import select
 from app.core import community_perms as perms
 from app.core.community_hub import hub
 from app.core.database import AsyncSessionLocal
+from app.core.media_url import media_ref_to_url
 from app.core.security import decode_token
 from app.models.community import Community
 from app.models.user import User
@@ -55,6 +56,21 @@ async def community_chat_socket(websocket: WebSocket, slug: str, token: str = Qu
     try:
         while True:
             event = await queue.get()
+            # Re-sign any attachment for THIS subscriber (see the fan-out
+            # in app/routers/communities.py): the broadcast payload
+            # deliberately carries refs, not viewer-bound URLs.
+            # Never mutate the broadcast payload itself — the same dict
+            # object is handed to every subscriber.
+            if isinstance(event, dict) and "media_refs" in event:
+                refs = event.get("media_refs") or []
+                message = {
+                    **(event.get("message") or {}),
+                    "media_urls": [
+                        u for u in (media_ref_to_url(r, viewer_id=user.id) for r in refs) if u
+                    ],
+                }
+                event = {k: v for k, v in event.items() if k != "media_refs"}
+                event["message"] = message
             await websocket.send_json(event)
     except WebSocketDisconnect:
         pass

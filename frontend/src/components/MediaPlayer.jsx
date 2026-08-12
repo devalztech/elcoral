@@ -25,6 +25,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Maximize2, Minimize2, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX,
 } from 'lucide-react'
+import MediaFallback from './MediaFallback.jsx'
 
 const SKIP_SECONDS = 10
 // Two taps closer together than this on the same side are a double-tap.
@@ -68,6 +69,9 @@ export default function MediaPlayer({
   autoPlay = false,
   onTime,
   onRequestFullscreen,
+  onError,
+  onRetry,
+  forceDarkFallback = false,
 }) {
   const wrapRef = useRef(null)
   const videoRef = useRef(null)
@@ -85,6 +89,7 @@ export default function MediaPlayer({
   const [started, setStarted] = useState(immersive)
   const [scrubbing, setScrubbing] = useState(false)
   const [browserFullscreen, setBrowserFullscreen] = useState(false)
+  const [failed, setFailed] = useState(false)
   // { side: 'back' | 'forward', amount } — the double-tap ripple.
   const [jump, setJump] = useState(null)
 
@@ -233,10 +238,45 @@ export default function MediaPlayer({
     setPlaying(false)
     setTime(startAt || 0)
     setBuffered(0)
+    setFailed(false)
   }, [src]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pct = duration ? (time / duration) * 100 : 0
   const bufferedPct = duration ? Math.min(100, (buffered / duration) * 100) : 0
+
+  if (failed) {
+    return (
+      <div
+        className={['mp', 'mp-failed', rounded ? 'mp-round' : '', fill ? 'mp-fill-box' : ''].join(' ')}
+        style={!fill && ratio ? { aspectRatio: ratio } : undefined}
+      >
+        <MediaFallback
+          kind="video"
+          compact={!immersive}
+          onDark={immersive || forceDarkFallback}
+          onRetry={
+            onRetry
+              ? async () => {
+                  const ok = await onRetry()
+                  if (ok !== false) setFailed(false)
+                }
+              : undefined
+          }
+        />
+        <style>{`
+          /* Transparent, not tinted: in fill mode this sits inside a
+             frame the PARENT already colored (e.g. Attachment.jsx's
+             always-black .ma-video) — a second background here would
+             fight it instead of blending in. */
+          .mp { position: relative; display: block; width: 100%; overflow: hidden; }
+          .mp:not(.mp-fill-box) { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+          .mp-round { border-radius: 16px; }
+          .mp-fill-box { width: 100%; height: 100%; }
+          .mp-failed:not(.mp-fill-box) { min-height: 180px; }
+        `}</style>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -264,6 +304,7 @@ export default function MediaPlayer({
         onPointerUp={onSurfaceClick}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
+        onError={() => { setFailed(true); onError?.() }}
         onTimeUpdate={(e) => {
           if (scrubbing) return
           const at = e.currentTarget.currentTime

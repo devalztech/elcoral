@@ -14,14 +14,27 @@ import { useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react'
 import MediaPlayer from './MediaPlayer.jsx'
 import MediaViewer from './MediaViewer.jsx'
+import MediaFallback from './MediaFallback.jsx'
 
 const isVideo = (item) =>
   item?.kind === 'video' || (item?.mime_type || '').startsWith('video/')
 
-export default function MediaCarousel({ items, className = '' }) {
+/* `onRetry(item)` is optional — omit it for a caller with no cheap way
+   to refetch a fresh signed URL for just this item, and the fallback
+   still renders correctly as a dead-end "unavailable" state.
+
+   `onDark` must be passed explicitly by each caller rather than
+   defaulting — this component has no fixed background of its own (see
+   .mcar below), so whether light-on-dark or theme-following text reads
+   correctly depends entirely on what background the PARENT frame uses.
+   PostMedia.jsx and MessageThread.jsx wrap this in an always-black
+   frame -> onDark. ChatTab.jsx wraps it in a theme-following panel
+   (var(--panel)) -> no onDark. */
+export default function MediaCarousel({ items, className = '', onRetry, onDark = false }) {
   const list = (Array.isArray(items) ? items : []).filter(Boolean)
   const [index, setIndex] = useState(0)
   const [viewer, setViewer] = useState(null) // { index, startAt, autoPlay }
+  const [imgFailed, setImgFailed] = useState(() => new Set())
   // Playheads per slide, so the small frame and the full-screen viewer
   // hand the same position back and forth instead of restarting at 0:00.
   const times = useRef({})
@@ -32,6 +45,16 @@ export default function MediaCarousel({ items, className = '' }) {
   const many = list.length > 1
   const item = list[index]
   const video = isVideo(item)
+  const thisImgFailed = imgFailed.has(index)
+
+  const retryImg = onRetry
+    ? async () => {
+        const ok = await onRetry(item)
+        if (ok !== false) {
+          setImgFailed((s) => { const next = new Set(s); next.delete(index); return next })
+        }
+      }
+    : undefined
 
   const go = (next) => {
     if (next < 0 || next > list.length - 1) return
@@ -75,10 +98,19 @@ export default function MediaCarousel({ items, className = '' }) {
           onTime={(at) => { times.current[index] = at }}
           // Expand opens OUR viewer, carrying the playhead over.
           onRequestFullscreen={(at) => open(at, true)}
+          onRetry={onRetry ? () => onRetry(item) : undefined}
+          forceDarkFallback={onDark}
         />
+      ) : thisImgFailed ? (
+        <MediaFallback kind="image" onRetry={retryImg} compact onDark={onDark} />
       ) : (
         <button type="button" className="mcar-img-btn" onClick={() => open()} aria-label="Open preview">
-          <img src={item.url} alt={item.alt || ''} loading="lazy" />
+          <img
+            src={item.url}
+            alt={item.alt || ''}
+            loading="lazy"
+            onError={() => setImgFailed((s) => new Set(s).add(index))}
+          />
         </button>
       )}
 

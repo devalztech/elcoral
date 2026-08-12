@@ -93,7 +93,9 @@ class MessageOut(BaseModel):
         types = list(getattr(message, "media_types", None) or [])
         attachments = [
             MessageAttachmentOut(
-                url=media_ref_to_url(ref),
+                # Private DM media: bound to the viewer so a copied link
+                # cannot be replayed by another account.
+                url=media_ref_to_url(ref, viewer_id=viewer_id),
                 mime_type=types[i] if i < len(types) else None,
                 kind=_kind_for(types[i] if i < len(types) else None),
             )
